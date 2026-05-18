@@ -16,18 +16,30 @@
 
 ```
 computer-use/
-├── README.md                                    # 本文件
-├── .gitignore                                   # 忽略 reports/
-├── scripts/
-│   ├── install_cua_driver.py                    # 桌面驱动器安装(macOS=Swift,Linux/Win=Rust 端口)
-│   └── analyze_product.py                       # 主入口
+├── README.md
+├── .gitignore
 ├── reports/                                     # 每次跑的产出在这里(已 .gitignore)
+├── scripts/
+│   ├── analyze_product.py                       # 入口 shim(只调 product_analyzer.main)
+│   ├── install_cua_driver.py                    # 桌面驱动器安装(macOS=Swift,Linux/Win=Rust)
+│   └── product_analyzer/                        # 实现包
+│       ├── __init__.py                          # 曝露 main + 模块依赖图
+│       ├── config.py                            # 路径常量 + ANSI 配色
+│       ├── ui.py                                # log/err/prompt_str/Spinner
+│       ├── renderer.py                          # stream-json → 终端美化
+│       ├── preflight.py                         # detect_host/ensure_*
+│       ├── tasks.py                             # slug/metadata/list_tasks/post_check
+│       ├── prompts.py                           # build_prompt + build_resume_prompt
+│       ├── claude_driver.py                     # ESC + spawn + run_claude
+│       └── cli.py                               # argparse + cmd_new/cmd_resume
 └── .claude/skills/
-    ├── cua-driver/                              # 桌面自动化 skill(snapshot→act→verify 循环)
+    ├── cua-driver/                              # 桌面自动化 skill(snapshot→act→verify)
     └── product-analyzer/                        # 本项目核心 skill
         ├── SKILL.md                             # 工作流规则
         └── REPORT_TEMPLATE.md                   # 中文报告骨架
 ```
+
+模块依赖单向无环:`config → ui → renderer → preflight → tasks → prompts → claude_driver → cli`。
 
 `scripts/analyze_product.py` 不做产品分析的判断,只负责前置工作(校验输入、建目录、调 claude)。所有产品分析的判断逻辑在 `.claude/skills/product-analyzer/SKILL.md` 里 — **改规则不需要改代码**。
 
