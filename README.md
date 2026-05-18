@@ -1,14 +1,16 @@
 # computer-use
 
-把"分析一款新产品"这件事做成一条 Python 脚本能调起来的可重复流水线。
+一个**自动化竞品分析的 agent computer-use Python 脚本**:给它一个产品名和官网 URL,它就驱动 Claude Code 当 agent,自己打开浏览器爬官网、定位安装包、装上桌面端、用 cua-driver 操作真实 GUI 把主要界面挨个走一遍、批量截图,最后落一份结构稳定的简体中文竞品分析报告。
 
-输入:产品名 + 官网 URL  
+整条流水线是无人值守的:Python 把任务喂进 `claude --print --output-format stream-json --verbose` 子进程,Claude 通过 [`product-analyzer`](.claude/skills/product-analyzer/SKILL.md) skill 走 7 步固定 canonical loop,通过 [`cua-driver`](.claude/skills/cua-driver/SKILL.md) skill 严守 no-foreground 契约驱动桌面端 — 用户的前台应用全程不被抢走,可以一边干别的一边看 agent 在终端里把一款新产品拆开。
+
+输入:产品名 + 官网 URL(可选第三个参数:直达安装包 URL)
 输出:
-- 一份结构稳定的简体中文 Markdown 分析报告(含三个强制章节:产品逻辑 / UI-UX / 官网描述)
-- 一个按命名规则编排的截图文件夹
-- 一份 `metadata.json` 元数据
+- 一份结构稳定的简体中文 Markdown 竞品分析报告(6 个强制章节按固定顺序:总定位 / 界面清单 / 各界面功能与评价 / UI-UX / 官网描述 / 截图索引)
+- 一个按命名规则编排的截图文件夹(`NN_<web|app>_<view>.png`)
+- 一份 `metadata.json` 元数据(产物校验 + 断点续跑用)
 
-执行过程对用户可见:Python 子进程调 `claude --output-format stream-json --verbose`,把 Claude Code 的全量事件流(thinking / 工具调用 / 工具返回 / 文本)实时透传到终端。
+执行过程对用户可见:stream-json 事件流被实时翻译成 Claude Code 风格的彩色终端输出 — thinking、工具调用、工具返回、TodoWrite 列表都以 ☐/◐/☑ 形式打到终端。中途发现 agent 走偏可以**按 ESC 暂停**,补一句话再 `--resume` 续跑。
 
 ---
 
