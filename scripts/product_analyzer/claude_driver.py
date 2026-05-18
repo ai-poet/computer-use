@@ -16,9 +16,11 @@ from .tasks import update_metadata
 from .ui import Spinner, err, log
 
 
-def _esc_watcher_unix(flag: dict, stop: dict) -> None:
+def _esc_watcher_unix(flag: dict, stop: dict, proc: subprocess.Popen) -> None:
     """Background thread: set ``flag['esc']=True`` if user presses ESC on
-    stdin tty. POSIX-only (termios cbreak). Stops when ``stop['done']``."""
+    stdin tty, AND terminate ``proc`` so the main loop's stdout iterator
+    unblocks on EOF immediately instead of waiting for claude to emit the
+    next event. POSIX-only (termios cbreak). Stops when ``stop['done']``."""
     import select
     import termios
     import tty
@@ -31,12 +33,16 @@ def _esc_watcher_unix(flag: dict, stop: dict) -> None:
     try:
         tty.setcbreak(fd)
         while not stop.get("done"):
-            r, _, _ = select.select([fd], [], [], 0.2)
+            r, _, _ = select.select([fd], [], [], 0.05)
             if not r:
                 continue
             ch = os.read(fd, 1)
             if ch == b"\x1b":  # ESC
                 flag["esc"] = True
+                try:
+                    proc.terminate()
+                except (ProcessLookupError, OSError):
+                    pass
                 return
     finally:
         try:
@@ -131,7 +137,7 @@ def run_claude(
             watcher: threading.Thread | None = None
             if sys.stdin.isatty():
                 watcher = threading.Thread(
-                    target=_esc_watcher_unix, args=(esc_flag, stop_flag), daemon=True
+                    target=_esc_watcher_unix, args=(esc_flag, stop_flag, proc), daemon=True
                 )
                 watcher.start()
                 print(f"{DIM}    (按 ESC 暂停并补充指令){RESET}")
@@ -162,8 +168,7 @@ def run_claude(
                         persisted_sid = sid_now
                     if esc_flag.get("esc"):
                         spinner.stop()
-                        print(f"\n{YELLOW}ESC 收到,正在停掉当前 claude 子进程…{RESET}", flush=True)
-                        proc.terminate()
+                        print(f"\n{YELLOW}ESC 收到,已停掉当前 claude 子进程…{RESET}", flush=True)
                         try:
                             proc.wait(timeout=5)
                         except subprocess.TimeoutExpired:
@@ -187,7 +192,14 @@ def run_claude(
                 final_rc = proc.wait()
                 break
 
-            # ESC path: collect supplemental prompt, prepare to resume
+            # ESC path: collect supplemental prompt, prepare to resume.
+            # watcher already terminated proc; reap it so we don't leak a zombie
+            # while _read_supplement blocks on input().
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
             sup = _read_supplement()
             if not sup:
                 err("放弃续跑")
