@@ -1,0 +1,14 @@
+# product-analyzer outputs (large, regenerable, contains screenshots)
+reports/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# editors
+.vscode/
+.idea/
