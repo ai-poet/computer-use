@@ -37,6 +37,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
@@ -166,7 +167,8 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
     """Parse one stream-json line; return list of pretty lines (or None if not JSON).
 
     `state`, when provided, is a mutable dict the caller passes in so we can
-    surface the session id back (used by the ESC resume loop)."""
+    surface the session id back (used by the ESC resume loop) and track the
+    last meaningful action for the loading spinner."""
     try:
         ev = json.loads(raw)
     except json.JSONDecodeError:
@@ -181,8 +183,10 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
             model = ev.get("model", "?")
             cwd = ev.get("cwd", "")
             sid = ev.get("session_id")
-            if state is not None and sid:
-                state["session_id"] = sid
+            if state is not None:
+                if sid:
+                    state["session_id"] = sid
+                state["last_action"] = "thinking"
             out.append(f"{DIM}── claude session · model={model} · cwd={cwd}{RESET}")
         return out
 
@@ -198,18 +202,24 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
             if btype == "thinking":
                 txt = (block.get("thinking") or "").strip()
                 if txt:
+                    if state is not None:
+                        state["last_action"] = "thinking"
                     out.append(f"{DIM}{ITAL}✻ Thinking{RESET}")
                     for line in txt.split("\n"):
                         out.append(f"{DIM}  {line}{RESET}")
             elif btype == "text":
                 txt = (block.get("text") or "").rstrip()
                 if txt:
+                    if state is not None:
+                        state["last_action"] = "writing"
                     out.append(txt)
             elif btype == "tool_use":
                 name = block.get("name", "?")
                 summary = _summarize_tool_input(name, block.get("input"))
                 tail = f" {DIM}{summary}{RESET}" if summary else ""
                 out.append(f"{CYAN}● {name}{RESET}{tail}")
+                if state is not None:
+                    state["last_action"] = f"running {name}"
                 # Expand todo lists inline so the user sees full plan + progress
                 inp = block.get("input")
                 if name == "TodoWrite" and isinstance(inp, dict):
@@ -234,6 +244,8 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
                 first = txt.split("\n", 1)[0] if txt else "(empty)"
                 tag = "↳ error" if is_err else "↳"
                 out.append(f"  {color}{tag} {_trunc(first, 110)}{RESET}")
+                if state is not None:
+                    state["last_action"] = "thinking"
         return out
 
     if t == "result":
@@ -247,6 +259,8 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
             bits.append(f"{dur / 1000:.1f}s")
         color = GREEN if sub == "success" else YELLOW
         out.append(f"{color}{' · '.join(bits)}{RESET}")
+        if state is not None:
+            state["last_action"] = None
         return out
 
     return out
@@ -474,6 +488,92 @@ def _esc_watcher_unix(flag: dict, stop: dict) -> None:
             pass
 
 
+class Spinner:
+    """A self-erasing one-line loading indicator that lives on the bottom of
+    the terminal while real output streams above it.
+
+    Usage:
+        sp = Spinner()
+        sp.start()
+        for line in stream:
+            sp.write_above(line)   # erase, print real content, re-paint
+            sp.set_label(...)
+        sp.stop()
+
+    Auto-disabled when not a tty (CI / pipe / redirect)."""
+
+    FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(self):
+        self.enabled = sys.stdout.isatty() and _USE_COLOR
+        self._label = "starting"
+        self._frame_idx = 0
+        self._lock = None
+        self._thread = None
+        self._stop = None
+        self._painted = False
+        self._start_time = 0.0
+
+    def _paint(self) -> None:
+        if not self.enabled:
+            return
+        elapsed = time.time() - self._start_time
+        glyph = self.FRAMES[self._frame_idx % len(self.FRAMES)]
+        line = f"{CYAN}{glyph}{RESET} {DIM}{self._label} · {elapsed:.0f}s · ESC 暂停{RESET}"
+        sys.stdout.write("\r\x1b[2K" + line)
+        sys.stdout.flush()
+        self._painted = True
+
+    def _erase(self) -> None:
+        if not self.enabled or not self._painted:
+            return
+        sys.stdout.write("\r\x1b[2K")
+        sys.stdout.flush()
+        self._painted = False
+
+    def _loop(self) -> None:
+        while not self._stop.is_set():
+            with self._lock:
+                self._paint()
+                self._frame_idx += 1
+            self._stop.wait(0.1)
+        with self._lock:
+            self._erase()
+
+    def start(self) -> None:
+        if not self.enabled:
+            return
+        import threading
+        self._lock = threading.Lock()
+        self._stop = threading.Event()
+        self._start_time = time.time()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        if not self.enabled or self._thread is None:
+            return
+        self._stop.set()
+        self._thread.join(timeout=1)
+        with self._lock:
+            self._erase()
+        self._thread = None
+
+    def set_label(self, label: str | None) -> None:
+        self._label = label or "thinking"
+
+    def write_above(self, line: str) -> None:
+        """Print a line above the spinner: erase, print, re-paint."""
+        if not self.enabled:
+            print(line, flush=True)
+            return
+        with self._lock:
+            self._erase()
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+            self._paint()
+
+
 def _spawn_claude(prompt: str, resume_id: str | None) -> subprocess.Popen:
     cmd = [
         "claude", "--print",
@@ -555,6 +655,9 @@ def run_claude(prompt: str) -> int:
                 )
                 watcher.start()
                 print(f"{DIM}    (按 ESC 暂停并补充指令){RESET}")
+            spinner = Spinner()
+            spinner.set_label(state.get("last_action") or "starting")
+            spinner.start()
             try:
                 for line in proc.stdout:
                     if raw_fh:
@@ -565,11 +668,13 @@ def run_claude(prompt: str) -> int:
                         continue
                     pretty = format_event(line, state)
                     if pretty is None:
-                        print(line, flush=True)
+                        spinner.write_above(line)
                     else:
                         for p in pretty:
-                            print(p, flush=True)
+                            spinner.write_above(p)
+                    spinner.set_label(state.get("last_action") or "thinking")
                     if esc_flag.get("esc"):
+                        spinner.stop()
                         print(f"\n{YELLOW}ESC 收到,正在停掉当前 claude 子进程…{RESET}", flush=True)
                         proc.terminate()
                         try:
@@ -578,6 +683,7 @@ def run_claude(prompt: str) -> int:
                             proc.kill()
                         break
             except KeyboardInterrupt:
+                spinner.stop()
                 proc.terminate()
                 err("用户 Ctrl+C,中止")
                 final_rc = 130
@@ -585,6 +691,7 @@ def run_claude(prompt: str) -> int:
                 if watcher and watcher.is_alive():
                     watcher.join(timeout=1)
                 break
+            spinner.stop()
             stop_flag["done"] = True
             if watcher and watcher.is_alive():
                 watcher.join(timeout=1)
