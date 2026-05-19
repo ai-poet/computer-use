@@ -134,12 +134,16 @@ def cmd_batch(args: argparse.Namespace) -> int:
     for warning in warnings:
         err(f"[sandbox preflight] {warning}")
 
-    result = run_batch(
-        args.batch,
-        args.max_workers,
-        sandbox_image=args.sandbox_image,
-        sandbox_warnings=warnings,
-    )
+    try:
+        result = run_batch(
+            args.batch,
+            args.max_workers,
+            sandbox_image=args.sandbox_image,
+            sandbox_warnings=warnings,
+        )
+    except KeyboardInterrupt:
+        err("用户中断批量任务")
+        return 130
     ok = result.total - len(result.failed)
     log(f"批量完成: total={result.total} ok={ok} failed={len(result.failed)}")
     for row in result.results:

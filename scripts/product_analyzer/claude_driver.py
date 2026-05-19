@@ -16,6 +16,9 @@ from .tasks import update_metadata
 from .ui import Spinner, err, log
 
 
+_PRINT_LOCK = threading.Lock()
+
+
 def _esc_watcher_unix(flag: dict, stop: dict, proc: subprocess.Popen) -> None:
     """Background thread: set ``flag['esc']=True`` if user presses ESC on
     stdin tty, AND terminate ``proc`` so the main loop's stdout iterator
@@ -113,6 +116,7 @@ def run_claude(
     non_interactive: bool = False,
     log_file: Path | None = None,
     env: dict[str, str] | None = None,
+    terminal_prefix: str | None = None,
 ) -> int:
     """Run claude in stream-json mode with ESC-pause + resume support.
 
@@ -132,6 +136,7 @@ def run_claude(
         non_interactive: disable ESC/spinner UI; intended for batch workers
         log_file: optional file that receives raw stream-json/stdout
         env: optional environment for the Claude subprocess
+        terminal_prefix: prefix for mirrored non-interactive terminal output
     """
     raw_dump_path = os.environ.get("ANALYZE_RAW_LOG")
     raw_fh = open(raw_dump_path, "a", encoding="utf-8") if raw_dump_path else None
@@ -179,6 +184,8 @@ def run_claude(
                             for p in pretty:
                                 spinner.write_above(p)
                         spinner.set_label(state.get("last_action") or "thinking")
+                    elif non_interactive and terminal_prefix:
+                        _write_prefixed(terminal_prefix, pretty or [line])
                     # Persist session_id the first time it changes — gives a
                     # resume target even if claude is killed mid-stream.
                     sid_now = state.get("session_id")
@@ -246,3 +253,11 @@ def run_claude(
         if log_fh:
             log_fh.close()
     return final_rc
+
+
+def _write_prefixed(prefix: str, lines: list[str]) -> None:
+    """Mirror batch worker progress without interleaving partial lines."""
+    with _PRINT_LOCK:
+        for item in lines:
+            for physical_line in item.splitlines() or [""]:
+                print(f"{prefix}{physical_line}", flush=True)

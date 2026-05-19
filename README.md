@@ -60,12 +60,12 @@ computer-use/
 批量本地 sandbox 模式依赖 Cua Sandbox SDK。它要求 Python 3.12 或 3.13;macOS Xcode 自带的 Python 3.9 不能安装 `cua` 包。
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
+conda create -y -n computer-use-py312 python=3.12
+conda activate computer-use-py312
 python -m pip install -r requirements.txt
 ```
 
-如果本机没有 `python3.12`,先用 Homebrew 或你常用的 Python 版本管理器安装 Python 3.12/3.13。
+如果不用 conda,也可以用 Homebrew / pyenv / venv 创建 Python 3.12 或 3.13 环境。关键是运行 `analyze_product.py` 的 `python` 必须是 3.12/3.13。
 
 ### 3. 装桌面驱动器
 
@@ -132,7 +132,7 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 先确认本地依赖:
 
 ```bash
-source .venv/bin/activate
+conda activate computer-use-py312
 python --version   # 应为 3.12.x 或 3.13.x
 python -m pip install -r requirements.txt
 docker info

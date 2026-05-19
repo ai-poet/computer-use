@@ -172,6 +172,7 @@ def _run_one(
         non_interactive=True,
         log_file=log_file,
         env=env,
+        terminal_prefix=f"[batch:{index} {product_name}] ",
     )
     post_check(out_dir)
     if rc != 0:
