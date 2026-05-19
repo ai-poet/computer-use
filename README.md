@@ -168,9 +168,37 @@ python -m pip install -r requirements.txt
 docker info
 claude --version
 
-# 本地 Linux sandbox 默认镜像(与 Cua 文档 "Linux on Docker" 一致)
+# 本地 Linux 桌面 sandbox(与 Cua 文档 "Linux on Docker" 一致)
 docker pull --platform=linux/amd64 trycua/cua-xfce:latest
 ```
+
+### Android APK 沙盒(可选)
+
+若产品官网提供 **APK**,可在 **Android 模拟器沙盒**里下载、安装、启动并截图体验(对应 skill 里的 `android` 路径、`screenshots/NN_android_*.png`)。镜像为 QEMU Android 容器,**APK 的安装与 UI 测试都在该沙盒内完成**,不占用 host 真机。
+
+预拉镜像(Apple Silicon / arm64 Mac **必须**带 `--platform=linux/amd64`,否则会出现 `no matching manifest for linux/arm64`):
+
+```bash
+docker pull --platform=linux/amd64 trycua/cua-qemu-android:latest
+```
+
+Intel Mac / Linux x86_64 可直接:
+
+```bash
+docker pull trycua/cua-qemu-android:latest
+```
+
+批量分析时启用 Android 路径(默认 `--sandbox-image linux` **不会**走 APK;需显式打开):
+
+```bash
+python scripts/analyze_product.py \
+  --batch queue.language-learning.json \
+  --max-workers 2 \
+  --sandbox-image auto \
+  --android
+```
+
+Claude worker 会在沙盒内用 `Sandbox.ephemeral(Image.android(), local=True)` 起独立 Android sandbox,通过 `sb.shell.run()` 执行 `adb install`、启动应用、`await sb.screenshot()` 等;APK 文件落在各产品目录的 `downloads/` 下。详见 [Cua Set Up a Sandbox — Android](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox) 与 `.claude/skills/product-analyzer/SKILL.md` 中的 Android 增强路径。
 
 若本机配置了 HTTP 代理,批量本地 sandbox 会自动为 worker 设置 `NO_PROXY=127.0.0.1,localhost`,避免 SDK 探测 `localhost:<docker_port>` 时被代理成 502。
 
@@ -223,13 +251,7 @@ python scripts/analyze_product.py \
   --sandbox-image linux
 ```
 
-`--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径;只有 `auto` 或显式 `--android` 才会。
-
-若要在 Apple Silicon 上拉 Android QEMU 镜像(amd64 模拟,较慢):
-
-```bash
-docker pull --platform=linux/amd64 trycua/cua-qemu-android:latest
-```
+`--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径;需要 APK 时请预拉上方 `cua-qemu-android` 镜像并加 `--android`(或 `--sandbox-image auto`)。
 
 云端 sandbox(必须加 `--sandbox cloud`;Key 在 [cua.ai](https://cua.ai/signin) 创建):
 
