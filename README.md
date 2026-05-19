@@ -20,9 +20,11 @@
 computer-use/
 ├── README.md
 ├── .gitignore
-├── reports/                                     # 每次跑的产出(可提交;downloads/ 与 .sandbox_ctl_last_shell.json 仍忽略)
+├── reports/                                     # 每次跑的产出(可 git 提交,见下方说明)
+│   └── <slug>-YYYY-MM-DD[-N]/                   # 例: reports/babbel-2026-05-19/
 ├── scripts/
 │   ├── analyze_product.py                       # 入口 shim(只调 product_analyzer.main)
+│   ├── sandbox_ctl.py                           # 沙盒逐步控制 CLI shim → product_analyzer.sandbox_ctl
 │   ├── install_cua_driver.py                    # 桌面驱动器安装(macOS=Swift,Linux/Win=Rust)
 │   └── product_analyzer/                        # 实现包
 │       ├── __init__.py                          # 曝露 main + 模块依赖图
@@ -32,10 +34,12 @@ computer-use/
 │       ├── preflight.py                         # detect_host/ensure_*
 │       ├── tasks.py                             # slug/metadata/list_tasks/post_check
 │       ├── sandbox_runtime.py                   # 本地 Cua sandbox runtime 合约
+│       ├── sandbox_ctl.py                       # bootstrap / step / teardown / status
 │       ├── prompts.py                           # build_prompt + build_resume_prompt
 │       ├── claude_driver.py                     # ESC + spawn + run_claude
 │       ├── batch.py                             # CSV/JSON 队列 + 并发 worker
 │       └── cli.py                               # argparse + cmd_new/cmd_resume/cmd_batch
+├── tests/sandbox/                               # linux_smoke、sandbox_ctl_smoke、键名归一化单测
 └── .claude/skills/
     ├── cua-driver/                              # 桌面自动化 skill(snapshot→act→verify)
     └── product-analyzer/                        # 本项目核心 skill
@@ -43,7 +47,9 @@ computer-use/
         └── REPORT_TEMPLATE.md                   # 中文报告骨架
 ```
 
-模块依赖单向无环:`config → ui → renderer → preflight → tasks → sandbox_runtime → prompts → claude_driver → batch → cli`。
+模块依赖单向无环:`config → ui → renderer → preflight → tasks → sandbox_runtime → sandbox_ctl → prompts → claude_driver → batch → cli`。
+
+**`reports/` 与 git**:默认会提交 `report.md`、`metadata.json`、`sandbox.json`、`run.log`、`screenshots/` 等分析产物,便于对照 batch 进度与回归截图。仍忽略 `reports/**/downloads/`(安装包缓存)和 `reports/**/.sandbox_ctl_last_shell.json`(`step shell` 的临时 JSON,供 Bash 吞 stdout 时读取)。
 
 `scripts/analyze_product.py` 不做产品分析的判断,只负责前置工作(校验输入、建目录、调 claude)。所有产品分析的判断逻辑在 `.claude/skills/product-analyzer/SKILL.md` 里 — **改规则不需要改代码**。
 
@@ -142,8 +148,27 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 **本机 Claude 不直接连沙盒 GUI**,而是通过 **脚本** 间接操控:
 
 1. **Python 编排器**(`scripts/analyze_product.py` + `scripts/product_analyzer/batch.py`)只负责起子进程、注入 env、写 `reports/<slug>/`、云端时挂 `--mcp-config`;**不**替 Claude 点鼠标。
-2. **每个 Claude worker** 读 product-analyzer skill,用 **Bash 反复调用** [`scripts/sandbox_ctl.py`](scripts/sandbox_ctl.py)(本地)或 **Cua MCP**(云端)完成「建沙盒 → **以鼠标为主**逐步截图/点击/滚动 → 拆沙盒」。官网用 `bootstrap --open-browser --url …` 打开,**不要**用 `wget` 抓 HTML;`step shell` 仅用于下载已有直链的安装包。若 Bash 吞 stdout,读 `reports/.../.sandbox_ctl_last_shell.json`。
-3. **`sandbox_ctl`** 内部用 Cua Sandbox SDK 对 **named** 容器发单步命令(`screenshot` / `click` / `shell` …),连接信息写在 `reports/.../sandbox.json`;Claude 每步一条命令、先看 PNG 再决策,与单任务里 cua-driver 的 observe–act 节奏一致。
+2. **每个 Claude worker** 读 product-analyzer skill,用 **Bash 反复调用** [`scripts/sandbox_ctl.py`](scripts/sandbox_ctl.py)(本地)或 **Cua MCP**(云端)完成「建沙盒 → **以鼠标为主**逐步截图/点击/滚动 → 拆沙盒」。官网用 `bootstrap --open-browser --url …` 打开,**不要**用 `wget` 抓 HTML;`step shell` 仅用于下载已有直链的安装包。若 Bash 吞 stdout,读 `reports/.../.sandbox_ctl_last_shell.json`(该文件不提交 git)。
+3. **`sandbox_ctl`** 内部用 Cua Sandbox SDK 对 **named** 容器发单步命令(`screenshot` / `click` / `type` / `key` / `scroll` / `shell` …),连接信息写在 `reports/.../sandbox.json`;Claude 每步一条命令、先看 PNG 再决策,与单任务里 cua-driver 的 observe–act 节奏一致。
+
+**`sandbox_ctl` 常用命令**(本地 batch;建议 `conda activate computer-use-py312` 后用同一 Python):
+
+```bash
+# 建沙盒 + 写 sandbox.json + 可选用键盘打开官网(非 wget)
+python scripts/sandbox_ctl.py bootstrap reports/<slug>-<date> --open-browser --url 'https://example.com'
+
+# observe–act 单步(每步一条 Bash,禁止整段 asyncio 脚本)
+python scripts/sandbox_ctl.py step screenshot reports/<slug>-<date> --out screenshots/01_web_homepage.png
+python scripts/sandbox_ctl.py step click   reports/<slug>-<date> 640 120
+python scripts/sandbox_ctl.py step key     reports/<slug>-<date> 'ctrl+l'   # 小写键名
+python scripts/sandbox_ctl.py step key     reports/<slug>-<date> enter      # 勿用 Return/Escape
+python scripts/sandbox_ctl.py step shell   reports/<slug>-<date> -c 'wget -O downloads/app.deb …'
+
+python scripts/sandbox_ctl.py teardown reports/<slug>-<date>
+python scripts/sandbox_ctl.py status   reports/<slug>-<date>
+```
+
+沙盒内 `step key` 的键名必须是 **computer-server 接受的小写名**(`enter`、`escape`、`ctrl+l` 等)。`Return` / `Escape` 等 pynput 风格会触发 `Unknown key in hotkey`。
 
 ```
 queue.json
@@ -207,6 +232,9 @@ docker pull --platform=linux/amd64 trycua/cua-xfce:latest
 # 逐步控制桥 smoke(需 Docker);截图落在 tmp/sandbox-ctl-smoke/screenshots/
 python -m tests.sandbox.sandbox_ctl_smoke
 # 保留容器便于手查: python -m tests.sandbox.sandbox_ctl_smoke --no-teardown
+
+# 键名归一化单测(无需 Docker)
+python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
 ```
 
 ### Android APK 沙盒(可选)
@@ -304,14 +332,19 @@ python scripts/analyze_product.py \
 
 ```text
 reports/<product-slug>-YYYY-MM-DD[-N]/
-├── report.md
-├── metadata.json
-├── run.log
-├── downloads/
+├── report.md              # 完成后由 Claude 写入
+├── metadata.json          # Python 写雏形,结束前由 Claude 补齐
+├── sandbox.json           # sandbox_ctl bootstrap 写入(api_url、容器名)
+├── run.log                # 该 worker 的 stream-json 事件流(批量模式)
+├── downloads/             # 安装包缓存(.gitignore,不提交)
 └── screenshots/
+    ├── 01_web_homepage.png
+    └── ...
 ```
 
-`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项。第一轮批量测试建议 `--sandbox-image linux` + 已预拉 `cua-xfce` 镜像;`metadata.json` 里 `runtime` 为 `sandbox-local` 或 `sandbox-cloud`,`sandbox.mode` 为 `local` / `cloud`。
+仓库里可带有进行中的 batch 样例(如 [`reports/babbel-2026-05-19/`](reports/babbel-2026-05-19/))供对照截图与 `run.log`。
+
+`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项。第一轮批量测试建议 `--sandbox-image linux` + 已预拉 `cua-xfce` 镜像;`metadata.json` 里 `runtime` 为 `sandbox-local` 或 `sandbox-cloud`,`sandbox` 块记录 `name` / `api_url` / `local`。
 
 ### 执行过程
 
@@ -356,9 +389,11 @@ ANALYZE_RAW_LOG=/tmp/raw.jsonl python3 scripts/analyze_product.py "ProductiveKit
 
 ```
 reports/<slug>-2026-05-18/
-├── report.md                       # 简体中文,3 强制章节按顺序
+├── report.md                       # 简体中文,6 个强制章节按固定顺序
 ├── metadata.json                   # 机器可读元数据
-├── downloads/                      # 安装包 / APK 下载缓存
+├── sandbox.json                    # 批量 sandbox 时由 sandbox_ctl 写入
+├── run.log                         # 批量时 Claude worker 事件流(可选)
+├── downloads/                      # 安装包 / APK 下载缓存(.gitignore)
 └── screenshots/
     ├── 01_web_homepage.png         # NN_<source>_<view>.png
     ├── 02_web_pricing.png
@@ -468,8 +503,15 @@ python3 scripts/analyze_product.py "ProductiveKitty" "https://productivekitty.ma
 
 通过条件:
 1. 终端实时看见 stream-json 事件流(thinking、各类 Tool 调用、Tool 返回都可见)
-2. `reports/productivekitty-YYYY-MM-DD/report.md` 存在,3 个强制章节按顺序
+2. `reports/productivekitty-YYYY-MM-DD/report.md` 存在,6 个强制章节按顺序
 3. `screenshots/` 至少 1 张 `web_*` + (有桌面端时)≥3 张 `app_*`
 4. 每张截图都在 `report.md` 里被引用过
 5. `metadata.json` 的 `finished_at` / `mode` 字段已被补齐
 6. 重跑同输入 → 产出 `...-2026-05-18-2/` 而非覆盖
+
+批量 sandbox 额外建议:
+
+```bash
+python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
+python -m tests.sandbox.sandbox_ctl_smoke
+```
