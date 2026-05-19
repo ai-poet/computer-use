@@ -185,7 +185,10 @@ def run_claude(
                                 spinner.write_above(p)
                         spinner.set_label(state.get("last_action") or "thinking")
                     elif non_interactive and terminal_prefix:
-                        _write_prefixed(terminal_prefix, pretty or [line])
+                        if pretty is None:
+                            _write_prefixed(terminal_prefix, [line])
+                        elif pretty:
+                            _write_prefixed(terminal_prefix, pretty)
                     # Persist session_id the first time it changes — gives a
                     # resume target even if claude is killed mid-stream.
                     sid_now = state.get("session_id")
