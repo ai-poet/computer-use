@@ -55,7 +55,15 @@ computer-use/
 
 按官方文档装好 `claude` 命令:<https://docs.claude.com/en/docs/claude-code>
 
-### 2. 装桌面驱动器
+### 2. 装 Python 依赖
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+当前主要用于批量本地 sandbox 模式的 Cua Sandbox SDK。
+
+### 3. 装桌面驱动器
 
 ```bash
 python3 scripts/install_cua_driver.py
@@ -72,7 +80,7 @@ python3 scripts/install_cua_driver.py
 
 如果首次运行 `analyze_product.py` 时没装,它会自动调起这个脚本。
 
-### 3. 网络代理(可选)
+### 4. 网络代理(可选)
 
 `install_cua_driver.py` 会从 GitHub 下安装包,如果你需要走代理,先在父 shell 设好:
 
@@ -120,7 +128,7 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 先确认本地依赖:
 
 ```bash
-pip install cua
+python3 -m pip install -r requirements.txt
 docker info
 claude --version
 ```

@@ -86,7 +86,7 @@ def ensure_cua_sdk() -> None:
     if importlib.util.find_spec("cua") is not None:
         return
     err("未找到 `cua` Python 包。批量本地沙箱模式需要先安装 Cua Sandbox SDK:")
-    err("  pip install cua")
+    err("  python3 -m pip install -r requirements.txt")
     sys.exit(1)
 
 
