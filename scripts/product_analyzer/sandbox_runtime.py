@@ -71,43 +71,31 @@ def resolve_api_key(cli_key: str | None) -> str | None:
 def resolve_sandbox_mode(
     *,
     cli_sandbox: str | None,
-    api_key: str | None,
     interactive: bool,
 ) -> SandboxMode:
     """Pick local vs cloud sandbox for batch mode.
 
+    Default is **local**. Cloud is used only when explicitly requested.
+
     Priority:
     1. ``--sandbox cloud`` → cloud (caller must ensure API key)
-    2. ``--sandbox local`` → local (even if CUA_API_KEY is set)
-    3. API key present → cloud
-    4. Interactive prompt, else default local
+    2. ``--sandbox local`` or unset → local (``CUA_API_KEY`` in env is ignored)
+    3. Interactive menu: default local; choose ``2`` for cloud
     """
     if cli_sandbox == "cloud":
         return "cloud"
     if cli_sandbox == "local":
         return "local"
     if interactive:
-        return _prompt_sandbox_mode(api_key)
-    if api_key:
-        return "cloud"
+        return _prompt_sandbox_mode()
     return "local"
 
 
-def _prompt_sandbox_mode(api_key: str | None) -> SandboxMode:
+def _prompt_sandbox_mode() -> SandboxMode:
     from .ui import prompt_str
 
-    if api_key:
-        use_cloud = prompt_str(
-            "检测到 CUA_API_KEY,默认使用云端 sandbox。使用云端? [Y/n]: ",
-            validate=lambda s: s.lower() in ("", "y", "yes", "n", "no"),
-            allow_empty=True,
-        )
-        if use_cloud.lower() in ("n", "no"):
-            return "local"
-        return "cloud"
-
     choice = prompt_str(
-        "Sandbox 运行环境 [1=本地 Docker/Lume, 2=云端 Cua Cloud, 默认 1]: ",
+        "Sandbox 运行环境 [1=本地 Docker/Lume(默认), 2=云端 Cua Cloud]: ",
         validate=lambda s: s in ("", "1", "2"),
         allow_empty=True,
     )

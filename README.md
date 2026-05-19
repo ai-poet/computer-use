@@ -125,16 +125,27 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 
 任何缺失的位置参数会回退到 `input()` 询问。空字符串视为"未给"。
 
-### 批量并发(本地 / 云端 sandbox)
+### 批量并发(默认本地 sandbox)
 
-批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的 sandbox(**本地** Docker/Lume 或 **Cua Cloud**),在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
+批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的 **本地** sandbox(Docker/Lume/QEMU),在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
 
-Sandbox 环境说明见 [Cua Set Up a Sandbox](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox):
+**默认行为:本地 sandbox。** 未传 `--sandbox` 时一律走本机 Docker/Lume,即使环境里已有 `CUA_API_KEY` 也不会自动切到云端。
 
-- **本地**(`--sandbox local`):Linux 推荐 Docker + `trycua/cua-xfce`;需本机 Docker/Lume/QEMU
-- **云端**(`--sandbox cloud` 或设置 `CUA_API_KEY`):由 Cua Cloud 托管,无需本机 Docker
+若要使用 **Cua Cloud 云端 sandbox**,必须显式指定:
 
-判定规则:显式 `--sandbox local` 强制本地;显式 `--sandbox cloud` 强制云端(需 API Key);未指定时若存在 `CUA_API_KEY` 则默认云端,否则交互选择。零参数菜单选 `3` 可进入批量分析向导。
+```bash
+python scripts/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
+# 或
+export CUA_API_KEY=sk-...
+python scripts/analyze_product.py --batch queue.json --sandbox cloud
+```
+
+环境说明见 [Cua Set Up a Sandbox](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox):
+
+- **本地(默认)**:Linux 推荐 Docker + `trycua/cua-xfce`;需本机 Docker/Lume/QEMU
+- **云端(仅 `--sandbox cloud`)**:由 Cua Cloud 托管,需 API Key,无需本机 Docker
+
+零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。
 
 先确认本地依赖:
 
@@ -184,25 +195,21 @@ python -m tests.sandbox.linux_smoke --timeout 180
 ]
 ```
 
-跑两个并发 worker(本地 Linux sandbox):
+跑两个并发 worker(默认本地 Linux sandbox,可省略 `--sandbox local`):
 
 ```bash
 python scripts/analyze_product.py \
   --batch queue.test.json \
   --max-workers 2 \
-  --sandbox local \
   --sandbox-image linux
 ```
 
-云端 sandbox(需先在 [cua.ai](https://cua.ai/signin) 创建 API Key):
+云端 sandbox(必须加 `--sandbox cloud`;Key 在 [cua.ai](https://cua.ai/signin) 创建):
 
 ```bash
-export CUA_API_KEY=sk-...
-python scripts/analyze_product.py --batch queue.test.json --max-workers 2
-
-# 或显式指定
 python scripts/analyze_product.py \
   --batch queue.test.json \
+  --max-workers 2 \
   --sandbox cloud \
   --cua-api-key sk-...
 ```

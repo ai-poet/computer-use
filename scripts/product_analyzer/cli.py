@@ -83,7 +83,6 @@ def prepare_batch_context(args: argparse.Namespace):
     api_key = resolve_api_key(args.cua_api_key)
     mode = resolve_sandbox_mode(
         cli_sandbox=args.sandbox,
-        api_key=api_key,
         interactive=interactive,
     )
     if mode == "cloud":
@@ -132,10 +131,10 @@ def collect_batch_args() -> argparse.Namespace:
     )
     sandbox_image = image_raw.strip() or "auto"
 
-    api_key = resolve_api_key(None)
-    mode = resolve_sandbox_mode(cli_sandbox=None, api_key=api_key, interactive=True)
+    mode = resolve_sandbox_mode(cli_sandbox=None, interactive=True)
+    api_key: str | None = None
     if mode == "cloud":
-        api_key = _prompt_api_key_if_needed("cloud", api_key)
+        api_key = _prompt_api_key_if_needed("cloud", resolve_api_key(None))
         if api_key:
             ensure_cua_api_key(api_key)
 
@@ -144,7 +143,7 @@ def collect_batch_args() -> argparse.Namespace:
         max_workers=max_workers,
         sandbox_image=sandbox_image,
         sandbox="cloud" if mode == "cloud" else "local",
-        cua_api_key=api_key,
+        cua_api_key=api_key if mode == "cloud" else None,
         product_name=None,
         url=None,
         download_url=None,
@@ -300,10 +299,10 @@ def _build_parser() -> argparse.ArgumentParser:
             '"https://productivekitty.masterwordai.com"\n'
             "  全参:    python3 scripts/analyze_product.py NAME URL DOWNLOAD_URL\n"
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
-            "  批量本地: python3 scripts/analyze_product.py --batch queue.json "
-            "--sandbox local --sandbox-image linux\n"
-            "  批量云端: export CUA_API_KEY=sk-... && python3 scripts/analyze_product.py "
-            "--batch queue.json\n"
+            "  批量(默认本地): python3 scripts/analyze_product.py --batch queue.json "
+            "--sandbox-image linux\n"
+            "  批量云端: python3 scripts/analyze_product.py --batch queue.json "
+            "--sandbox cloud --cua-api-key sk-...\n"
         ),
     )
     parser.add_argument(
@@ -344,12 +343,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--sandbox",
         choices=("local", "cloud"),
         default=None,
-        help="批量 sandbox 运行环境:local=本机 Docker/Lume;cloud=Cua Cloud。",
+        help="批量 sandbox 运行环境。默认 local;仅 --sandbox cloud 时走 Cua Cloud。",
     )
     parser.add_argument(
         "--cua-api-key",
         default=None,
-        help="Cua Cloud API Key。也可设环境变量 CUA_API_KEY(有 Key 时默认走云端)。",
+        help="Cua Cloud API Key(仅 --sandbox cloud 时需要)。也可 export CUA_API_KEY。",
     )
     return parser
 

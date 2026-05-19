@@ -26,10 +26,9 @@ python3 scripts/analyze_product.py
 # 直接进恢复流程
 python3 scripts/analyze_product.py --resume
 
-# 批量:每个产品一个 Cua sandbox worker(本地或云端)
-python3 scripts/analyze_product.py --batch queue.json --max-workers 2 --sandbox local --sandbox-image auto
-export CUA_API_KEY=sk-...  # 有 Key 时默认云端
-python3 scripts/analyze_product.py --batch queue.json --max-workers 2
+# 批量:默认本地 sandbox;仅 --sandbox cloud 时走云端
+python3 scripts/analyze_product.py --batch queue.json --max-workers 2 --sandbox-image auto
+python3 scripts/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
 
 # 调试:把 stream-json 同时落盘
 ANALYZE_RAW_LOG=/tmp/raw.jsonl python3 scripts/analyze_product.py NAME URL
