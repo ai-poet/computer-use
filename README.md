@@ -139,6 +139,29 @@ docker info
 claude --version
 ```
 
+建议先跑 Linux sandbox smoke test,确认 Cua SDK + Docker + GUI 截图链路可用。测试在 `tests/sandbox/`:
+
+```bash
+# 只检查 Python / cua / Docker,不拉起 sandbox
+python -m tests.sandbox.linux_smoke --check-only
+
+# 完整 smoke(每步默认 180s 超时)
+python -m tests.sandbox.linux_smoke --timeout 180
+```
+
+这个测试会覆盖:
+
+- Python / `cua` 包版本检查
+- Docker daemon 和正在运行的 Cua 容器摘要
+- `Sandbox.ephemeral(Image.linux(), local=True)` 创建
+- `sb.shell.run(...)`
+- `sb.mouse.move(...)` / `sb.mouse.click(...)`
+- `sb.keyboard.press(...)`
+- `sb.screenshot()` 并保存到 `tmp/sandbox-smoke/linux_sandbox_screenshot.png`
+- 结构化结果 `tmp/sandbox-smoke/linux_smoke_report.json`
+
+如果卡住或失败,脚本会自动打印相关 Cua 容器的 `docker port` 和 `docker logs --tail ...`,方便定位是 Docker、容器服务还是 SDK 连接问题。
+
 准备一个队列文件,例如 `queue.test.json`:
 
 ```json
