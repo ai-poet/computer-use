@@ -90,6 +90,8 @@ python3 scripts/install_cua_driver.py
 
 如果首次运行 `analyze_product.py` 时没装,它会自动调起这个脚本。
 
+> **批量 `--batch` 不需要 cua-driver** — 各产品在 Docker/云端沙盒里用 Firefox + `sandbox_ctl` 完成;只有单任务 `runtime=host` 才依赖本机 cua-driver。批量跑前清单见 [批量并发跑前准备](#批量并发跑前准备清单)。
+
 ### 4. 网络代理(可选)
 
 `install_cua_driver.py` 会从 GitHub 下安装包,如果你需要走代理,先在父 shell 设好:
@@ -144,6 +146,60 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 ### 批量并发(默认本地 sandbox)
 
 批量模式在本机用 `--max-workers` **并发**启动多个独立的 `claude --print` worker,每个 worker 分析队列里的一个产品。**并发跑时,每个产品都会先在自己的隔离环境里创建一台沙盒**(本地 Docker/Lume/QEMU,或 Cua Cloud VM),分析结束后再销毁;worker 之间不共享沙盒、也不碰你 Mac 上的前台应用。
+
+#### 批量并发跑前准备(清单)
+
+跑 `--batch` 前建议逐项确认。编排器启动时会做 **claude / cua SDK / cua CLI** 预检;**不会**安装 cua-driver(批量走沙盒,不走 host 桌面)。
+
+| 类别 | 要求 | 说明 |
+|------|------|------|
+| **Claude Code** | `claude` 已安装且已登录 | `claude --version`;需能非交互跑 `claude --print`(批量禁用 ESC 续跑 UI) |
+| **Python** | 3.12 或 3.13 | macOS 自带 3.9 不能装 `cua`;建议 conda 环境 `computer-use-py312` |
+| **依赖** | `pip install -r requirements.txt` | 提供 `cua` Sandbox SDK;与跑 `analyze_product.py` 的同一解释器 |
+| **Cua CLI** | `cua --version` | 云端 MCP、`serve-mcp` 等;与 SDK 同环境安装 |
+| **Docker(本地 linux)** | `docker info` 正常 | 默认 `--sandbox-image linux` 时每 worker 一台 **独立** `trycua/cua-xfce` 容器 |
+| **镜像** | 预拉 `cua-xfce` | Apple Silicon:`docker pull --platform=linux/amd64 trycua/cua-xfce:latest`;避免首 worker 卡在 pull |
+| **队列** | `.json` / `.csv` | 每行 `product_name` + `url`,可选 `download_url`;例 [`queue.language-learning.json`](queue.language-learning.json) |
+| **并发度** | `--max-workers N` | 每 worker ≈ 1 个 Claude 子进程 + 1 个沙盒容器;建议从 `2` 起,按 CPU/内存/Docker 上限调高 |
+| **磁盘** | `reports/` 可写 | 每产品独立目录 `reports/<slug>-日期[-N]/`,含 `run.log`、多张 PNG;同日重跑自动 `-2` 后缀 |
+| **代理** | 可选 | 访问官网若需代理在**宿主机** shell 配置;编排器会为 worker 设 `NO_PROXY=127.0.0.1,localhost`,避免 Docker 端口被代理成 502 |
+| **Android(可选)** | 默认关 | `--sandbox-image linux` 时 **只操作 Firefox 网页**;要 APK 路径需 `--android` 并预拉 `cua-qemu-android` |
+
+**推荐一次性自检**(本地 Linux sandbox,与下方正式 batch 同环境):
+
+```bash
+cd /path/to/computer-use
+conda activate computer-use-py312   # 或你的 3.12/3.13 venv
+
+python --version                    # 3.12.x / 3.13.x
+python -m pip install -r requirements.txt
+claude --version
+cua --version
+docker info
+docker pull --platform=linux/amd64 trycua/cua-xfce:latest   # arm64 Mac 必带 platform
+
+# 无需 Docker 的快速检查
+python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
+
+# 单沙盒逐步控制 smoke(会起停一台容器,截图在 tmp/sandbox-ctl-smoke/)
+python -m tests.sandbox.sandbox_ctl_smoke
+
+# 可选:SDK 级 GUI smoke
+python -m tests.sandbox.linux_smoke --check-only
+python -m tests.sandbox.linux_smoke --timeout 180
+```
+
+**Claude worker 里调 `sandbox_ctl`**:编排器会把 `ANALYZER_PYTHON` 设为当前解释器路径;若 worker 用 Bash 起子进程,优先:
+
+```bash
+conda run -n computer-use-py312 python scripts/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
+```
+
+或先 `conda activate computer-use-py312`,再 `python scripts/sandbox_ctl.py …`(勿用系统 `python3` 3.9)。
+
+**跑之前清理(可选)**:上次异常退出可能残留 Cua 容器,可先 `docker ps` 看 `cua-` / `analyzer-` 命名容器;批量结束会在 `finally` 里 **teardown**,但手工中断后建议对对应 `reports/*/sandbox.json` 执行 `python scripts/sandbox_ctl.py teardown <dir>`。
+
+**云端 batch**(`--sandbox cloud`):不需本机 Docker;需 [cua.ai](https://cua.ai/signin) 的 `CUA_API_KEY`(或 `--cua-api-key`),并确认账户配额够支撑 `max-workers` 并行 VM。
 
 **本机 Claude 不直接连沙盒 GUI**,而是通过 **脚本** 间接操控:
 
@@ -214,28 +270,7 @@ python scripts/analyze_product.py --batch queue.json --sandbox cloud
 - **本地(默认)**:Linux 桌面用 Docker 镜像 **`trycua/cua-xfce:latest`**(轻量 XFCE + **Firefox**;无 Chromium);`bootstrap --open-browser` 由 `sandbox_ctl` 探测 `DISPLAY` 并启 Firefox。Apple Silicon 需 `linux/amd64` 平台(见下方 `docker pull`)。macOS/Windows 桌面包仍走 Lume/QEMU。
 - **云端(仅 `--sandbox cloud`)**:由 Cua Cloud 托管,需 API Key,无需本机 Docker
 
-零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。
-
-先确认本地依赖并预拉 Linux 镜像(推荐,避免首跑超时):
-
-```bash
-conda activate computer-use-py312
-python --version   # 应为 3.12.x 或 3.13.x
-python -m pip install -r requirements.txt
-docker info
-claude --version
-cua --version      # sandbox_ctl + cloud MCP
-
-# 本地 Linux 桌面 sandbox(与 Cua 文档 "Linux on Docker" 一致)
-docker pull --platform=linux/amd64 trycua/cua-xfce:latest
-
-# 逐步控制桥 smoke(需 Docker);截图落在 tmp/sandbox-ctl-smoke/screenshots/
-python -m tests.sandbox.sandbox_ctl_smoke
-# 保留容器便于手查: python -m tests.sandbox.sandbox_ctl_smoke --no-teardown
-
-# 键名归一化单测(无需 Docker)
-python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
-```
+零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。完整跑前清单见上文 **[批量并发跑前准备](#批量并发跑前准备清单)**。
 
 ### Android APK 沙盒(可选)
 
