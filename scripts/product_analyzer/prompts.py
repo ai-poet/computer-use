@@ -50,7 +50,8 @@ def build_prompt(
         )
         host_rule = (
             "3. 沙盒 runtime — 遵守 SKILL「沙盒控制三阶段」(bootstrap → step loop → teardown);"
-            f"控制面:{ctl_hint};**禁止 monolithic analysis script**"
+            f"控制面:{ctl_hint};Linux cua-xfce 仅 Firefox(bootstrap 会起,勿 chromium);"
+            "**禁止 monolithic analysis script**"
         )
         sandbox_rule = (
             "4. 操作系统级操作只在沙盒内;host 仅写 `<output_dir>`;"

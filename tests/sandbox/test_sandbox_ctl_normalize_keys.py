@@ -10,7 +10,18 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
-from product_analyzer.sandbox_ctl import _normalize_keys  # noqa: E402
+from product_analyzer.sandbox_ctl import (  # noqa: E402
+    _LINUX_FIREFOX_LAUNCH_SHELL,
+    _normalize_keys,
+)
+
+
+class TestFirefoxLaunchShell(unittest.TestCase):
+    def test_uses_firefox_not_chromium(self) -> None:
+        low = _LINUX_FIREFOX_LAUNCH_SHELL.lower()
+        self.assertIn("firefox", low)
+        self.assertNotIn("chromium", low)
+        self.assertIn("/tmp/.x11-unix", low)
 
 
 class TestNormalizeKeys(unittest.TestCase):

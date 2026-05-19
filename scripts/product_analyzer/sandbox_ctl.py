@@ -99,13 +99,27 @@ def _connect_from_info(info: dict[str, Any]) -> Any:
     return Sandbox.connect(name, local=local, api_key=api_key)
 
 
+# cua-xfce Linux image ships Firefox only (no Chromium). Probe DISPLAY from /tmp/.X11-unix
+# (often :1, not :0) before launching.
+_LINUX_FIREFOX_LAUNCH_SHELL = (
+    'D="${DISPLAY:-}"; '
+    'if [ -z "$D" ] || [ ! -S "/tmp/.X11-unix/X${D#:}" ] 2>/dev/null; then '
+    "for x in /tmp/.X11-unix/X*; do "
+    '[ -S "$x" ] || continue; '
+    'D=":${x##*/X}"; break; '
+    "done; "
+    "fi; "
+    'export DISPLAY="${D:-:1}"; '
+    "if pgrep -x firefox >/dev/null 2>&1; then exit 0; fi; "
+    "firefox --new-window about:blank >/dev/null 2>&1 & "
+    "sleep 3; "
+    "pgrep -x firefox >/dev/null"
+)
+
+
 async def _launch_browser_once(out_dir: Path) -> int:
-    """One-time shell helper to start Chromium; navigation after this is mouse/keyboard."""
-    return await cmd_step_shell(
-        out_dir,
-        "chromium --no-sandbox --new-window about:blank >/dev/null 2>&1 & "
-        "sleep 2 || firefox about:blank >/dev/null 2>&1 & sleep 2 || true",
-    )
+    """One-time shell helper to start Firefox; navigation after this is mouse/keyboard."""
+    return await cmd_step_shell(out_dir, _LINUX_FIREFOX_LAUNCH_SHELL)
 
 
 async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> int:
@@ -113,7 +127,7 @@ async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> 
     if launch:
         await _launch_browser_once(out_dir)
         await asyncio.sleep(1.0)
-    # Focus omnibox then type URL (works in Chromium/Firefox on XFCE).
+    # Focus omnibox then type URL (Firefox on cua-xfce XFCE).
     await cmd_step_key(out_dir, "ctrl+l")
     await asyncio.sleep(0.4)
     await cmd_step_key(out_dir, "ctrl+a")
@@ -424,7 +438,7 @@ def _build_parser() -> argparse.ArgumentParser:
     boot.add_argument(
         "--open-browser",
         action="store_true",
-        help="After bootstrap, launch browser (use with --url for mouse-first navigation)",
+        help="After bootstrap, launch Firefox (cua-xfce; use with --url for Ctrl+L navigation)",
     )
     boot.add_argument(
         "--url",
@@ -504,7 +518,7 @@ def _build_parser() -> argparse.ArgumentParser:
     open_url.add_argument(
         "--no-launch",
         action="store_true",
-        help="Skip chromium launch (browser already running)",
+        help="Skip Firefox launch (browser already running)",
     )
 
     return p
