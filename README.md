@@ -139,7 +139,17 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 
 批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的 **本地** sandbox(Docker/Lume/QEMU),在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
 
-每个 worker 的 prompt **只传入参数**(runtime、sandbox 镜像、是否批量并行等)并指向 `.claude/skills/product-analyzer/SKILL.md` 的 **「Sandbox 运行合约」**;沙盒怎么操作、Python 3.12/conda、禁止 host GUI 等细则都在 skill 里维护(符合「改规则不改代码」)。环境变量 `ANALYZER_BATCH_PARALLEL=1`、`ANALYZER_CONDA_ENV` 等供 Claude 对照。
+每个 worker 的 prompt **只传入参数**(runtime、sandbox 镜像、是否批量并行等)并指向 `.claude/skills/product-analyzer/SKILL.md` 的 **「Sandbox 运行合约」** 与 **「沙盒控制三阶段」**;细则在 skill 里维护(符合「改规则不改代码」)。环境变量 `ANALYZER_BATCH_PARALLEL=1`、`ANALYZER_CONDA_ENV` 等供 Claude 对照。
+
+**Host vs 沙盒控制面对照**
+
+| 模式 | Claude 如何逐步驱动 |
+|------|---------------------|
+| 单任务 `runtime=host` | **cua-driver** MCP/CLI(`get_window_state` → `element_index` 点击) |
+| 批量 `sandbox-local` | **`scripts/sandbox_ctl.py`**:`bootstrap` → 多次 `step screenshot/shell/click/...` → `teardown` |
+| 批量 `sandbox-cloud` | **`cua serve-mcp`**(`computer_screenshot` / `computer_click` / …),编排器注入 `--mcp-config` |
+
+**不要**在 batch 里写一整段 `asyncio.run()` 分析脚本 — SDK 每步本是 HTTP `/cmd`,应让 Claude 每步一条 Bash/MCP 以便看图再决策。
 
 **默认行为:本地 sandbox。** 未传 `--sandbox` 时一律走本机 Docker/Lume,即使环境里已有 `CUA_API_KEY` 也不会自动切到云端。
 
@@ -167,9 +177,13 @@ python --version   # 应为 3.12.x 或 3.13.x
 python -m pip install -r requirements.txt
 docker info
 claude --version
+cua --version      # sandbox_ctl + cloud MCP
 
 # 本地 Linux 桌面 sandbox(与 Cua 文档 "Linux on Docker" 一致)
 docker pull --platform=linux/amd64 trycua/cua-xfce:latest
+
+# 逐步控制桥 smoke(需 Docker)
+python -m tests.sandbox.sandbox_ctl_smoke
 ```
 
 ### Android APK 沙盒(可选)

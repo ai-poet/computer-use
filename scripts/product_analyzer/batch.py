@@ -12,7 +12,8 @@ from typing import Any
 
 from .claude_driver import run_claude
 from .prompts import build_prompt
-from .sandbox_runtime import SandboxContext
+from .sandbox_ctl import teardown_out_dir
+from .sandbox_runtime import SandboxContext, write_cloud_mcp_config
 from .tasks import post_check, prepare_output_dir, write_metadata_seed
 from .ui import err, log
 
@@ -175,14 +176,23 @@ def _run_one(
         sandbox_warnings=sandbox_warnings,
         batch_parallel=True,
     )
-    rc = run_claude(
-        prompt,
-        out_dir=out_dir,
-        non_interactive=True,
-        log_file=log_file,
-        env=env,
-        terminal_prefix=f"[batch:{index} {product_name}] ",
-    )
+    mcp_config = None
+    if sandbox_ctx.mode == "cloud" and sandbox_ctx.api_key:
+        mcp_config = write_cloud_mcp_config(out_dir, api_key=sandbox_ctx.api_key)
+
+    try:
+        rc = run_claude(
+            prompt,
+            out_dir=out_dir,
+            non_interactive=True,
+            log_file=log_file,
+            env=env,
+            terminal_prefix=f"[batch:{index} {product_name}] ",
+            mcp_config=mcp_config,
+        )
+    finally:
+        teardown_out_dir(out_dir)
+
     post_check(out_dir)
     if rc != 0:
         err(f"[batch:{index}] {product_name} 失败,详见 {log_file}")

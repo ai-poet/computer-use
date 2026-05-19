@@ -81,6 +81,16 @@ def ensure_cua_driver() -> None:
     log("cua-driver 安装完成")
 
 
+def ensure_cua_cli() -> None:
+    """Ensure the ``cua`` CLI is on PATH (batch sandbox_ctl + serve-mcp)."""
+    if shutil.which("cua"):
+        return
+    err("未找到 `cua` CLI。批量沙箱模式需要 Cua CLI:")
+    err("  python -m pip install cua   # 或 pip install cua-cli")
+    err("文档: https://cua.ai/docs/cua/guide/get-started/using-sandbox-sdk")
+    sys.exit(1)
+
+
 def ensure_cua_sdk() -> None:
     """Ensure the Cua Sandbox SDK import is available for batch sandbox workers."""
     if sys.version_info < (3, 12) or sys.version_info >= (3, 14):

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 SandboxMode = Literal["local", "cloud"]
@@ -129,11 +130,51 @@ def linux_container_image():
     )
 
 
-def linux_docker_runtime():
+def linux_docker_runtime(*, ephemeral: bool = True):
     """DockerRuntime with linux/amd64 platform (needed on Apple Silicon hosts)."""
     from cua_sandbox.runtime.docker import DockerRuntime
 
-    return DockerRuntime(ephemeral=True, platform=LINUX_DOCKER_PLATFORM)
+    return DockerRuntime(ephemeral=ephemeral, platform=LINUX_DOCKER_PLATFORM)
+
+
+def apply_no_proxy_env(env: dict[str, str] | None = None) -> dict[str, str]:
+    """Merge localhost NO_PROXY into *env* (or os.environ copy)."""
+    import os
+
+    out = dict(env if env is not None else os.environ)
+    out.update(_local_no_proxy_env())
+    return out
+
+
+def write_cloud_mcp_config(
+    out_dir: Path,
+    *,
+    api_key: str,
+    sandbox_name: str = "",
+) -> Path:
+    """Write per-worker MCP config for ``cua serve-mcp`` (cloud batch)."""
+    import json
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / ".mcp.json"
+    env_block: dict[str, str] = {"CUA_API_KEY": api_key}
+    if sandbox_name:
+        env_block["CUA_SANDBOX"] = sandbox_name
+    payload = {
+        "mcpServers": {
+            "cua": {
+                "command": "cua",
+                "args": [
+                    "serve-mcp",
+                    "--permissions",
+                    "computer:all,sandbox:all",
+                ],
+                "env": env_block,
+            }
+        }
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
 
 
 def build_sandbox_context(

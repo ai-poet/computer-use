@@ -59,6 +59,7 @@ def _spawn_claude(
     resume_id: str | None,
     *,
     env: dict[str, str] | None = None,
+    mcp_config: Path | None = None,
 ) -> subprocess.Popen:
     cmd = [
         "claude", "--print",
@@ -69,6 +70,8 @@ def _spawn_claude(
     ]
     if resume_id:
         cmd += ["--resume", resume_id]
+    if mcp_config is not None:
+        cmd += ["--mcp-config", str(mcp_config)]
     log(f"启动 claude 子进程: {' '.join(cmd)}")
     proc = subprocess.Popen(
         cmd,
@@ -117,6 +120,7 @@ def run_claude(
     log_file: Path | None = None,
     env: dict[str, str] | None = None,
     terminal_prefix: str | None = None,
+    mcp_config: Path | None = None,
 ) -> int:
     """Run claude in stream-json mode with ESC-pause + resume support.
 
@@ -137,6 +141,7 @@ def run_claude(
         log_file: optional file that receives raw stream-json/stdout
         env: optional environment for the Claude subprocess
         terminal_prefix: prefix for mirrored non-interactive terminal output
+        mcp_config: optional JSON file for ``claude --mcp-config`` (cloud batch Cua MCP)
     """
     raw_dump_path = os.environ.get("ANALYZE_RAW_LOG")
     raw_fh = open(raw_dump_path, "a", encoding="utf-8") if raw_dump_path else None
@@ -148,7 +153,9 @@ def run_claude(
 
     try:
         while True:
-            proc = _spawn_claude(current_prompt, resume_id, env=env)
+            proc = _spawn_claude(
+                current_prompt, resume_id, env=env, mcp_config=mcp_config
+            )
             assert proc.stdout is not None
             esc_flag = {"esc": False}
             stop_flag = {"done": False}

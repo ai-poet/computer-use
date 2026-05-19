@@ -84,6 +84,7 @@ def write_metadata_seed(
             "local": sandbox_local,
             "mode": sandbox_mode or ("local" if sandbox_local else "cloud"),
             "name": None,
+            "api_url": None,
         },
         "android": {
             "enabled": android_enabled,

@@ -8,6 +8,7 @@
     preflight    detect_host/ensure_claude_cli/ensure_cua_driver
     tasks        slugify / metadata I/O / list_tasks / pick_resume_target
     sandbox_runtime  batch 本地 Cua sandbox 运行上下文
+    sandbox_ctl  bootstrap/step/teardown 逐步控制桥
     prompts      build_prompt / build_resume_prompt
     claude_driver  ESC watcher + spawn + run_claude(对外唯一编排接口)
     batch        CSV/JSON 队列 + 并发 worker 调度

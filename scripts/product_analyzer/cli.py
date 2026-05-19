@@ -16,6 +16,7 @@ from .preflight import (
     check_local_sandbox_prereqs,
     ensure_claude_cli,
     ensure_cua_api_key,
+    ensure_cua_cli,
     ensure_cua_driver,
     ensure_cua_sdk,
 )
@@ -400,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         log("预检:Cua Sandbox SDK")
         ensure_cua_sdk()
+        log("预检:cua CLI")
+        ensure_cua_cli()
         return cmd_batch(args)
 
     log("预检:cua-driver")
@@ -417,6 +420,8 @@ def main(argv: list[str] | None = None) -> int:
     if action == "batch":
         log("预检:Cua Sandbox SDK")
         ensure_cua_sdk()
+        log("预检:cua CLI")
+        ensure_cua_cli()
         try:
             batch_args = collect_batch_args()
         except (FileNotFoundError, ValueError) as exc:

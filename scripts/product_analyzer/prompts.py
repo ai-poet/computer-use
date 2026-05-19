@@ -43,13 +43,18 @@ def build_prompt(
     )
 
     if runtime in ("sandbox-local", "sandbox-cloud"):
+        ctl_hint = (
+            "scripts/sandbox_ctl.py bootstrap/step/teardown"
+            if runtime == "sandbox-local"
+            else "Cua MCP(computer_*) 或 sandbox_ctl"
+        )
         host_rule = (
-            "3. 沙盒 runtime — 遵守 SKILL.md「Sandbox 运行合约」;"
-            "禁止使用 cua-driver 或 host GUI"
+            "3. 沙盒 runtime — 遵守 SKILL「沙盒控制三阶段」(bootstrap → step loop → teardown);"
+            f"控制面:{ctl_hint};**禁止 monolithic analysis script**"
         )
         sandbox_rule = (
-            "4. 操作系统级操作(浏览/下载/安装/点击/截图)只在沙盒内;"
-            "host 仅写 `<output_dir>` 产物"
+            "4. 操作系统级操作只在沙盒内;host 仅写 `<output_dir>`;"
+            "每步 GUI 后截图到 screenshots/ 并读图再决策"
         )
     else:
         host_rule = (
@@ -85,10 +90,17 @@ def build_resume_prompt(out_dir: Path, supplement: str) -> str:
     """Prompt for the cmd_resume path: claude already has session history,
     just remind it of the output_dir + skill, then forward the user's
     supplemental instruction (or a generic 'continue' if blank)."""
+    sandbox_json = out_dir / "sandbox.json"
+    sandbox_hint = ""
+    if sandbox_json.is_file():
+        sandbox_hint = (
+            f"\n- 已存在 {sandbox_json}:先 `python scripts/sandbox_ctl.py status {out_dir}`,"
+            "勿重复 bootstrap;从 step loop 断点续跑;结束后 teardown。\n"
+        )
     return f"""(从历史任务恢复)继续之前在 {out_dir} 上未完成的产品分析工作。
 
-请检查现有产物(report.md / metadata.json / screenshots/)的进度,从断点处接着干。继续遵循 product-analyzer skill 的 canonical loop;TodoWrite 列表如果丢了就重建。若为 sandbox runtime,继续遵守 SKILL.md「Sandbox 运行合约」。
-
+请检查现有产物(report.md / metadata.json / screenshots/)的进度,从断点处接着干。继续遵循 product-analyzer skill 的 canonical loop;TodoWrite 列表如果丢了就重建。若为 sandbox runtime,继续遵守 SKILL「沙盒控制三阶段」。
+{sandbox_hint}
 用户补充指令:
 {supplement or '(无,请按原计划继续)'}
 """
@@ -112,6 +124,15 @@ def _runtime_block(
         )
 
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
+    local_ctl = (
+        "- **本地控制**:`python scripts/sandbox_ctl.py bootstrap <output_dir>` 后逐步 "
+        "`step screenshot|shell|click|type|key`,结束 `teardown`"
+        if runtime == "sandbox-local"
+        else (
+            "- **云端控制**:用注入的 Cua MCP(`computer_screenshot`/`computer_click`/…);"
+            "截图须落到 screenshots/;禁止 host GUI"
+        )
+    )
     return f"""- runtime:{runtime}
 - sandbox.image:{sandbox_image or "auto"}
 - sandbox.local:{str(sandbox_local).lower()}
@@ -119,5 +140,6 @@ def _runtime_block(
 - batch.parallel:{str(batch_parallel).lower()}
 - sandbox 预检 warnings(非致命):
 {warning_lines}
-- **沙盒操作**:必读 SKILL.md「Sandbox 运行合约」(Host Python/conda、镜像选择、SDK 示例、批量并行、禁止 host GUI);prompt 不再重复这些规则。
+{local_ctl}
+- **沙盒操作**:必读 SKILL「Sandbox 运行合约」与「沙盒控制三阶段」;禁止整段 asyncio 分析脚本。
 """
