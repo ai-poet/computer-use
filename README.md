@@ -239,7 +239,9 @@ python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
 
 ### Android APK 沙盒(可选)
 
-若产品官网提供 **APK**,可在 **Android 模拟器沙盒**里下载、安装、启动并截图体验(对应 skill 里的 `android` 路径、`screenshots/NN_android_*.png`)。镜像为 QEMU Android 容器,**APK 的安装与 UI 测试都在该沙盒内完成**,不占用 host 真机。
+若产品官网提供 **APK**,且批量时显式加了 `--android` 并成功拉起 **Android 模拟器沙盒**,可在其中下载、安装、启动并截图(对应 skill 里的 `android` 路径、`screenshots/NN_android_*.png`)。镜像为 QEMU Android 容器,**APK 的安装与 UI 测试都在该沙盒内完成**,不占用 host 真机。
+
+**默认 `--sandbox-image linux` 不带 Android**(`android.enabled=false`)。此时 Claude worker 会收到明确指令:**不要**起 Android 沙盒、不要 `adb install`;**只在 Linux 桌面沙盒的 Firefox 里**浏览官网,从网页获取产品信息并截 `NN_web_*.png`。若加了 `--android` 但 Android 沙盒起不来(镜像未拉、超时、adb 失败),同样**退回仅网页路径**,在 `metadata.android.mode=skipped` 与 `warnings[]` 记录原因,**不会**因此把整单判成全局 `web-only`(除非桌面安装包 hunt 也失败,见 skill「跨平台与降级」)。
 
 预拉镜像(Apple Silicon / arm64 Mac **必须**带 `--platform=linux/amd64`,否则会出现 `no matching manifest for linux/arm64`):
 
@@ -316,7 +318,7 @@ python scripts/analyze_product.py \
   --sandbox-image linux
 ```
 
-`--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径;需要 APK 时请预拉上方 `cua-qemu-android` 镜像并加 `--android`(或 `--sandbox-image auto`)。
+`--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径 — worker **只操作网页**。需要 APK 时请预拉上方 `cua-qemu-android` 镜像并加 `--android`(或 `--sandbox-image auto`);Android 沙盒若仍启动失败,按 skill 退回网页分析,不阻塞报告产出。
 
 云端 sandbox(必须加 `--sandbox cloud`;Key 在 [cua.ai](https://cua.ai/signin) 创建):
 

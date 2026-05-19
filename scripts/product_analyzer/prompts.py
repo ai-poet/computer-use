@@ -125,6 +125,18 @@ def _runtime_block(
         )
 
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
+    if android_enabled:
+        android_rule = (
+            "- **Android**:enabled — 仅在 Android 沙盒成功启动且找到 APK 时走 APK 路径;"
+            "若沙盒起不来或安装失败,设 android.mode=skipped/failed,**改只操作 Firefox 网页**"
+            "从官网获取产品信息(勿强行 adb/QEMU)"
+        )
+    else:
+        android_rule = (
+            "- **Android**:disabled — **禁止**创建 Android 沙盒、adb、QEMU APK 安装。"
+            "**只**在 Linux 沙盒 Firefox 内浏览官网,从网页获取产品信息与截图;"
+            "可记录 Play 链接到 warnings,设 metadata.android.mode=skipped"
+        )
     local_ctl = (
         "- **本地控制(鼠标优先)**:"
         "`bootstrap <out_dir> --open-browser --url <官网>` → "
@@ -142,6 +154,7 @@ def _runtime_block(
 - sandbox.local:{str(sandbox_local).lower()}
 - android.enabled:{str(android_enabled).lower()}
 - batch.parallel:{str(batch_parallel).lower()}
+{android_rule}
 - sandbox 预检 warnings(非致命):
 {warning_lines}
 {local_ctl}
