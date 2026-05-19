@@ -1,6 +1,9 @@
 # product-analyzer outputs (large, regenerable, contains screenshots)
 reports/
 
+# cua-driver bundle (installed locally via install_cua_driver.py)
+cua/
+
 # Python
 __pycache__/
 *.pyc
