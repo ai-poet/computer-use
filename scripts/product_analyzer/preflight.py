@@ -83,10 +83,21 @@ def ensure_cua_driver() -> None:
 
 def ensure_cua_sdk() -> None:
     """Ensure the Cua Sandbox SDK import is available for sandbox workers."""
+    if sys.version_info < (3, 12) or sys.version_info >= (3, 14):
+        version = ".".join(str(part) for part in sys.version_info[:3])
+        err(
+            "批量本地沙箱模式需要 Python 3.12 或 3.13 "
+            f"(当前 python 是 {version})。"
+        )
+        err("建议创建 3.12/3.13 虚拟环境后安装依赖:")
+        err("  python3.12 -m venv .venv")
+        err("  source .venv/bin/activate")
+        err("  python -m pip install -r requirements.txt")
+        sys.exit(1)
     if importlib.util.find_spec("cua") is not None:
         return
     err("未找到 `cua` Python 包。批量本地沙箱模式需要先安装 Cua Sandbox SDK:")
-    err("  python3 -m pip install -r requirements.txt")
+    err("  python -m pip install -r requirements.txt")
     sys.exit(1)
 
 
