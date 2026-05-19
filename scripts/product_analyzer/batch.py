@@ -147,6 +147,7 @@ def _run_one(
     env.update(
         {
             "ANALYZER_OUTPUT_DIR": str(out_dir),
+            "ANALYZER_BATCH_PARALLEL": "1",
             "ANALYZER_SANDBOX_WARNINGS": json.dumps(
                 sandbox_warnings, ensure_ascii=False
             ),
@@ -165,6 +166,7 @@ def _run_one(
         sandbox_local=sandbox_ctx.local,
         android_enabled=sandbox_ctx.android_enabled,
         sandbox_warnings=sandbox_warnings,
+        batch_parallel=True,
     )
     rc = run_claude(
         prompt,
