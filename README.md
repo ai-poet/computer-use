@@ -172,10 +172,9 @@ python -m tests.sandbox.linux_smoke --timeout 180
 - Python / `cua` 包版本检查
 - Docker daemon 和正在运行的 Cua 容器摘要
 - `Sandbox.ephemeral(Image.linux(kind="container"), local=True)` 创建
-- `sb.shell.run(...)`
-- `sb.mouse.move(...)` / `sb.mouse.click(...)`
-- `sb.keyboard.press(...)`
-- `sb.screenshot()` 并保存到 `tmp/sandbox-smoke/linux_sandbox_screenshot.png`
+- `sb.shell.run(...)`、`sb.screen.size()`
+- 常见 UI 操作:`mouse.move` / `click` / `right_click` / `double_click` / `scroll`,`keyboard.type` / `keypress`
+- 多步截图(桌面、右键菜单、滚动后、尝试打开终端、输入文字等)保存到 `tmp/sandbox-smoke/screenshots/01_*.png` … `07_*.png`
 - 结构化结果 `tmp/sandbox-smoke/linux_smoke_report.json`
 
 如果卡住或失败,脚本会自动打印相关 Cua 容器的 `docker port` 和 `docker logs --tail ...`,方便定位是 Docker、容器服务还是 SDK 连接问题。

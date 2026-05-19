@@ -1,9 +1,11 @@
 {
-  "passed": true,
-  "python": "3.12.13",
-  "cua_import_ok": true,
-  "docker_ok": true,
+  "passed": false,
+  "python": "3.9.6",
+  "cua_import_ok": false,
+  "docker_ok": false,
+  "screen_size": null,
+  "screenshots": [],
   "screenshot": null,
-  "error": null,
+  "error": "unsupported Python version",
   "steps": []
 }
