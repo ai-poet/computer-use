@@ -171,11 +171,23 @@ def cmd_new(args: argparse.Namespace) -> int:
 
     out_dir = prepare_output_dir(product_name)
     log(f"输出目录: {out_dir}")
-    meta = write_metadata_seed(out_dir, product_name, url, download_url)
+    meta = write_metadata_seed(
+        out_dir,
+        product_name,
+        url,
+        download_url,
+        runtime="host",
+        sandbox_image=None,
+        sandbox_local=True,
+        sandbox_mode="local",
+        android_enabled=False,
+    )
 
     prompt = build_prompt(
         product_name, url, download_url, out_dir,
         meta["host_os"], meta["host_arch"],
+        runtime="host",
+        batch_parallel=False,
     )
     rc = run_claude(prompt, out_dir=out_dir)
     log(f"claude 子进程退出码: {rc}")
