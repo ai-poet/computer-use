@@ -30,7 +30,7 @@ from ._cli import (
 )
 from .docker_diag import dump_cua_diagnostics, print_docker_summary
 
-# Reuse batch defaults (Ubuntu KASM image + amd64 platform).
+# Reuse batch defaults (XFCE image + amd64 platform).
 from scripts.product_analyzer.sandbox_runtime import (
     LINUX_CONTAINER_IMAGE,
     linux_container_image,

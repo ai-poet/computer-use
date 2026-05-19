@@ -152,7 +152,7 @@ python scripts/analyze_product.py --batch queue.json --sandbox cloud
 
 环境说明见 [Cua Set Up a Sandbox](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox):
 
-- **本地(默认)**:Linux 桌面用 Docker 镜像 **`trycua/cua-ubuntu:latest`**(完整 Ubuntu 桌面,KASM);`--sandbox-image linux` 时由 SDK 拉取该镜像。Apple Silicon 需 `linux/amd64` 平台(见下方 `docker pull`)。macOS/Windows 桌面包仍走 Lume/QEMU。
+- **本地(默认)**:Linux 桌面用 Docker 镜像 **`trycua/cua-xfce:latest`**(轻量 XFCE + 浏览器);`--sandbox-image linux` 时由 SDK 拉取该镜像。Apple Silicon 需 `linux/amd64` 平台(见下方 `docker pull`)。macOS/Windows 桌面包仍走 Lume/QEMU。
 - **云端(仅 `--sandbox cloud`)**:由 Cua Cloud 托管,需 API Key,无需本机 Docker
 
 零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。
@@ -167,10 +167,12 @@ docker info
 claude --version
 
 # 本地 Linux sandbox 默认镜像(与 Cua 文档 "Linux on Docker" 一致)
-docker pull --platform=linux/amd64 trycua/cua-ubuntu:latest
+docker pull --platform=linux/amd64 trycua/cua-xfce:latest
 ```
 
 若本机配置了 HTTP 代理,批量本地 sandbox 会自动为 worker 设置 `NO_PROXY=127.0.0.1,localhost`,避免 SDK 探测 `localhost:<docker_port>` 时被代理成 502。
+
+**网页点击能不能用?** 可以。`cua-xfce` 镜像是带 XFCE 桌面的 Linux 容器,内置 `computer-server`,批量/skill 里通过 `sb.mouse` / `sb.keyboard` / `sb.screenshot` 驱动沙箱内浏览器(需在 sandbox 里先 `shell.run` 打开 Chromium/Firefox 或桌面快捷方式)。这与 host 上的 cua-driver(无障碍树 `element_index`)不是同一条路,而是**坐标级 GUI 自动化**,对常规官网导航、点按钮、填表、滚动足够;极复杂 SPA、强登录墙或 canvas 主界面可能需要更多步或降级 web-only。Cua 文档也把 XFCE 标为多数场景的推荐轻量镜像。
 
 建议先跑 Linux sandbox smoke test,确认 Cua SDK + Docker + GUI/UI 截图链路可用。测试在 `tests/sandbox/`:
 
@@ -186,7 +188,7 @@ python -m tests.sandbox.linux_smoke --timeout 180
 
 - Python / `cua` 包版本检查
 - Docker daemon 和正在运行的 Cua 容器摘要
-- `Sandbox.ephemeral(trycua/cua-ubuntu:latest, local=True, platform=linux/amd64)` 创建
+- `Sandbox.ephemeral(trycua/cua-xfce:latest, local=True, platform=linux/amd64)` 创建
 - `sb.shell.run(...)`、`sb.screen.size()`
 - 常见 UI 操作:`mouse.move` / `click` / `right_click` / `double_click` / `scroll`,`keyboard.type` / `keypress`
 - 多步截图(桌面、右键菜单、滚动后、尝试打开终端、输入文字等)保存到 `tmp/sandbox-smoke/screenshots/01_*.png` … `07_*.png`
@@ -239,7 +241,7 @@ reports/<product-slug>-YYYY-MM-DD[-N]/
 └── screenshots/
 ```
 
-`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项。第一轮批量测试建议 `--sandbox-image linux` + 已预拉 `cua-ubuntu` 镜像;`metadata.json` 里 `runtime` 为 `sandbox-local` 或 `sandbox-cloud`,`sandbox.mode` 为 `local` / `cloud`。
+`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项。第一轮批量测试建议 `--sandbox-image linux` + 已预拉 `cua-xfce` 镜像;`metadata.json` 里 `runtime` 为 `sandbox-local` 或 `sandbox-cloud`,`sandbox.mode` 为 `local` / `cloud`。
 
 ### 执行过程
 

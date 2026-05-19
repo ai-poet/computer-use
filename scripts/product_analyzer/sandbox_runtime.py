@@ -14,8 +14,8 @@ SandboxMode = Literal["local", "cloud"]
 
 SANDBOX_IMAGES = {"auto", "linux", "macos", "windows"}
 
-# Local Linux desktop sandbox (KASM full Ubuntu). See Cua docs "Linux on Docker".
-LINUX_CONTAINER_IMAGE = "trycua/cua-ubuntu:latest"
+# Local Linux desktop sandbox (XFCE). See Cua docs "Linux on Docker".
+LINUX_CONTAINER_IMAGE = "trycua/cua-xfce:latest"
 LINUX_DOCKER_PLATFORM = "linux/amd64"
 
 _NO_PROXY_HOSTS = "127.0.0.1,localhost"
@@ -110,7 +110,7 @@ def _prompt_sandbox_mode() -> SandboxMode:
 
 
 def linux_container_image():
-    """Cua SDK Image for local Linux Docker desktop (Ubuntu/KASM, not XFCE)."""
+    """Cua SDK Image for local Linux Docker desktop (XFCE)."""
     from dataclasses import replace
 
     from cua import Image
