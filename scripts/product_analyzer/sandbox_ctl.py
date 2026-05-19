@@ -350,20 +350,31 @@ async def cmd_step_type(out_dir: Path, text: str) -> int:
     return 0
 
 
+# computer-server / cua_auto hotkey() only accepts lowercase names (see cua_auto.keyboard._SPECIAL).
+# Do not emit pynput-style PascalCase (Return, Escape) — HTTP transport rejects them.
 _KEY_ALIASES: dict[str, str] = {
-    "escape": "Escape",
-    "esc": "Escape",
-    "enter": "Return",
-    "return": "Return",
+    "escape": "escape",
+    "esc": "escape",
+    "enter": "enter",
+    "return": "enter",
+    "control": "ctrl",
+    "command": "meta",
+    "cmd": "meta",
+    "win": "meta",
+    "super": "meta",
+    "option": "alt",
 }
 
 
 def _normalize_keys(keys: str) -> list[str]:
     parts = [k.strip() for k in keys.split("+") if k.strip()]
-    if len(parts) > 1:
-        return [_KEY_ALIASES.get(p.lower(), p) for p in parts]
-    single = parts[0] if parts else keys
-    return [_KEY_ALIASES.get(single.lower(), single)]
+    if not parts:
+        return []
+    out: list[str] = []
+    for p in parts:
+        lk = p.lower()
+        out.append(_KEY_ALIASES.get(lk, lk))
+    return out
 
 
 async def cmd_step_key(out_dir: Path, keys: str) -> int:

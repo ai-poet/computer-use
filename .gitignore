@@ -1,5 +1,6 @@
-# product-analyzer outputs (large, regenerable, contains screenshots)
-reports/
+# product-analyzer: ignore large/ephemeral paths only (reports/ itself is tracked)
+reports/**/downloads/
+reports/**/.sandbox_ctl_last_shell.json
 
 # cua-driver bundle (installed locally via install_cua_driver.py)
 cua/

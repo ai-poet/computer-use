@@ -20,7 +20,7 @@
 computer-use/
 ├── README.md
 ├── .gitignore
-├── reports/                                     # 每次跑的产出在这里(已 .gitignore)
+├── reports/                                     # 每次跑的产出(可提交;downloads/ 与 .sandbox_ctl_last_shell.json 仍忽略)
 ├── scripts/
 │   ├── analyze_product.py                       # 入口 shim(只调 product_analyzer.main)
 │   ├── install_cua_driver.py                    # 桌面驱动器安装(macOS=Swift,Linux/Win=Rust)
