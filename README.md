@@ -31,9 +31,11 @@ computer-use/
 │       ├── renderer.py                          # stream-json → 终端美化
 │       ├── preflight.py                         # detect_host/ensure_*
 │       ├── tasks.py                             # slug/metadata/list_tasks/post_check
+│       ├── sandbox_runtime.py                   # 本地 Cua sandbox runtime 合约
 │       ├── prompts.py                           # build_prompt + build_resume_prompt
 │       ├── claude_driver.py                     # ESC + spawn + run_claude
-│       └── cli.py                               # argparse + cmd_new/cmd_resume
+│       ├── batch.py                             # CSV/JSON 队列 + 并发 worker
+│       └── cli.py                               # argparse + cmd_new/cmd_resume/cmd_batch
 └── .claude/skills/
     ├── cua-driver/                              # 桌面自动化 skill(snapshot→act→verify)
     └── product-analyzer/                        # 本项目核心 skill
@@ -41,7 +43,7 @@ computer-use/
         └── REPORT_TEMPLATE.md                   # 中文报告骨架
 ```
 
-模块依赖单向无环:`config → ui → renderer → preflight → tasks → prompts → claude_driver → cli`。
+模块依赖单向无环:`config → ui → renderer → preflight → tasks → sandbox_runtime → prompts → claude_driver → batch → cli`。
 
 `scripts/analyze_product.py` 不做产品分析的判断,只负责前置工作(校验输入、建目录、调 claude)。所有产品分析的判断逻辑在 `.claude/skills/product-analyzer/SKILL.md` 里 — **改规则不需要改代码**。
 
@@ -110,6 +112,55 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 ```
 
 任何缺失的位置参数会回退到 `input()` 询问。空字符串视为"未给"。
+
+### 批量并发(本地 sandbox)
+
+批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的本地 sandbox,在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
+
+先确认本地依赖:
+
+```bash
+pip install cua
+docker info
+claude --version
+```
+
+准备一个队列文件,例如 `queue.test.json`:
+
+```json
+[
+  {
+    "product_name": "Excalidraw",
+    "url": "https://excalidraw.com"
+  },
+  {
+    "product_name": "Tldraw",
+    "url": "https://www.tldraw.com"
+  }
+]
+```
+
+跑两个并发 worker:
+
+```bash
+python3 scripts/analyze_product.py \
+  --batch queue.test.json \
+  --max-workers 2 \
+  --sandbox-image linux
+```
+
+运行后每个产品都会写入独立目录:
+
+```text
+reports/<product-slug>-YYYY-MM-DD[-N]/
+├── report.md
+├── metadata.json
+├── run.log
+├── downloads/
+└── screenshots/
+```
+
+`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项;第一轮并发测试建议先用 `--sandbox-image linux`,资源和依赖都最轻。
 
 ### 执行过程
 
