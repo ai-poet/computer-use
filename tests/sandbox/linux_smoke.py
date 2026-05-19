@@ -30,6 +30,13 @@ from ._cli import (
 )
 from .docker_diag import dump_cua_diagnostics, print_docker_summary
 
+# Reuse batch defaults (Ubuntu KASM image + amd64 platform).
+from scripts.product_analyzer.sandbox_runtime import (
+    LINUX_CONTAINER_IMAGE,
+    linux_container_image,
+    linux_docker_runtime,
+)
+
 _MIN_SCREENSHOT_BYTES = 1000
 
 
@@ -220,7 +227,7 @@ async def smoke_linux(args: argparse.Namespace) -> int:
         report.error = "cua import failed"
         _write_report(args.output_dir, report)
         return 1
-    Image, Sandbox = cua
+    _, Sandbox = cua
     report.cua_import_ok = True
 
     section("Docker")
@@ -239,9 +246,13 @@ async def smoke_linux(args: argparse.Namespace) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     shots_dir = output_dir / "screenshots"
 
-    section("Linux sandbox (Docker/XFCE)")
+    section(f"Linux sandbox ({LINUX_CONTAINER_IMAGE})")
     try:
-        async with Sandbox.ephemeral(Image.linux(kind="container"), local=True) as sb:
+        async with Sandbox.ephemeral(
+            linux_container_image(),
+            local=True,
+            runtime=linux_docker_runtime(),
+        ) as sb:
             log("sandbox ready")
             record(report, "create_sandbox", True)
 

@@ -104,7 +104,17 @@ export all_proxy=socks5://127.0.0.1:7897
 python3 scripts/analyze_product.py
 ```
 
-脚本依次问:
+菜单:
+
+| 选项 | 说明 |
+|------|------|
+| `1` | 新任务 — host 模式 + cua-driver(默认) |
+| `2` | 恢复历史任务 — 从 `reports/` 续跑 |
+| `3` | 批量分析 — 默认**本地** Cua sandbox(Docker),可选云端 |
+| `q` | 退出 |
+
+单任务(选项 1)会依次问:
+
 ```
 产品名: ProductiveKitty
 官网 URL: https://productivekitty.masterwordai.com
@@ -142,12 +152,12 @@ python scripts/analyze_product.py --batch queue.json --sandbox cloud
 
 环境说明见 [Cua Set Up a Sandbox](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox):
 
-- **本地(默认)**:Linux 推荐 Docker + `trycua/cua-xfce`;需本机 Docker/Lume/QEMU
+- **本地(默认)**:Linux 桌面用 Docker 镜像 **`trycua/cua-ubuntu:latest`**(完整 Ubuntu 桌面,KASM);`--sandbox-image linux` 时由 SDK 拉取该镜像。Apple Silicon 需 `linux/amd64` 平台(见下方 `docker pull`)。macOS/Windows 桌面包仍走 Lume/QEMU。
 - **云端(仅 `--sandbox cloud`)**:由 Cua Cloud 托管,需 API Key,无需本机 Docker
 
 零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。
 
-先确认本地依赖:
+先确认本地依赖并预拉 Linux 镜像(推荐,避免首跑超时):
 
 ```bash
 conda activate computer-use-py312
@@ -155,9 +165,14 @@ python --version   # 应为 3.12.x 或 3.13.x
 python -m pip install -r requirements.txt
 docker info
 claude --version
+
+# 本地 Linux sandbox 默认镜像(与 Cua 文档 "Linux on Docker" 一致)
+docker pull --platform=linux/amd64 trycua/cua-ubuntu:latest
 ```
 
-建议先跑 Linux sandbox smoke test,确认 Cua SDK + Docker + GUI 截图链路可用。测试在 `tests/sandbox/`:
+若本机配置了 HTTP 代理,批量本地 sandbox 会自动为 worker 设置 `NO_PROXY=127.0.0.1,localhost`,避免 SDK 探测 `localhost:<docker_port>` 时被代理成 502。
+
+建议先跑 Linux sandbox smoke test,确认 Cua SDK + Docker + GUI/UI 截图链路可用。测试在 `tests/sandbox/`:
 
 ```bash
 # 只检查 Python / cua / Docker,不拉起 sandbox
@@ -171,7 +186,7 @@ python -m tests.sandbox.linux_smoke --timeout 180
 
 - Python / `cua` 包版本检查
 - Docker daemon 和正在运行的 Cua 容器摘要
-- `Sandbox.ephemeral(Image.linux(kind="container"), local=True)` 创建
+- `Sandbox.ephemeral(trycua/cua-ubuntu:latest, local=True, platform=linux/amd64)` 创建
 - `sb.shell.run(...)`、`sb.screen.size()`
 - 常见 UI 操作:`mouse.move` / `click` / `right_click` / `double_click` / `scroll`,`keyboard.type` / `keypress`
 - 多步截图(桌面、右键菜单、滚动后、尝试打开终端、输入文字等)保存到 `tmp/sandbox-smoke/screenshots/01_*.png` … `07_*.png`
@@ -224,7 +239,7 @@ reports/<product-slug>-YYYY-MM-DD[-N]/
 └── screenshots/
 ```
 
-`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项;第一轮并发测试建议先用 `--sandbox-image linux`,资源和依赖都最轻。
+`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项。第一轮批量测试建议 `--sandbox-image linux` + 已预拉 `cua-ubuntu` 镜像;`metadata.json` 里 `runtime` 为 `sandbox-local` 或 `sandbox-cloud`,`sandbox.mode` 为 `local` / `cloud`。
 
 ### 执行过程
 

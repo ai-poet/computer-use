@@ -76,16 +76,29 @@ def build_resume_prompt(out_dir: Path, supplement: str) -> str:
 
 
 def _sandbox_sdk_example(*, local: bool) -> str:
+    from .sandbox_runtime import LINUX_CONTAINER_IMAGE, LINUX_DOCKER_PLATFORM
+
     local_flag = "True" if local else "False"
     android_local = "True" if local else "False"
+    runtime_line = (
+        f'        runtime=DockerRuntime(ephemeral=True, platform="{LINUX_DOCKER_PLATFORM}"),\n'
+        if local
+        else ""
+    )
     return f"""```python
 import asyncio
-import os
-from cua import Sandbox, Image
+from dataclasses import replace
+from cua import Image, Sandbox
+from cua_sandbox.runtime.docker import DockerRuntime
+
+LINUX_IMAGE = "{LINUX_CONTAINER_IMAGE}"
 
 async def main():
-    # Linux 桌面优先用 Docker/XFCE 容器镜像,不要用默认 kind=vm 的 QEMU 路径
-    async with Sandbox.ephemeral(Image.linux(kind="container"), local={local_flag}) as sb:
+    img = replace(Image.linux(kind="container"), _registry=LINUX_IMAGE)
+    async with Sandbox.ephemeral(
+        img,
+        local={local_flag},
+{runtime_line}    ) as sb:
         result = await sb.shell.run("uname -s")
         png = await sb.screenshot()
 
@@ -95,7 +108,7 @@ async def main():
 
 asyncio.run(main())
 ```
-云端模式:环境变量 `CUA_API_KEY` 已由 orchestrator 注入;也可 `import cua; cua.configure(api_key=os.environ["CUA_API_KEY"])`。"""
+本地 Linux 需 `linux/amd64` 平台(Apple Silicon 上尤其重要)。云端模式:`CUA_API_KEY` 已由 orchestrator 注入。"""
 
 
 def _runtime_block(

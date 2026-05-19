@@ -13,6 +13,11 @@ from typing import Literal
 SandboxMode = Literal["local", "cloud"]
 
 SANDBOX_IMAGES = {"auto", "linux", "macos", "windows"}
+
+# Local Linux desktop sandbox (KASM full Ubuntu). See Cua docs "Linux on Docker".
+LINUX_CONTAINER_IMAGE = "trycua/cua-ubuntu:latest"
+LINUX_DOCKER_PLATFORM = "linux/amd64"
+
 _NO_PROXY_HOSTS = "127.0.0.1,localhost"
 
 
@@ -38,6 +43,8 @@ class SandboxContext:
         }
         if self.local:
             out.update(_local_no_proxy_env())
+            out["ANALYZER_LINUX_CONTAINER_IMAGE"] = LINUX_CONTAINER_IMAGE
+            out["ANALYZER_LINUX_DOCKER_PLATFORM"] = LINUX_DOCKER_PLATFORM
         elif self.api_key:
             out["CUA_API_KEY"] = self.api_key
         return out
@@ -100,6 +107,25 @@ def _prompt_sandbox_mode() -> SandboxMode:
         allow_empty=True,
     )
     return "cloud" if choice == "2" else "local"
+
+
+def linux_container_image():
+    """Cua SDK Image for local Linux Docker desktop (Ubuntu/KASM, not XFCE)."""
+    from dataclasses import replace
+
+    from cua import Image
+
+    return replace(
+        Image.linux(kind="container"),
+        _registry=LINUX_CONTAINER_IMAGE,
+    )
+
+
+def linux_docker_runtime():
+    """DockerRuntime with linux/amd64 platform (needed on Apple Silicon hosts)."""
+    from cua_sandbox.runtime.docker import DockerRuntime
+
+    return DockerRuntime(ephemeral=True, platform=LINUX_DOCKER_PLATFORM)
 
 
 def build_sandbox_context(
