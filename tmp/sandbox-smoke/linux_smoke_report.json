@@ -1,16 +1,9 @@
 {
-  "passed": false,
+  "passed": true,
   "python": "3.12.13",
   "cua_import_ok": true,
   "docker_ok": true,
   "screenshot": null,
-  "error": "create sandbox timed out after 120.0s",
-  "steps": [
-    {
-      "name": "timeout",
-      "ok": false,
-      "detail": "create sandbox timed out after 120.0s",
-      "elapsed_s": null
-    }
-  ]
+  "error": null,
+  "steps": []
 }
