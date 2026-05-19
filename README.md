@@ -216,10 +216,19 @@ python -m tests.sandbox.linux_smoke --timeout 180
 跑两个并发 worker(默认本地 Linux sandbox,可省略 `--sandbox local`):
 
 ```bash
+# 仓库里示例队列是 queue.language-learning.json,不是 queue.json
 python scripts/analyze_product.py \
-  --batch queue.test.json \
+  --batch queue.language-learning.json \
   --max-workers 2 \
   --sandbox-image linux
+```
+
+`--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径;只有 `auto` 或显式 `--android` 才会。
+
+若要在 Apple Silicon 上拉 Android QEMU 镜像(amd64 模拟,较慢):
+
+```bash
+docker pull --platform=linux/amd64 trycua/cua-qemu-android:latest
 ```
 
 云端 sandbox(必须加 `--sandbox cloud`;Key 在 [cua.ai](https://cua.ai/signin) 创建):

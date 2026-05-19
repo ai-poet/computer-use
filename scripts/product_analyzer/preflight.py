@@ -114,7 +114,11 @@ def ensure_cua_api_key(api_key: str | None) -> str:
     sys.exit(1)
 
 
-def check_local_sandbox_prereqs(sandbox_image: str = "auto") -> list[str]:
+def check_local_sandbox_prereqs(
+    sandbox_image: str = "auto",
+    *,
+    android_enabled: bool = False,
+) -> list[str]:
     """Return non-fatal warnings for missing local sandbox runtimes."""
     warnings: list[str] = []
     image = sandbox_image.lower()
@@ -132,11 +136,15 @@ def check_local_sandbox_prereqs(sandbox_image: str = "auto") -> list[str]:
     if image in ("auto", "windows") and not qemu_available:
         warnings.append("local Windows sandbox requires QEMU, but no qemu-system binary was found")
 
-    android_sdk_available = shutil.which("adb") and shutil.which("emulator")
-    if not android_sdk_available and not qemu_available:
-        warnings.append(
-            "local Android sandbox requires Android SDK (adb + emulator) or QEMU, "
-            "but neither complete runtime was found"
-        )
+    # Only check Android when the batch will actually try the APK path.
+    if image == "auto" or android_enabled:
+        android_sdk_available = shutil.which("adb") and shutil.which("emulator")
+        if not android_sdk_available and not qemu_available:
+            warnings.append(
+                "local Android sandbox requires Android SDK (adb + emulator) or QEMU, "
+                "but neither complete runtime was found "
+                "(use --sandbox-image linux to skip Android, or "
+                "docker pull --platform=linux/amd64 trycua/cua-qemu-android:latest)"
+            )
 
     return warnings

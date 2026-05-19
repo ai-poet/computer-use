@@ -77,10 +77,20 @@ def _prompt_api_key_if_needed(mode: str, api_key: str | None) -> str | None:
     return key.strip()
 
 
+def resolve_android_enabled(args: argparse.Namespace) -> bool:
+    """Android APK path is opt-in unless sandbox-image is auto."""
+    if getattr(args, "android", False):
+        return True
+    if getattr(args, "no_android", False):
+        return False
+    return args.sandbox_image == "auto"
+
+
 def prepare_batch_context(args: argparse.Namespace):
     """Resolve sandbox mode, preflight, and return (SandboxContext, warnings)."""
     interactive = sys.stdin.isatty() and args.sandbox is None
     api_key = resolve_api_key(args.cua_api_key)
+    android_enabled = resolve_android_enabled(args)
     mode = resolve_sandbox_mode(
         cli_sandbox=args.sandbox,
         interactive=interactive,
@@ -92,14 +102,17 @@ def prepare_batch_context(args: argparse.Namespace):
     else:
         api_key = None
         log(f"批量模式:本地 Cua sandbox (image={args.sandbox_image})")
-        warnings = check_local_sandbox_prereqs(args.sandbox_image)
+        warnings = check_local_sandbox_prereqs(
+            args.sandbox_image,
+            android_enabled=android_enabled,
+        )
         for warning in warnings:
             err(f"[sandbox preflight] {warning}")
 
     ctx = build_sandbox_context(
         args.sandbox_image,
         mode=mode,
-        android_enabled=True,
+        android_enabled=android_enabled,
         api_key=api_key,
     )
     return ctx, warnings
@@ -349,6 +362,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--cua-api-key",
         default=None,
         help="Cua Cloud API Key(仅 --sandbox cloud 时需要)。也可 export CUA_API_KEY。",
+    )
+    parser.add_argument(
+        "--android",
+        action="store_true",
+        help="批量时启用 Android APK 分析路径(需 adb/QEMU 或 cua-qemu-android 镜像)。",
+    )
+    parser.add_argument(
+        "--no-android",
+        action="store_true",
+        help="批量时禁用 Android 路径(默认 --sandbox-image linux 时已禁用)。",
     )
     return parser
 

@@ -30,7 +30,14 @@ class BatchResult:
 def load_queue(path: Path) -> list[dict[str, str | None]]:
     """Load CSV or JSON queue rows with product_name/url/download_url fields."""
     if not path.exists():
-        raise FileNotFoundError(path)
+        resolved = path.expanduser().resolve()
+        hint = (
+            f"queue file not found: {resolved}\n"
+            f"  cwd: {Path.cwd()}\n"
+            "  example: python scripts/analyze_product.py "
+            "--batch queue.language-learning.json --sandbox-image linux"
+        )
+        raise FileNotFoundError(hint)
     if path.suffix.lower() == ".csv":
         with path.open(newline="", encoding="utf-8") as fh:
             rows: Any = list(csv.DictReader(fh))
