@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "output_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/tmp/sandbox-ctl-smoke",
+  "screenshots_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/tmp/sandbox-ctl-smoke/screenshots",
+  "screenshots": [
+    "screenshots/01_desktop_idle.png",
+    "screenshots/02_after_mouse_move.png",
+    "screenshots/03_after_right_click.png",
+    "screenshots/04_after_scroll.png",
+    "screenshots/05_terminal_open.png",
+    "screenshots/06_after_typing.png",
+    "screenshots/07_final.png"
+  ],
+  "error": null
+}

@@ -1,10 +1,6 @@
 # product-analyzer outputs (large, regenerable, contains screenshots)
 reports/
 
-# sandbox smoke artifacts (regenerable PNGs)
-tmp/sandbox-smoke/
-tmp/sandbox-ctl-smoke/
-
 # cua-driver bundle (installed locally via install_cua_driver.py)
 cua/
 
