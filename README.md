@@ -137,19 +137,41 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 
 ### 批量并发(默认本地 sandbox)
 
-批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的 **本地** sandbox(Docker/Lume/QEMU),在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
+批量模式在本机用 `--max-workers` **并发**启动多个独立的 `claude --print` worker,每个 worker 分析队列里的一个产品。**并发跑时,每个产品都会先在自己的隔离环境里创建一台沙盒**(本地 Docker/Lume/QEMU,或 Cua Cloud VM),分析结束后再销毁;worker 之间不共享沙盒、也不碰你 Mac 上的前台应用。
+
+**本机 Claude 不直接连沙盒 GUI**,而是通过 **脚本** 间接操控:
+
+1. **Python 编排器**(`scripts/analyze_product.py` + `scripts/product_analyzer/batch.py`)只负责起子进程、注入 env、写 `reports/<slug>/`、云端时挂 `--mcp-config`;**不**替 Claude 点鼠标。
+2. **每个 Claude worker** 读 product-analyzer skill,用 **Bash 反复调用** [`scripts/sandbox_ctl.py`](scripts/sandbox_ctl.py)(本地)或 **Cua MCP 工具**(云端)完成「建沙盒 → 逐步截图/点击/shell → 拆沙盒」。
+3. **`sandbox_ctl`** 内部用 Cua Sandbox SDK 对 **named** 容器发单步命令(`screenshot` / `click` / `shell` …),连接信息写在 `reports/.../sandbox.json`;Claude 每步一条命令、先看 PNG 再决策,与单任务里 cua-driver 的 observe–act 节奏一致。
+
+```
+queue.json
+    │
+    ├─ worker 1 (claude --print) ──Bash──► sandbox_ctl bootstrap / step … / teardown
+    │                                              │
+    │                                              ▼
+    │                                    Docker 沙盒 A (cua-xfce)
+    │
+    └─ worker 2 (claude --print) ──Bash──► sandbox_ctl …
+                                              │
+                                              ▼
+                                    Docker 沙盒 B (独立)
+```
+
+worker 结束后,编排器还会在 `finally` 里 **兜底 teardown**,避免容器泄漏。
 
 每个 worker 的 prompt **只传入参数**(runtime、sandbox 镜像、是否批量并行等)并指向 `.claude/skills/product-analyzer/SKILL.md` 的 **「Sandbox 运行合约」** 与 **「沙盒控制三阶段」**;细则在 skill 里维护(符合「改规则不改代码」)。环境变量 `ANALYZER_BATCH_PARALLEL=1`、`ANALYZER_CONDA_ENV` 等供 Claude 对照。
 
 **Host vs 沙盒控制面对照**
 
-| 模式 | Claude 如何逐步驱动 |
-|------|---------------------|
-| 单任务 `runtime=host` | **cua-driver** MCP/CLI(`get_window_state` → `element_index` 点击) |
-| 批量 `sandbox-local` | **`scripts/sandbox_ctl.py`**:`bootstrap` → 多次 `step screenshot/shell/click/...` → `teardown` |
-| 批量 `sandbox-cloud` | **`cua serve-mcp`**(`computer_screenshot` / `computer_click` / …),编排器注入 `--mcp-config` |
+| 模式 | 谁创建环境 | 本机 Claude 如何操控 |
+|------|------------|----------------------|
+| 单任务 `runtime=host` | 无沙盒,直接用本机桌面 | **cua-driver** MCP/CLI(`get_window_state` → `element_index`) |
+| 批量 `sandbox-local` | `sandbox_ctl bootstrap` 起 Docker 等 | **反复 Bash** 调 `sandbox_ctl step …`(见 skill 三阶段) |
+| 批量 `sandbox-cloud` | MCP / `sandbox_ctl` 起 Cloud VM | **Cua MCP**(`computer_screenshot` / `computer_click` / …),编排器注入 `--mcp-config` |
 
-**不要**在 batch 里写一整段 `asyncio.run()` 分析脚本 — SDK 每步本是 HTTP `/cmd`,应让 Claude 每步一条 Bash/MCP 以便看图再决策。
+**不要**让 Claude 写一整段 `asyncio.run()` 把分析包进一个 Python 文件 — 应 **一条 Bash 一步**,截图落到 `reports/.../screenshots/` 后再继续。
 
 **默认行为:本地 sandbox。** 未传 `--sandbox` 时一律走本机 Docker/Lume,即使环境里已有 `CUA_API_KEY` 也不会自动切到云端。
 
@@ -213,11 +235,11 @@ python scripts/analyze_product.py \
   --android
 ```
 
-Claude worker 会在沙盒内用 `Sandbox.ephemeral(Image.android(), local=True)` 起独立 Android sandbox,通过 `sb.shell.run()` 执行 `adb install`、启动应用、`await sb.screenshot()` 等;APK 文件落在各产品目录的 `downloads/` 下。详见 [Cua Set Up a Sandbox — Android](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox) 与 `.claude/skills/product-analyzer/SKILL.md` 中的 Android 增强路径。
+Android 路径同样由 Claude 通过 **`sandbox_ctl`**(或云端 MCP)逐步操作独立 Android 沙盒(`adb install`、截图等),APK 落在各产品目录的 `downloads/` 下。详见 [Cua Set Up a Sandbox — Android](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox) 与 skill 中的 Android 增强路径。
 
 若本机配置了 HTTP 代理,批量本地 sandbox 会自动为 worker 设置 `NO_PROXY=127.0.0.1,localhost`,避免 SDK 探测 `localhost:<docker_port>` 时被代理成 502。
 
-**网页点击能不能用?** 可以。`cua-xfce` 镜像是带 XFCE 桌面的 Linux 容器,内置 `computer-server`,批量/skill 里通过 `sb.mouse` / `sb.keyboard` / `sb.screenshot` 驱动沙箱内浏览器(需在 sandbox 里先 `shell.run` 打开 Chromium/Firefox 或桌面快捷方式)。这与 host 上的 cua-driver(无障碍树 `element_index`)不是同一条路,而是**坐标级 GUI 自动化**,对常规官网导航、点按钮、填表、滚动足够;极复杂 SPA、强登录墙或 canvas 主界面可能需要更多步或降级 web-only。Cua 文档也把 XFCE 标为多数场景的推荐轻量镜像。
+**网页点击能不能用?** 可以。`cua-xfce` 镜像是带 XFCE 桌面的 Linux 容器,内置 `computer-server`;Claude 用 `sandbox_ctl step click/type/screenshot` 在沙盒里做**坐标级**自动化(先 `step shell` 打开浏览器)。这与 host 上 cua-driver 的 `element_index` 不是同一条路,但对常规官网导航、表单、滚动足够。参考截图见 [`tmp/sandbox-ctl-smoke/screenshots/`](tmp/sandbox-ctl-smoke/screenshots/)(`python -m tests.sandbox.sandbox_ctl_smoke` 生成)。
 
 建议先跑 Linux sandbox smoke test,确认 Cua SDK + Docker + GUI/UI 截图链路可用。测试在 `tests/sandbox/`:
 
