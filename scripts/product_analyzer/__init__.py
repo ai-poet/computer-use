@@ -7,9 +7,11 @@
     renderer     format_event 全家 — stream-json → 美化输出
     preflight    detect_host/ensure_claude_cli/ensure_cua_driver
     tasks        slugify / metadata I/O / list_tasks / pick_resume_target
+    sandbox_runtime  batch 本地 Cua sandbox 运行上下文
     prompts      build_prompt / build_resume_prompt
     claude_driver  ESC watcher + spawn + run_claude(对外唯一编排接口)
-    cli          collect_inputs / cmd_new / cmd_resume / pick_action / main
+    batch        CSV/JSON 队列 + 并发 worker 调度
+    cli          collect_inputs / cmd_new / cmd_resume / cmd_batch / pick_action / main
 
 外部入口只有 ``cli.main``,由 ``scripts/analyze_product.py`` 这层 shim 调用。
 """

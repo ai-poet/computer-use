@@ -17,11 +17,24 @@ def build_prompt(
     out_dir: Path,
     host_os: str,
     host_arch: str,
+    *,
+    runtime: str = "host",
+    sandbox_image: str | None = None,
+    sandbox_local: bool = True,
+    android_enabled: bool = False,
+    sandbox_warnings: list[str] | None = None,
 ) -> str:
     dl_line = (
         f"- 下载链接(预先给定):{download_url}"
         if download_url
         else "- 下载链接:未提供,需要从官网自行定位"
+    )
+    runtime_block = _runtime_block(
+        runtime,
+        sandbox_image=sandbox_image,
+        sandbox_local=sandbox_local,
+        android_enabled=android_enabled,
+        sandbox_warnings=sandbox_warnings or [],
     )
     return f"""请使用 product-analyzer skill 完成产品分析。
 
@@ -31,12 +44,14 @@ def build_prompt(
 {dl_line}
 - 输出目录(已建好,所有产物写到这里):{out_dir}
 - 主机:{host_os}/{host_arch}
+- runtime:{runtime}
+{runtime_block}
 
 **要求**:
 1. 严格遵循 .claude/skills/product-analyzer/SKILL.md 中的 canonical loop(7 步固定顺序)
 2. 全程用 TodoWrite 维护进度,7 个 todos,每步开始前 in_progress、完成后 completed
-3. 桌面端驱动一律走 cua-driver,严守 cua-driver SKILL 的 no-foreground 契约
-4. 报告全程简体中文,3 个强制章节按顺序出现
+3. host runtime 下桌面端驱动一律走 cua-driver,严守 cua-driver SKILL 的 no-foreground 契约
+4. sandbox-local runtime 下所有 shell/screenshot/click/type 操作都必须在本地 Cua sandbox 内完成,禁止触碰 host GUI
 5. 结束前在 metadata.json 里补齐 finished_at / mode / screenshots[] / warnings[]
 
 现在开始执行。
@@ -53,4 +68,46 @@ def build_resume_prompt(out_dir: Path, supplement: str) -> str:
 
 用户补充指令:
 {supplement or '(无,请按原计划继续)'}
+"""
+
+
+def _runtime_block(
+    runtime: str,
+    *,
+    sandbox_image: str | None,
+    sandbox_local: bool,
+    android_enabled: bool,
+    sandbox_warnings: list[str],
+) -> str:
+    if runtime != "sandbox-local":
+        return "- runtime 说明:host 模式,使用当前主机和 cua-driver。"
+
+    warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
+    return f"""- sandbox.image:{sandbox_image or "auto"}
+- sandbox.local:{str(sandbox_local).lower()}
+- android.enabled:{str(android_enabled).lower()}
+- 本地 sandbox 预检 warnings:
+{warning_lines}
+
+**sandbox-local 运行约束**:
+- 你必须在本任务内用 Cua Sandbox SDK 创建并管理独立本地沙箱,不要操作 host GUI。
+- 默认使用 ephemeral sandbox;任务结束前让 context manager 自动清理。
+- `sandbox.image=auto` 时,优先按找到的桌面安装包选择 `Image.macos()` / `Image.windows()` / `Image.linux()`,找不到桌面包则用 `Image.linux()` 做网页分析。
+- 若检测到官方 APK 且 `android.enabled=true`,额外创建 `Sandbox.ephemeral(Image.android(), local=True)` 做 Android 体验。
+- 参考代码:
+```python
+import asyncio
+from cua import Sandbox, Image
+
+async def main():
+    async with Sandbox.ephemeral(Image.linux(), local=True) as sb:
+        result = await sb.shell.run("uname -s")
+        png = await sb.screenshot()
+
+    async with Sandbox.ephemeral(Image.android(), local=True) as android:
+        result = await android.shell.run("getprop ro.build.version.release")
+        png = await android.screenshot()
+
+asyncio.run(main())
+```
 """

@@ -45,13 +45,16 @@ def prepare_output_dir(product_name: str) -> Path:
     new dir's Path. ``-N`` suffix is appended for same-day reruns."""
     today = dt.date.today().isoformat()
     base = REPORTS_DIR / f"{slugify(product_name)}-{today}"
-    out = base
-    n = 2
-    while out.exists():
-        out = base.with_name(f"{base.name}-{n}")
-        n += 1
-    (out / "screenshots").mkdir(parents=True)
-    return out
+    n = 1
+    while True:
+        out = base if n == 1 else base.with_name(f"{base.name}-{n}")
+        try:
+            out.mkdir(parents=True)
+            (out / "screenshots").mkdir()
+            (out / "downloads").mkdir()
+            return out
+        except FileExistsError:
+            n += 1
 
 
 # ---------- metadata I/O ----------
@@ -61,6 +64,11 @@ def write_metadata_seed(
     product_name: str,
     url: str,
     download_url: str | None,
+    *,
+    runtime: str = "host",
+    sandbox_image: str | None = None,
+    sandbox_local: bool = True,
+    android_enabled: bool = False,
 ) -> dict:
     host_os, host_arch = detect_host()
     meta = {
@@ -69,6 +77,19 @@ def write_metadata_seed(
         "download_url": download_url,
         "host_os": host_os,
         "host_arch": host_arch,
+        "runtime": runtime,
+        "sandbox": {
+            "image": sandbox_image,
+            "local": sandbox_local,
+            "name": None,
+        },
+        "android": {
+            "enabled": android_enabled,
+            "apk_url": None,
+            "apk_file": None,
+            "package_name": None,
+            "mode": None,
+        },
         "started_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "finished_at": None,
         "mode": None,

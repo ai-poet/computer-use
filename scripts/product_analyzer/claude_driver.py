@@ -51,7 +51,12 @@ def _esc_watcher_unix(flag: dict, stop: dict, proc: subprocess.Popen) -> None:
             pass
 
 
-def _spawn_claude(prompt: str, resume_id: str | None) -> subprocess.Popen:
+def _spawn_claude(
+    prompt: str,
+    resume_id: str | None,
+    *,
+    env: dict[str, str] | None = None,
+) -> subprocess.Popen:
     cmd = [
         "claude", "--print",
         "--output-format", "stream-json",
@@ -69,6 +74,7 @@ def _spawn_claude(prompt: str, resume_id: str | None) -> subprocess.Popen:
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
+        env=env,
     )
     assert proc.stdin is not None
     proc.stdin.write(prompt)
@@ -104,6 +110,9 @@ def run_claude(
     *,
     resume_id: str | None = None,
     out_dir: Path | None = None,
+    non_interactive: bool = False,
+    log_file: Path | None = None,
+    env: dict[str, str] | None = None,
 ) -> int:
     """Run claude in stream-json mode with ESC-pause + resume support.
 
@@ -120,9 +129,13 @@ def run_claude(
         prompt: initial user message
         resume_id: existing claude session id to resume (used by cmd_resume)
         out_dir: where to persist ``last_session_id``; None = no persistence
+        non_interactive: disable ESC/spinner UI; intended for batch workers
+        log_file: optional file that receives raw stream-json/stdout
+        env: optional environment for the Claude subprocess
     """
     raw_dump_path = os.environ.get("ANALYZE_RAW_LOG")
     raw_fh = open(raw_dump_path, "a", encoding="utf-8") if raw_dump_path else None
+    log_fh = open(log_file, "a", encoding="utf-8") if log_file else None
     state: dict = {"session_id": None, "last_action": "starting"}
 
     current_prompt = prompt
@@ -130,36 +143,42 @@ def run_claude(
 
     try:
         while True:
-            proc = _spawn_claude(current_prompt, resume_id)
+            proc = _spawn_claude(current_prompt, resume_id, env=env)
             assert proc.stdout is not None
             esc_flag = {"esc": False}
             stop_flag = {"done": False}
             watcher: threading.Thread | None = None
-            if sys.stdin.isatty():
+            if not non_interactive and sys.stdin.isatty():
                 watcher = threading.Thread(
                     target=_esc_watcher_unix, args=(esc_flag, stop_flag, proc), daemon=True
                 )
                 watcher.start()
                 print(f"{DIM}    (按 ESC 暂停并补充指令){RESET}")
-            spinner = Spinner()
-            spinner.set_label(state.get("last_action") or "starting")
-            spinner.start()
+            spinner: Spinner | None = None
+            if not non_interactive:
+                spinner = Spinner()
+                spinner.set_label(state.get("last_action") or "starting")
+                spinner.start()
             persisted_sid = state.get("session_id") if out_dir else None
             try:
                 for line in proc.stdout:
                     if raw_fh:
                         raw_fh.write(line)
                         raw_fh.flush()
+                    if log_fh:
+                        log_fh.write(line)
+                        log_fh.flush()
                     line = line.rstrip("\n")
                     if not line:
                         continue
                     pretty = format_event(line, state)
-                    if pretty is None:
-                        spinner.write_above(line)
-                    else:
-                        for p in pretty:
-                            spinner.write_above(p)
-                    spinner.set_label(state.get("last_action") or "thinking")
+                    if spinner is not None:
+                        if pretty is None:
+                            spinner.write_above(line)
+                        else:
+                            for p in pretty:
+                                spinner.write_above(p)
+                        spinner.set_label(state.get("last_action") or "thinking")
                     # Persist session_id the first time it changes — gives a
                     # resume target even if claude is killed mid-stream.
                     sid_now = state.get("session_id")
@@ -167,7 +186,8 @@ def run_claude(
                         update_metadata(out_dir, last_session_id=sid_now)
                         persisted_sid = sid_now
                     if esc_flag.get("esc"):
-                        spinner.stop()
+                        if spinner is not None:
+                            spinner.stop()
                         print(f"\n{YELLOW}ESC 收到,已停掉当前 claude 子进程…{RESET}", flush=True)
                         try:
                             proc.wait(timeout=5)
@@ -175,7 +195,8 @@ def run_claude(
                             proc.kill()
                         break
             except KeyboardInterrupt:
-                spinner.stop()
+                if spinner is not None:
+                    spinner.stop()
                 proc.terminate()
                 err("用户 Ctrl+C,中止")
                 final_rc = 130
@@ -183,12 +204,17 @@ def run_claude(
                 if watcher and watcher.is_alive():
                     watcher.join(timeout=1)
                 break
-            spinner.stop()
+            if spinner is not None:
+                spinner.stop()
             stop_flag["done"] = True
             if watcher and watcher.is_alive():
                 watcher.join(timeout=1)
 
             if not esc_flag.get("esc"):
+                final_rc = proc.wait()
+                break
+
+            if non_interactive:
                 final_rc = proc.wait()
                 break
 
@@ -217,4 +243,6 @@ def run_claude(
     finally:
         if raw_fh:
             raw_fh.close()
+        if log_fh:
+            log_fh.close()
     return final_rc

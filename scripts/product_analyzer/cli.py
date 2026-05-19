@@ -8,10 +8,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from .claude_driver import run_claude
 from .config import BOLD, DIM, RESET
-from .preflight import ensure_claude_cli, ensure_cua_driver
+from .preflight import (
+    check_local_sandbox_prereqs,
+    ensure_claude_cli,
+    ensure_cua_driver,
+    ensure_cua_sdk,
+)
 from .prompts import build_prompt, build_resume_prompt
 from .tasks import (
     pick_resume_target,
@@ -119,6 +125,35 @@ def cmd_resume() -> int:
     return 0
 
 
+def cmd_batch(args: argparse.Namespace) -> int:
+    """Run a CSV/JSON queue with one local sandbox contract per product."""
+    from .batch import run_batch
+
+    assert args.batch is not None
+    warnings = check_local_sandbox_prereqs(args.sandbox_image)
+    for warning in warnings:
+        err(f"[sandbox preflight] {warning}")
+
+    result = run_batch(
+        args.batch,
+        args.max_workers,
+        sandbox_image=args.sandbox_image,
+        sandbox_warnings=warnings,
+    )
+    ok = result.total - len(result.failed)
+    log(f"批量完成: total={result.total} ok={ok} failed={len(result.failed)}")
+    for row in result.results:
+        status = "OK" if row["rc"] == 0 else f"FAIL rc={row['rc']}"
+        log(
+            f"  [{status}] {row['product']} "
+            f"sandbox={row.get('sandbox_image')} out={row.get('out_dir')} "
+            f"log={row.get('log_file')}"
+        )
+        if row.get("error"):
+            err(f"    error: {row['error']}")
+    return 2 if result.failed else 0
+
+
 def pick_action(args: argparse.Namespace) -> str:
     """Decide which subcommand to run.
 
@@ -162,6 +197,7 @@ def _build_parser() -> argparse.ArgumentParser:
             '"https://productivekitty.masterwordai.com"\n'
             "  全参:    python3 scripts/analyze_product.py NAME URL DOWNLOAD_URL\n"
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
+            "  批量:    python3 scripts/analyze_product.py --batch queue.json --max-workers 2\n"
         ),
     )
     parser.add_argument(
@@ -180,6 +216,24 @@ def _build_parser() -> argparse.ArgumentParser:
         "--resume", action="store_true",
         help='跳过菜单,直接进入"恢复历史任务"流程。',
     )
+    parser.add_argument(
+        "--batch",
+        type=Path,
+        default=None,
+        help="CSV/JSON 队列路径。启用后每个产品使用独立本地 Cua sandbox。",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=2,
+        help="批量模式最大并发 sandbox 数。默认 2。",
+    )
+    parser.add_argument(
+        "--sandbox-image",
+        choices=("auto", "linux", "macos", "windows"),
+        default="auto",
+        help="批量模式桌面 sandbox 镜像。默认 auto。",
+    )
     return parser
 
 
@@ -188,6 +242,15 @@ def main(argv: list[str] | None = None) -> int:
 
     log("预检:claude CLI")
     ensure_claude_cli()
+
+    if args.batch is not None:
+        if args.resume:
+            err("--batch 与 --resume 不能同时使用")
+            return 1
+        log("预检:Cua Sandbox SDK")
+        ensure_cua_sdk()
+        return cmd_batch(args)
+
     log("预检:cua-driver")
     ensure_cua_driver()
 

@@ -6,10 +6,11 @@
 | 下载链接 | <download_url 或 "—"> |
 | 报告日期 | YYYY-MM-DD |
 | 主机 | <darwin/linux/windows> / <arm64/x86_64> |
-| 模式 | <full / web-only> |
+| Runtime | <host / sandbox-local> |
+| 模式 | <full / sandbox-full / android / web-only> |
 | 用时 | <分钟> |
 
-> 模式说明:**full** = 同时分析了官网与桌面应用;**web-only** = 仅基于官网与浏览器截图,未驱动桌面端(原因见下)。
+> 模式说明:**full** = host 上同时分析了官网与桌面应用;**sandbox-full** = 本地 Cua sandbox 内完成官网/桌面应用分析;**android** = 额外分析了 Android APK;**web-only** = 仅基于官网与浏览器截图,未驱动桌面端(原因见下)。
 
 <!-- 若 mode = web-only,在此用一句话说明降级原因。例如:
 > 本次为网页版分析,未驱动桌面端 — 当前主机 Linux aarch64 没有 cua-driver-rs 预编译。
@@ -34,6 +35,7 @@
 |---|---|---|---|---|
 | 1 | 首页(网页) | <URL> | … | [01_web_homepage.png](screenshots/01_web_homepage.png) |
 | 2 | 任务设置(应用) | 启动后默认窗口 | 输入任务、选择专注时长、开始 | [05_app_main.png](screenshots/05_app_main.png) |
+| 3 | Android 主界面 | APK 启动后 | 移动端主流程 | [09_android_main.png](screenshots/09_android_main.png) |
 | … | … | … | … | … |
 
 ### 1.3 各界面功能与评价
@@ -122,6 +124,7 @@
 | 01 | screenshots/01_web_homepage.png | 官网首页全景 |
 | 02 | screenshots/02_web_pricing.png | 定价区段 |
 | 05 | screenshots/05_app_main.png | 应用主界面 |
+| 09 | screenshots/09_android_main.png | Android 应用主界面 |
 | … | … | … |
 
-> 编号规则:`NN_<source>_<view>.png`,`source ∈ {web, app}`,`view` 短 kebab-case;`NN` 单调递增,允许跳号(web 段 01-04,app 段 05+)。
+> 编号规则:`NN_<source>_<view>.png`,`source ∈ {web, app, android}`,`view` 短 kebab-case;`NN` 单调递增,允许跳号(web 段 01-04,app 段 05+,android 段接在已采集截图之后)。

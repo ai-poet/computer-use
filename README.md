@@ -156,16 +156,18 @@ ANALYZE_RAW_LOG=/tmp/raw.jsonl python3 scripts/analyze_product.py "ProductiveKit
 reports/<slug>-2026-05-18/
 ├── report.md                       # 简体中文,3 强制章节按顺序
 ├── metadata.json                   # 机器可读元数据
+├── downloads/                      # 安装包 / APK 下载缓存
 └── screenshots/
     ├── 01_web_homepage.png         # NN_<source>_<view>.png
     ├── 02_web_pricing.png
     ├── 05_app_main.png
+    ├── 09_android_main.png
     └── ...
 ```
 
 **slug 规则**:`kebab-case(ascii-fold(产品名))`,40 字符内。中文名走 fallback `product-<md5前6位>`。
 
-**截图编号**:`NN_<source>_<view>.png`,`source ∈ {web, app}`,`NN` 单调递增允许跳号。每张图都在 `report.md` 里以相对路径出现,且在附录 A 截图索引里有一行说明。
+**截图编号**:`NN_<source>_<view>.png`,`source ∈ {web, app, android}`,`NN` 单调递增允许跳号。每张图都在 `report.md` 里以相对路径出现,且在附录 A 截图索引里有一行说明。
 
 **metadata.json**(由 Python 写雏形,Claude 在结束前补齐):
 ```json
@@ -175,6 +177,15 @@ reports/<slug>-2026-05-18/
   "download_url": null,
   "host_os": "darwin",
   "host_arch": "arm64",
+  "runtime": "host",
+  "sandbox": {"image": null, "local": true, "name": null},
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
   "started_at": "2026-05-18T03:30:00+08:00",
   "finished_at": "2026-05-18T03:55:00+08:00",
   "mode": "full",
@@ -185,7 +196,7 @@ reports/<slug>-2026-05-18/
 }
 ```
 
-`mode = "full"` 表示同时分析了官网与桌面端;`mode = "web-only"` 表示只看了官网(降级条件见下一节)。
+`mode = "full"` 表示 host 上同时分析了官网与桌面端;`mode = "sandbox-full"` 表示本地 Cua sandbox 内完成官网/桌面端分析;`mode = "web-only"` 表示只看了官网(降级条件见下一节)。若额外分析了 APK,`android.mode` 会记录 Android 路径结果。
 
 **同日重跑**不会覆盖 — 自动追加 `-2`、`-3` 后缀。
 
