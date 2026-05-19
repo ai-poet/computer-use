@@ -182,8 +182,9 @@ cua --version      # sandbox_ctl + cloud MCP
 # 本地 Linux 桌面 sandbox(与 Cua 文档 "Linux on Docker" 一致)
 docker pull --platform=linux/amd64 trycua/cua-xfce:latest
 
-# 逐步控制桥 smoke(需 Docker)
+# 逐步控制桥 smoke(需 Docker);截图落在 tmp/sandbox-ctl-smoke/screenshots/
 python -m tests.sandbox.sandbox_ctl_smoke
+# 保留容器便于手查: python -m tests.sandbox.sandbox_ctl_smoke --no-teardown
 ```
 
 ### Android APK 沙盒(可选)

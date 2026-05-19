@@ -274,6 +274,26 @@ async def cmd_step_key(out_dir: Path, keys: str) -> int:
     return 0
 
 
+async def cmd_step_scroll(
+    out_dir: Path, x: int, y: int, *, scroll_x: int = 0, scroll_y: int = 3
+) -> int:
+    apply_no_proxy_env()
+    info = load_sandbox_info(out_dir)
+    async with _connect_from_info(info) as sb:
+        await sb.mouse.scroll(x, y, scroll_x, scroll_y)
+    print(json.dumps({"ok": True, "x": x, "y": y, "scroll_x": scroll_x, "scroll_y": scroll_y}))
+    return 0
+
+
+async def cmd_step_screen_size(out_dir: Path) -> int:
+    apply_no_proxy_env()
+    info = load_sandbox_info(out_dir)
+    async with _connect_from_info(info) as sb:
+        width, height = await sb.screen.size()
+    print(json.dumps({"ok": True, "width": width, "height": height}))
+    return 0
+
+
 def teardown_out_dir(out_dir: Path) -> None:
     """Best-effort teardown for batch finally hook; never raises."""
     try:
@@ -331,6 +351,17 @@ def _build_parser() -> argparse.ArgumentParser:
     key_p.add_argument("out_dir", type=Path)
     key_p.add_argument("keys")
 
+    scroll_p = step_sub.add_parser("scroll", help="Scroll at x y")
+    scroll_p.add_argument("out_dir", type=Path)
+    scroll_p.add_argument("x", type=int)
+    scroll_p.add_argument("y", type=int)
+    scroll_p.add_argument("--scroll-x", type=int, default=0)
+    scroll_p.add_argument("--scroll-y", type=int, default=3)
+
+    step_sub.add_parser("screen-size", help="Print sandbox display width x height").add_argument(
+        "out_dir", type=Path
+    )
+
     return p
 
 
@@ -363,6 +394,18 @@ def main(argv: list[str] | None = None) -> int:
             return asyncio.run(cmd_step_type(args.out_dir, args.text))
         if args.step_cmd == "key":
             return asyncio.run(cmd_step_key(args.out_dir, args.keys))
+        if args.step_cmd == "scroll":
+            return asyncio.run(
+                cmd_step_scroll(
+                    args.out_dir,
+                    args.x,
+                    args.y,
+                    scroll_x=args.scroll_x,
+                    scroll_y=args.scroll_y,
+                )
+            )
+        if args.step_cmd == "screen-size":
+            return asyncio.run(cmd_step_screen_size(args.out_dir))
     return 1
 
 
