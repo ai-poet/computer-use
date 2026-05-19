@@ -219,14 +219,16 @@ REPO=...                            # 仓库根目录
 # 1) bootstrap — 创建 named sandbox,写 sandbox.json
 python "$REPO/scripts/sandbox_ctl.py" bootstrap "$OUTPUT_DIR" [--open-browser]
 
-# 2) step loop — 每步一条命令(示例)
-python "$REPO/scripts/sandbox_ctl.py" step screenshot "$OUTPUT_DIR" \
+# 2) step loop — 每步一条命令(示例;优先 $ANALYZER_PYTHON 或 conda python)
+python scripts/sandbox_ctl.py step screenshot "$OUTPUT_DIR" \
   --out screenshots/01_web_homepage.png
-python "$REPO/scripts/sandbox_ctl.py" step shell "$OUTPUT_DIR" -- \
-  curl -fsSL -o /tmp/home.html 'https://example.com'
-python "$REPO/scripts/sandbox_ctl.py" step click "$OUTPUT_DIR" 640 400
-python "$REPO/scripts/sandbox_ctl.py" step type "$OUTPUT_DIR" 'hello'
-python "$REPO/scripts/sandbox_ctl.py" step key "$OUTPUT_DIR" enter
+# shell 必须用 -c(不要用裸 --,会与 argparse 冲突);stdout 第一行 JSON,完整结果另存:
+#   $OUTPUT_DIR/.sandbox_ctl_last_shell.json
+python scripts/sandbox_ctl.py step shell "$OUTPUT_DIR" -c \
+  "wget -q -O /tmp/home.html 'https://example.com' || python3 -c '...'"
+python scripts/sandbox_ctl.py step click "$OUTPUT_DIR" 640 400
+python scripts/sandbox_ctl.py step type "$OUTPUT_DIR" 'hello'
+python scripts/sandbox_ctl.py step key "$OUTPUT_DIR" enter
 
 # 3) teardown
 python "$REPO/scripts/sandbox_ctl.py" teardown "$OUTPUT_DIR"
@@ -248,6 +250,8 @@ python "$REPO/scripts/sandbox_ctl.py" teardown "$OUTPUT_DIR"
 - 使用 **`Sandbox.create(..., ephemeral=False, name=...)`**,以便 `~/.cua/sandboxes/` 有状态;**不要**用 `Sandbox.ephemeral` 做 batch 主沙盒。
 - **备选**:`cua do switch docker <sandbox.json.name>` 后 `cua do screenshot` / `click`(与 `sandbox_ctl` 二选一;**优先 `sandbox_ctl`**,不依赖 Claude 记 port)。
 - `sandbox_ctl status "$OUTPUT_DIR"` 排障。
+- **沙盒内无 curl** 时用 `wget` 或 `python3` 拉网页(见 batch 日志);禁止为此回退 host 父 shell。
+- **`step shell` 失败或 Bash 看不到输出**:读 `$OUTPUT_DIR/.sandbox_ctl_last_shell.json`;不要自写 `/tmp/sb_run.py` 替代(除非 `sandbox_ctl` 本身报错)。
 
 #### 云端 (`sandbox-cloud`) — 优先 Cua MCP
 

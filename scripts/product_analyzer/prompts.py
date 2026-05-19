@@ -126,7 +126,8 @@ def _runtime_block(
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
     local_ctl = (
         "- **本地控制**:`python scripts/sandbox_ctl.py bootstrap <output_dir>` 后逐步 "
-        "`step screenshot|shell|click|type|key`,结束 `teardown`"
+        "`step screenshot|shell -c '...'|click|type|key`(shell 结果见 `.sandbox_ctl_last_shell.json`),"
+        "结束 `teardown`;用 `$ANALYZER_PYTHON` 若已注入"
         if runtime == "sandbox-local"
         else (
             "- **云端控制**:用注入的 Cua MCP(`computer_screenshot`/`computer_click`/…);"

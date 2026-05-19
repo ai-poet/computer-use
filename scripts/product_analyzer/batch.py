@@ -6,6 +6,7 @@ import asyncio
 import csv
 import json
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -156,6 +157,7 @@ def _run_one(
         {
             "ANALYZER_OUTPUT_DIR": str(out_dir),
             "ANALYZER_BATCH_PARALLEL": "1",
+            "ANALYZER_PYTHON": sys.executable,
             "ANALYZER_SANDBOX_WARNINGS": json.dumps(
                 sandbox_warnings, ensure_ascii=False
             ),

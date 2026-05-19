@@ -235,7 +235,7 @@ def main() -> int:
         _run_ctl(["teardown", str(out_dir)])
         return 1
 
-    shell = _run_ctl(["step", "shell", str(out_dir), "--", "uname -a"])
+    shell = _run_ctl(["step", "shell", str(out_dir), "-c", "uname -a"])
     if shell.returncode != 0:
         print("warning: shell uname failed (screenshots already saved)", file=sys.stderr)
         if shell.stderr:

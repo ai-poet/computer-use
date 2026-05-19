@@ -142,7 +142,7 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 **本机 Claude 不直接连沙盒 GUI**,而是通过 **脚本** 间接操控:
 
 1. **Python 编排器**(`scripts/analyze_product.py` + `scripts/product_analyzer/batch.py`)只负责起子进程、注入 env、写 `reports/<slug>/`、云端时挂 `--mcp-config`;**不**替 Claude 点鼠标。
-2. **每个 Claude worker** 读 product-analyzer skill,用 **Bash 反复调用** [`scripts/sandbox_ctl.py`](scripts/sandbox_ctl.py)(本地)或 **Cua MCP 工具**(云端)完成「建沙盒 → 逐步截图/点击/shell → 拆沙盒」。
+2. **每个 Claude worker** 读 product-analyzer skill,用 **Bash 反复调用** [`scripts/sandbox_ctl.py`](scripts/sandbox_ctl.py)(本地)或 **Cua MCP 工具**(云端)完成「建沙盒 → 逐步截图/点击/shell → 拆沙盒」。`step shell` 请用 **`-c '命令'`**(避免 argparse 与顶层 `command` 冲突);若 Bash 工具吞 stdout,读 `reports/.../.sandbox_ctl_last_shell.json`。
 3. **`sandbox_ctl`** 内部用 Cua Sandbox SDK 对 **named** 容器发单步命令(`screenshot` / `click` / `shell` …),连接信息写在 `reports/.../sandbox.json`;Claude 每步一条命令、先看 PNG 再决策,与单任务里 cua-driver 的 observe–act 节奏一致。
 
 ```

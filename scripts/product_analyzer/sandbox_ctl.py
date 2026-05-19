@@ -25,7 +25,18 @@ from .sandbox_runtime import (
 from .tasks import read_metadata, update_metadata
 
 SANDBOX_JSON = "sandbox.json"
+LAST_SHELL_JSON = ".sandbox_ctl_last_shell.json"
 _MIN_SCREENSHOT_BYTES = 1000
+
+
+def _emit(payload: dict, *, file: Path | None = None) -> None:
+    """Print one JSON line to stdout (always flushed) and optionally persist."""
+    line = json.dumps(payload, ensure_ascii=False) + "\n"
+    sys.stdout.write(line)
+    sys.stdout.flush()
+    if file is not None:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(line, encoding="utf-8")
 
 
 def sandbox_json_path(out_dir: Path) -> Path:
@@ -143,7 +154,7 @@ async def cmd_bootstrap(out_dir: Path, *, open_browser: bool) -> int:
     _merge_metadata_sandbox(out_dir, info["name"], api_url, local)
     await sb.disconnect()
 
-    print(json.dumps({"ok": True, "sandbox": info}, ensure_ascii=False))
+    _emit({"ok": True, "sandbox": info})
 
     if open_browser:
         return await cmd_step_shell(
@@ -159,7 +170,7 @@ async def cmd_teardown(out_dir: Path) -> int:
     out_dir = out_dir.resolve()
     path = sandbox_json_path(out_dir)
     if not path.is_file():
-        print(json.dumps({"ok": True, "skipped": "no sandbox.json"}))
+        _emit({"ok": True, "skipped": "no sandbox.json"})
         return 0
     info = load_sandbox_info(out_dir)
     from cua import Sandbox
@@ -173,7 +184,7 @@ async def cmd_teardown(out_dir: Path) -> int:
     except Exception as exc:
         print(f"warning: Sandbox.delete: {exc}", file=sys.stderr)
     path.unlink(missing_ok=True)
-    print(json.dumps({"ok": True, "deleted": info["name"]}))
+    _emit({"ok": True, "deleted": info["name"]})
     return 0
 
 
@@ -181,9 +192,10 @@ def cmd_status(out_dir: Path) -> int:
     out_dir = out_dir.resolve()
     path = sandbox_json_path(out_dir)
     if not path.is_file():
-        print(f"no {SANDBOX_JSON} in {out_dir}")
+        _emit({"ok": False, "error": f"no {SANDBOX_JSON} in {out_dir}"})
         return 1
     info = load_sandbox_info(out_dir)
+    _emit({"ok": True, "sandbox": info})
     print(json.dumps(info, indent=2, ensure_ascii=False))
     api_url = info.get("api_url", "")
     if api_url:
@@ -209,26 +221,69 @@ async def cmd_step_screenshot(out_dir: Path, out_path: Path) -> int:
 
     out_path.write_bytes(png)
     ok = len(png) >= _MIN_SCREENSHOT_BYTES
-    print(json.dumps({"ok": ok, "path": str(out_path), "bytes": len(png)}))
+    _emit({"ok": ok, "path": str(out_path), "bytes": len(png)})
     return 0 if ok else 1
+
+
+def _resolve_shell_command(shell_cmd: str | None, shell_argv: list[str]) -> str | None:
+    if shell_cmd and shell_cmd.strip():
+        return shell_cmd.strip()
+    parts = list(shell_argv)
+    if parts and parts[0] == "--":
+        parts = parts[1:]
+    # REMAINDER may capture ``-c cmd ...`` when -c follows positional out_dir.
+    if parts and parts[0] in ("-c", "--cmd"):
+        parts = parts[1:]
+    if not parts:
+        return None
+    return " ".join(parts)
 
 
 async def cmd_step_shell(out_dir: Path, command: str) -> int:
     apply_no_proxy_env()
-    info = load_sandbox_info(out_dir)
-    async with _connect_from_info(info) as sb:
-        result = await sb.shell.run(command)
+    out_dir = out_dir.resolve()
+    artifact = out_dir / LAST_SHELL_JSON
+    try:
+        info = load_sandbox_info(out_dir)
+        async with _connect_from_info(info) as sb:
+            result = await sb.shell.run(command)
+    except Exception as exc:
+        payload = {
+            "ok": False,
+            "returncode": 1,
+            "stdout": "",
+            "stderr": str(exc),
+            "command": command,
+            "artifact": str(artifact),
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+        _emit(payload, file=artifact)
+        print(f"sandbox_ctl shell: {payload['error']}", file=sys.stderr, flush=True)
+        return 1
+    stdout = result.stdout or ""
+    stderr = result.stderr or ""
     payload = {
         "ok": result.success,
         "returncode": result.returncode,
-        "stdout": result.stdout or "",
-        "stderr": result.stderr or "",
+        "stdout": stdout,
+        "stderr": stderr,
+        "command": command,
+        "artifact": str(artifact),
     }
-    print(json.dumps(payload, ensure_ascii=False))
-    if result.stdout:
-        print(result.stdout, end="" if result.stdout.endswith("\n") else "\n")
-    if result.stderr:
-        print(result.stderr, file=sys.stderr, end="" if result.stderr.endswith("\n") else "\n")
+    _emit(payload, file=artifact)
+    # Human-readable tail on stderr so Bash-tool users still see something if stdout is sparse.
+    print(
+        f"sandbox_ctl shell: ok={result.success} rc={result.returncode} "
+        f"stdout_bytes={len(stdout)} stderr_bytes={len(stderr)}",
+        file=sys.stderr,
+        flush=True,
+    )
+    if stdout:
+        sys.stderr.write(stdout if stdout.endswith("\n") else stdout + "\n")
+        sys.stderr.flush()
+    if stderr:
+        sys.stderr.write(stderr if stderr.endswith("\n") else stderr + "\n")
+        sys.stderr.flush()
     return 0 if result.success else 1
 
 
@@ -242,7 +297,7 @@ async def cmd_step_click(out_dir: Path, x: int, y: int, *, button: str) -> int:
             await sb.mouse.double_click(x, y)
         else:
             await sb.mouse.click(x, y)
-    print(json.dumps({"ok": True, "action": button, "x": x, "y": y}))
+    _emit({"ok": True, "action": button, "x": x, "y": y})
     return 0
 
 
@@ -251,7 +306,7 @@ async def cmd_step_move(out_dir: Path, x: int, y: int) -> int:
     info = load_sandbox_info(out_dir)
     async with _connect_from_info(info) as sb:
         await sb.mouse.move(x, y)
-    print(json.dumps({"ok": True, "x": x, "y": y}))
+    _emit({"ok": True, "x": x, "y": y})
     return 0
 
 
@@ -260,7 +315,7 @@ async def cmd_step_type(out_dir: Path, text: str) -> int:
     info = load_sandbox_info(out_dir)
     async with _connect_from_info(info) as sb:
         await sb.keyboard.type(text)
-    print(json.dumps({"ok": True, "chars": len(text)}))
+    _emit({"ok": True, "chars": len(text)})
     return 0
 
 
@@ -286,7 +341,7 @@ async def cmd_step_key(out_dir: Path, keys: str) -> int:
     key_list = _normalize_keys(keys)
     async with _connect_from_info(info) as sb:
         await sb.keyboard.keypress(key_list)
-    print(json.dumps({"ok": True, "keys": keys}))
+    _emit({"ok": True, "keys": keys})
     return 0
 
 
@@ -297,7 +352,7 @@ async def cmd_step_scroll(
     info = load_sandbox_info(out_dir)
     async with _connect_from_info(info) as sb:
         await sb.mouse.scroll(x, y, scroll_x, scroll_y)
-    print(json.dumps({"ok": True, "x": x, "y": y, "scroll_x": scroll_x, "scroll_y": scroll_y}))
+    _emit({"ok": True, "x": x, "y": y, "scroll_x": scroll_x, "scroll_y": scroll_y})
     return 0
 
 
@@ -306,7 +361,7 @@ async def cmd_step_screen_size(out_dir: Path) -> int:
     info = load_sandbox_info(out_dir)
     async with _connect_from_info(info) as sb:
         width, height = await sb.screen.size()
-    print(json.dumps({"ok": True, "width": width, "height": height}))
+    _emit({"ok": True, "width": width, "height": height})
     return 0
 
 
@@ -344,9 +399,24 @@ def _build_parser() -> argparse.ArgumentParser:
     shot.add_argument("out_dir", type=Path)
     shot.add_argument("--out", type=Path, required=True)
 
-    shell = step_sub.add_parser("shell", help="Run one shell command in sandbox")
+    shell = step_sub.add_parser(
+        "shell",
+        help="Run one shell command in sandbox (prefer -c)",
+    )
     shell.add_argument("out_dir", type=Path)
-    shell.add_argument("command", nargs=argparse.REMAINDER, help="Command after --")
+    shell.add_argument(
+        "-c",
+        "--cmd",
+        dest="shell_cmd",
+        metavar="CMD",
+        help="Shell command string (required unless legacy args after --)",
+    )
+    shell.add_argument(
+        "shell_argv",
+        nargs=argparse.REMAINDER,
+        metavar="[-- CMD ...]",
+        help="Legacy: command tokens after --",
+    )
 
     click_p = step_sub.add_parser("click", help="Click at x y")
     click_p.add_argument("out_dir", type=Path)
@@ -393,13 +463,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.step_cmd == "screenshot":
             return asyncio.run(cmd_step_screenshot(args.out_dir, args.out))
         if args.step_cmd == "shell":
-            cmd_parts = args.command
-            if cmd_parts and cmd_parts[0] == "--":
-                cmd_parts = cmd_parts[1:]
-            if not cmd_parts:
-                print("error: shell requires a command (use -- before command)", file=sys.stderr)
+            command = _resolve_shell_command(
+                getattr(args, "shell_cmd", None),
+                getattr(args, "shell_argv", None) or [],
+            )
+            if not command:
+                print(
+                    "error: shell requires -c '...' or arguments after --",
+                    file=sys.stderr,
+                )
                 return 1
-            return asyncio.run(cmd_step_shell(args.out_dir, " ".join(cmd_parts)))
+            return asyncio.run(cmd_step_shell(args.out_dir, command))
         if args.step_cmd == "click":
             return asyncio.run(
                 cmd_step_click(args.out_dir, args.x, args.y, button=args.button)
