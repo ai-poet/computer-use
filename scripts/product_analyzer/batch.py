@@ -156,6 +156,7 @@ def _run_one(
     env.update(
         {
             "ANALYZER_OUTPUT_DIR": str(out_dir),
+            "ANALYZER_PRODUCT_URL": url,
             "ANALYZER_BATCH_PARALLEL": "1",
             "ANALYZER_PYTHON": sys.executable,
             "ANALYZER_SANDBOX_WARNINGS": json.dumps(

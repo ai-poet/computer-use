@@ -99,7 +99,39 @@ def _connect_from_info(info: dict[str, Any]) -> Any:
     return Sandbox.connect(name, local=local, api_key=api_key)
 
 
-async def cmd_bootstrap(out_dir: Path, *, open_browser: bool) -> int:
+async def _launch_browser_once(out_dir: Path) -> int:
+    """One-time shell helper to start Chromium; navigation after this is mouse/keyboard."""
+    return await cmd_step_shell(
+        out_dir,
+        "chromium --no-sandbox --new-window about:blank >/dev/null 2>&1 & "
+        "sleep 2 || firefox about:blank >/dev/null 2>&1 & sleep 2 || true",
+    )
+
+
+async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> int:
+    """Open URL in sandbox browser using keyboard focus + type (mouse-first navigation)."""
+    if launch:
+        await _launch_browser_once(out_dir)
+        await asyncio.sleep(1.0)
+    # Focus omnibox then type URL (works in Chromium/Firefox on XFCE).
+    await cmd_step_key(out_dir, "ctrl+l")
+    await asyncio.sleep(0.4)
+    await cmd_step_key(out_dir, "ctrl+a")
+    await asyncio.sleep(0.1)
+    await cmd_step_type(out_dir, url)
+    await asyncio.sleep(0.2)
+    await cmd_step_key(out_dir, "enter")
+    await asyncio.sleep(2.0)
+    _emit({"ok": True, "action": "open-url", "url": url})
+    return 0
+
+
+async def cmd_bootstrap(
+    out_dir: Path,
+    *,
+    open_browser: bool,
+    url: str | None = None,
+) -> int:
     apply_no_proxy_env()
     out_dir = out_dir.resolve()
     if sandbox_json_path(out_dir).is_file():
@@ -157,11 +189,10 @@ async def cmd_bootstrap(out_dir: Path, *, open_browser: bool) -> int:
     _emit({"ok": True, "sandbox": info})
 
     if open_browser:
-        return await cmd_step_shell(
-            out_dir,
-            "chromium --no-sandbox https://example.com/ >/dev/null 2>&1 & sleep 2 || "
-            "firefox https://example.com/ >/dev/null 2>&1 & sleep 2 || true",
-        )
+        target = (url or os.environ.get("ANALYZER_PRODUCT_URL") or "").strip()
+        if target:
+            return await cmd_step_open_url(out_dir, target, launch=True)
+        return await _launch_browser_once(out_dir)
     return 0
 
 
@@ -382,7 +413,12 @@ def _build_parser() -> argparse.ArgumentParser:
     boot.add_argument(
         "--open-browser",
         action="store_true",
-        help="After bootstrap, try to start a browser in the sandbox",
+        help="After bootstrap, launch browser (use with --url for mouse-first navigation)",
+    )
+    boot.add_argument(
+        "--url",
+        default=None,
+        help="Product homepage URL (opens via step open-url / Ctrl+L, not wget)",
     )
 
     sub.add_parser("teardown", help="Delete sandbox and remove sandbox.json").add_argument(
@@ -448,13 +484,31 @@ def _build_parser() -> argparse.ArgumentParser:
         "out_dir", type=Path
     )
 
+    open_url = step_sub.add_parser(
+        "open-url",
+        help="Launch browser (once) and open URL via keyboard (mouse-first)",
+    )
+    open_url.add_argument("out_dir", type=Path)
+    open_url.add_argument("url")
+    open_url.add_argument(
+        "--no-launch",
+        action="store_true",
+        help="Skip chromium launch (browser already running)",
+    )
+
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     if args.command == "bootstrap":
-        return asyncio.run(cmd_bootstrap(args.out_dir, open_browser=args.open_browser))
+        return asyncio.run(
+            cmd_bootstrap(
+                args.out_dir,
+                open_browser=args.open_browser,
+                url=getattr(args, "url", None),
+            )
+        )
     if args.command == "teardown":
         return asyncio.run(cmd_teardown(args.out_dir))
     if args.command == "status":
@@ -496,6 +550,14 @@ def main(argv: list[str] | None = None) -> int:
             )
         if args.step_cmd == "screen-size":
             return asyncio.run(cmd_step_screen_size(args.out_dir))
+        if args.step_cmd == "open-url":
+            return asyncio.run(
+                cmd_step_open_url(
+                    args.out_dir,
+                    args.url,
+                    launch=not args.no_launch,
+                )
+            )
     return 1
 
 

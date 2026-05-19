@@ -125,13 +125,15 @@ def _runtime_block(
 
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
     local_ctl = (
-        "- **本地控制**:`python scripts/sandbox_ctl.py bootstrap <output_dir>` 后逐步 "
-        "`step screenshot|shell -c '...'|click|type|key`(shell 结果见 `.sandbox_ctl_last_shell.json`),"
-        "结束 `teardown`;用 `$ANALYZER_PYTHON` 若已注入"
+        "- **本地控制(鼠标优先)**:"
+        "`bootstrap <out_dir> --open-browser --url <官网>` → "
+        "循环 `step screenshot` / `click` / `scroll` / `type` / `key`;"
+        "`step shell` 仅用于 wget 安装包或 dpkg,禁止 curl 抓官网;"
+        "结束 `teardown`"
         if runtime == "sandbox-local"
         else (
-            "- **云端控制**:用注入的 Cua MCP(`computer_screenshot`/`computer_click`/…);"
-            "截图须落到 screenshots/;禁止 host GUI"
+            "- **云端控制(鼠标优先)**:MCP `computer_screenshot`/`computer_click`/`computer_scroll`/…;"
+            "少用 `computer_shell`;禁止 host GUI"
         )
     )
     return f"""- runtime:{runtime}
