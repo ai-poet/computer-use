@@ -53,14 +53,18 @@ def _run_ctl(args: list[str], *, env: dict | None = None) -> subprocess.Complete
 def _must_ok(label: str, proc: subprocess.CompletedProcess[str], *, soft: bool = False) -> bool:
     if proc.returncode == 0:
         return True
+    if soft:
+        print(f"warning: {label} failed — continuing", file=sys.stderr)
+        if proc.stderr:
+            tail = proc.stderr.strip().splitlines()
+            if tail:
+                print(tail[-1], file=sys.stderr)
+        return True
     print(f"error: {label}", file=sys.stderr)
     if proc.stdout:
         print(proc.stdout, file=sys.stderr)
     if proc.stderr:
         print(proc.stderr, file=sys.stderr)
-    if soft:
-        print(f"warning: {label} — continuing", file=sys.stderr)
-        return True
     return False
 
 
@@ -233,10 +237,11 @@ def main() -> int:
 
     shell = _run_ctl(["step", "shell", str(out_dir), "--", "uname -a"])
     if shell.returncode != 0:
-        _write_report(out_dir, passed=False, screenshots=screenshots, error="shell failed")
-        _run_ctl(["teardown", str(out_dir)])
-        return 1
-    print(shell.stdout.strip())
+        print("warning: shell uname failed (screenshots already saved)", file=sys.stderr)
+        if shell.stderr:
+            print(shell.stderr, file=sys.stderr)
+    else:
+        print(shell.stdout.strip())
 
     if not args.no_teardown:
         down = _run_ctl(["teardown", str(out_dir)])

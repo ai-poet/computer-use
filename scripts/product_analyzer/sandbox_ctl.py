@@ -264,12 +264,28 @@ async def cmd_step_type(out_dir: Path, text: str) -> int:
     return 0
 
 
+_KEY_ALIASES: dict[str, str] = {
+    "escape": "Escape",
+    "esc": "Escape",
+    "enter": "Return",
+    "return": "Return",
+}
+
+
+def _normalize_keys(keys: str) -> list[str]:
+    parts = [k.strip() for k in keys.split("+") if k.strip()]
+    if len(parts) > 1:
+        return [_KEY_ALIASES.get(p.lower(), p) for p in parts]
+    single = parts[0] if parts else keys
+    return [_KEY_ALIASES.get(single.lower(), single)]
+
+
 async def cmd_step_key(out_dir: Path, keys: str) -> int:
     apply_no_proxy_env()
     info = load_sandbox_info(out_dir)
-    key_list = [k.strip() for k in keys.split("+") if k.strip()]
+    key_list = _normalize_keys(keys)
     async with _connect_from_info(info) as sb:
-        await sb.keyboard.keypress(key_list if len(key_list) > 1 else keys)
+        await sb.keyboard.keypress(key_list)
     print(json.dumps({"ok": True, "keys": keys}))
     return 0
 
