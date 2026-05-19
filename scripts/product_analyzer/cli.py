@@ -15,10 +15,16 @@ from .config import BOLD, DIM, RESET
 from .preflight import (
     check_local_sandbox_prereqs,
     ensure_claude_cli,
+    ensure_cua_api_key,
     ensure_cua_driver,
     ensure_cua_sdk,
 )
 from .prompts import build_prompt, build_resume_prompt
+from .sandbox_runtime import (
+    build_sandbox_context,
+    resolve_api_key,
+    resolve_sandbox_mode,
+)
 from .tasks import (
     pick_resume_target,
     post_check,
@@ -52,6 +58,98 @@ def collect_inputs(args: argparse.Namespace) -> tuple[str, str, str | None]:
         dl = args.download_url.strip() or None
 
     return product_name, url, dl
+
+
+def _prompt_api_key_if_needed(mode: str, api_key: str | None) -> str | None:
+    if mode != "cloud":
+        return None
+    if api_key:
+        return api_key
+    from os import environ
+
+    env_key = environ.get("CUA_API_KEY", "").strip()
+    if env_key:
+        return env_key
+    key = prompt_str(
+        "CUA API Key(也可事先 export CUA_API_KEY): ",
+        validate=lambda s: len(s.strip()) > 0,
+    )
+    return key.strip()
+
+
+def prepare_batch_context(args: argparse.Namespace):
+    """Resolve sandbox mode, preflight, and return (SandboxContext, warnings)."""
+    interactive = sys.stdin.isatty() and args.sandbox is None
+    api_key = resolve_api_key(args.cua_api_key)
+    mode = resolve_sandbox_mode(
+        cli_sandbox=args.sandbox,
+        api_key=api_key,
+        interactive=interactive,
+    )
+    if mode == "cloud":
+        api_key = ensure_cua_api_key(api_key)
+        log(f"批量模式:云端 Cua sandbox (image={args.sandbox_image})")
+        warnings: list[str] = []
+    else:
+        api_key = None
+        log(f"批量模式:本地 Cua sandbox (image={args.sandbox_image})")
+        warnings = check_local_sandbox_prereqs(args.sandbox_image)
+        for warning in warnings:
+            err(f"[sandbox preflight] {warning}")
+
+    ctx = build_sandbox_context(
+        args.sandbox_image,
+        mode=mode,
+        android_enabled=True,
+        api_key=api_key,
+    )
+    return ctx, warnings
+
+
+def collect_batch_args() -> argparse.Namespace:
+    """Interactive prompts for menu option 3 (batch)."""
+    queue_raw = prompt_str(
+        "队列文件路径(.csv 或 .json): ",
+        validate=lambda s: len(s.strip()) > 0,
+    )
+    queue_path = Path(queue_raw.strip()).expanduser()
+    if not queue_path.exists():
+        raise FileNotFoundError(queue_path)
+    if queue_path.suffix.lower() not in (".csv", ".json"):
+        raise ValueError("队列文件必须是 .csv 或 .json")
+
+    workers_raw = prompt_str(
+        "最大并发数 [默认 2]: ",
+        validate=lambda s: s == "" or s.isdigit(),
+        allow_empty=True,
+    )
+    max_workers = int(workers_raw) if workers_raw.strip() else 2
+
+    image_raw = prompt_str(
+        "Sandbox 镜像 [auto/linux/macos/windows, 默认 auto]: ",
+        validate=lambda s: s in ("", "auto", "linux", "macos", "windows"),
+        allow_empty=True,
+    )
+    sandbox_image = image_raw.strip() or "auto"
+
+    api_key = resolve_api_key(None)
+    mode = resolve_sandbox_mode(cli_sandbox=None, api_key=api_key, interactive=True)
+    if mode == "cloud":
+        api_key = _prompt_api_key_if_needed("cloud", api_key)
+        if api_key:
+            ensure_cua_api_key(api_key)
+
+    return argparse.Namespace(
+        batch=queue_path,
+        max_workers=max_workers,
+        sandbox_image=sandbox_image,
+        sandbox="cloud" if mode == "cloud" else "local",
+        cua_api_key=api_key,
+        product_name=None,
+        url=None,
+        download_url=None,
+        resume=False,
+    )
 
 
 def cmd_new(args: argparse.Namespace) -> int:
@@ -126,19 +224,17 @@ def cmd_resume() -> int:
 
 
 def cmd_batch(args: argparse.Namespace) -> int:
-    """Run a CSV/JSON queue with one local sandbox contract per product."""
+    """Run a CSV/JSON queue with one sandbox (local or cloud) per product."""
     from .batch import run_batch
 
     assert args.batch is not None
-    warnings = check_local_sandbox_prereqs(args.sandbox_image)
-    for warning in warnings:
-        err(f"[sandbox preflight] {warning}")
+    sandbox_ctx, warnings = prepare_batch_context(args)
 
     try:
         result = run_batch(
             args.batch,
             args.max_workers,
-            sandbox_image=args.sandbox_image,
+            sandbox_ctx=sandbox_ctx,
             sandbox_warnings=warnings,
         )
     except KeyboardInterrupt:
@@ -150,8 +246,8 @@ def cmd_batch(args: argparse.Namespace) -> int:
         status = "OK" if row["rc"] == 0 else f"FAIL rc={row['rc']}"
         log(
             f"  [{status}] {row['product']} "
-            f"sandbox={row.get('sandbox_image')} out={row.get('out_dir')} "
-            f"log={row.get('log_file')}"
+            f"sandbox={row.get('sandbox_mode')}/{row.get('sandbox_image')} "
+            f"out={row.get('out_dir')} log={row.get('log_file')}"
         )
         if row.get("error"):
             err(f"    error: {row['error']}")
@@ -162,7 +258,7 @@ def pick_action(args: argparse.Namespace) -> str:
     """Decide which subcommand to run.
 
     - Any positional arg given (orchestrator path) → 'new', skip the menu
-    - Otherwise show the new/resume picker
+    - Otherwise show the new/resume/batch picker
     - If stdin isn't a tty (CI / pipe) and no args → default to 'new' so
       the existing input() prompts kick in
     """
@@ -174,16 +270,19 @@ def pick_action(args: argparse.Namespace) -> str:
     print(f"\n{BOLD}产品分析自动化{RESET}")
     print("  1. 新任务(start a new run)")
     print("  2. 恢复历史任务(resume from reports/)")
+    print("  3. 批量分析(batch,本地/云端 sandbox)")
     print("  q. 退出")
     while True:
         try:
-            choice = input("选择 [1/2/q,默认 1]: ").strip().lower()
+            choice = input("选择 [1/2/3/q,默认 1]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             return "quit"
         if choice in ("", "1", "n", "new"):
             return "new"
         if choice in ("2", "r", "resume"):
             return "resume"
+        if choice in ("3", "b", "batch"):
+            return "batch"
         if choice in ("q", "quit", "exit"):
             return "quit"
         print("  无效输入,请重试")
@@ -201,7 +300,10 @@ def _build_parser() -> argparse.ArgumentParser:
             '"https://productivekitty.masterwordai.com"\n'
             "  全参:    python3 scripts/analyze_product.py NAME URL DOWNLOAD_URL\n"
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
-            "  批量:    python3 scripts/analyze_product.py --batch queue.json --max-workers 2\n"
+            "  批量本地: python3 scripts/analyze_product.py --batch queue.json "
+            "--sandbox local --sandbox-image linux\n"
+            "  批量云端: export CUA_API_KEY=sk-... && python3 scripts/analyze_product.py "
+            "--batch queue.json\n"
         ),
     )
     parser.add_argument(
@@ -224,7 +326,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--batch",
         type=Path,
         default=None,
-        help="CSV/JSON 队列路径。启用后每个产品使用独立本地 Cua sandbox。",
+        help="CSV/JSON 队列路径。启用后每个产品使用独立 Cua sandbox(本地或云端)。",
     )
     parser.add_argument(
         "--max-workers",
@@ -237,6 +339,17 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("auto", "linux", "macos", "windows"),
         default="auto",
         help="批量模式桌面 sandbox 镜像。默认 auto。",
+    )
+    parser.add_argument(
+        "--sandbox",
+        choices=("local", "cloud"),
+        default=None,
+        help="批量 sandbox 运行环境:local=本机 Docker/Lume;cloud=Cua Cloud。",
+    )
+    parser.add_argument(
+        "--cua-api-key",
+        default=None,
+        help="Cua Cloud API Key。也可设环境变量 CUA_API_KEY(有 Key 时默认走云端)。",
     )
     return parser
 
@@ -267,4 +380,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if action == "resume":
         return cmd_resume()
+    if action == "batch":
+        log("预检:Cua Sandbox SDK")
+        ensure_cua_sdk()
+        try:
+            batch_args = collect_batch_args()
+        except (FileNotFoundError, ValueError) as exc:
+            err(str(exc))
+            return 1
+        except KeyboardInterrupt:
+            err("用户中断")
+            return 130
+        return cmd_batch(batch_args)
     return cmd_new(args)

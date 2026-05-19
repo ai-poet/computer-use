@@ -36,6 +36,10 @@ def build_prompt(
         android_enabled=android_enabled,
         sandbox_warnings=sandbox_warnings or [],
     )
+    sandbox_rule = (
+        "4. sandbox-local / sandbox-cloud runtime 下所有 shell/screenshot/click/type "
+        "操作都必须在 Cua sandbox 内完成,禁止触碰 host GUI"
+    )
     return f"""请使用 product-analyzer skill 完成产品分析。
 
 **输入参数**(请把这些直接写进 metadata.json,不要修改值):
@@ -51,7 +55,7 @@ def build_prompt(
 1. 严格遵循 .claude/skills/product-analyzer/SKILL.md 中的 canonical loop(7 步固定顺序)
 2. 全程用 TodoWrite 维护进度,7 个 todos,每步开始前 in_progress、完成后 completed
 3. host runtime 下桌面端驱动一律走 cua-driver,严守 cua-driver SKILL 的 no-foreground 契约
-4. sandbox-local runtime 下所有 shell/screenshot/click/type 操作都必须在本地 Cua sandbox 内完成,禁止触碰 host GUI
+{sandbox_rule}
 5. 结束前在 metadata.json 里补齐 finished_at / mode / screenshots[] / warnings[]
 
 现在开始执行。
@@ -71,6 +75,29 @@ def build_resume_prompt(out_dir: Path, supplement: str) -> str:
 """
 
 
+def _sandbox_sdk_example(*, local: bool) -> str:
+    local_flag = "True" if local else "False"
+    android_local = "True" if local else "False"
+    return f"""```python
+import asyncio
+import os
+from cua import Sandbox, Image
+
+async def main():
+    # Linux 桌面优先用 Docker/XFCE 容器镜像,不要用默认 kind=vm 的 QEMU 路径
+    async with Sandbox.ephemeral(Image.linux(kind="container"), local={local_flag}) as sb:
+        result = await sb.shell.run("uname -s")
+        png = await sb.screenshot()
+
+    async with Sandbox.ephemeral(Image.android(), local={android_local}) as android:
+        result = await android.shell.run("getprop ro.build.version.release")
+        png = await android.screenshot()
+
+asyncio.run(main())
+```
+云端模式:环境变量 `CUA_API_KEY` 已由 orchestrator 注入;也可 `import cua; cua.configure(api_key=os.environ["CUA_API_KEY"])`。"""
+
+
 def _runtime_block(
     runtime: str,
     *,
@@ -79,35 +106,23 @@ def _runtime_block(
     android_enabled: bool,
     sandbox_warnings: list[str],
 ) -> str:
-    if runtime != "sandbox-local":
+    if runtime not in ("sandbox-local", "sandbox-cloud"):
         return "- runtime 说明:host 模式,使用当前主机和 cua-driver。"
 
+    label = "本地" if sandbox_local else "云端"
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
+    example = _sandbox_sdk_example(local=sandbox_local)
     return f"""- sandbox.image:{sandbox_image or "auto"}
 - sandbox.local:{str(sandbox_local).lower()}
 - android.enabled:{str(android_enabled).lower()}
-- 本地 sandbox 预检 warnings:
+- {label} sandbox 预检 warnings:
 {warning_lines}
 
-**sandbox-local 运行约束**:
-- 你必须在本任务内用 Cua Sandbox SDK 创建并管理独立本地沙箱,不要操作 host GUI。
+**{runtime} 运行约束**:
+- 你必须在本任务内用 Cua Sandbox SDK 创建并管理独立{label}沙箱,不要操作 host GUI。
 - 默认使用 ephemeral sandbox;任务结束前让 context manager 自动清理。
-- `sandbox.image=auto` 时,优先按找到的桌面安装包选择 `Image.macos()` / `Image.windows()` / `Image.linux()`,找不到桌面包则用 `Image.linux()` 做网页分析。
-- 若检测到官方 APK 且 `android.enabled=true`,额外创建 `Sandbox.ephemeral(Image.android(), local=True)` 做 Android 体验。
+- `sandbox.image=auto` 时,优先按找到的桌面安装包选择 `Image.macos()` / `Image.windows()` / `Image.linux(kind="container")`,找不到桌面包则用 `Image.linux(kind="container")` 做网页分析。
+- 若检测到官方 APK 且 `android.enabled=true`,额外创建 `Sandbox.ephemeral(Image.android(), local={str(sandbox_local).lower()})` 做 Android 体验。
 - 参考代码:
-```python
-import asyncio
-from cua import Sandbox, Image
-
-async def main():
-    async with Sandbox.ephemeral(Image.linux(), local=True) as sb:
-        result = await sb.shell.run("uname -s")
-        png = await sb.screenshot()
-
-    async with Sandbox.ephemeral(Image.android(), local=True) as android:
-        result = await android.shell.run("getprop ro.build.version.release")
-        png = await android.screenshot()
-
-asyncio.run(main())
-```
+{example}
 """

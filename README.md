@@ -125,9 +125,16 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 
 任何缺失的位置参数会回退到 `input()` 询问。空字符串视为"未给"。
 
-### 批量并发(本地 sandbox)
+### 批量并发(本地 / 云端 sandbox)
 
-批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的本地 sandbox,在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
+批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的 sandbox(**本地** Docker/Lume 或 **Cua Cloud**),在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
+
+Sandbox 环境说明见 [Cua Set Up a Sandbox](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox):
+
+- **本地**(`--sandbox local`):Linux 推荐 Docker + `trycua/cua-xfce`;需本机 Docker/Lume/QEMU
+- **云端**(`--sandbox cloud` 或设置 `CUA_API_KEY`):由 Cua Cloud 托管,无需本机 Docker
+
+判定规则:显式 `--sandbox local` 强制本地;显式 `--sandbox cloud` 强制云端(需 API Key);未指定时若存在 `CUA_API_KEY` 则默认云端,否则交互选择。零参数菜单选 `3` 可进入批量分析向导。
 
 先确认本地依赖:
 
@@ -153,7 +160,7 @@ python -m tests.sandbox.linux_smoke --timeout 180
 
 - Python / `cua` 包版本检查
 - Docker daemon 和正在运行的 Cua 容器摘要
-- `Sandbox.ephemeral(Image.linux(), local=True)` 创建
+- `Sandbox.ephemeral(Image.linux(kind="container"), local=True)` 创建
 - `sb.shell.run(...)`
 - `sb.mouse.move(...)` / `sb.mouse.click(...)`
 - `sb.keyboard.press(...)`
@@ -177,13 +184,27 @@ python -m tests.sandbox.linux_smoke --timeout 180
 ]
 ```
 
-跑两个并发 worker:
+跑两个并发 worker(本地 Linux sandbox):
 
 ```bash
 python scripts/analyze_product.py \
   --batch queue.test.json \
   --max-workers 2 \
+  --sandbox local \
   --sandbox-image linux
+```
+
+云端 sandbox(需先在 [cua.ai](https://cua.ai/signin) 创建 API Key):
+
+```bash
+export CUA_API_KEY=sk-...
+python scripts/analyze_product.py --batch queue.test.json --max-workers 2
+
+# 或显式指定
+python scripts/analyze_product.py \
+  --batch queue.test.json \
+  --sandbox cloud \
+  --cua-api-key sk-...
 ```
 
 运行后每个产品都会写入独立目录:

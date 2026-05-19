@@ -68,6 +68,7 @@ def write_metadata_seed(
     runtime: str = "host",
     sandbox_image: str | None = None,
     sandbox_local: bool = True,
+    sandbox_mode: str | None = None,
     android_enabled: bool = False,
 ) -> dict:
     host_os, host_arch = detect_host()
@@ -81,6 +82,7 @@ def write_metadata_seed(
         "sandbox": {
             "image": sandbox_image,
             "local": sandbox_local,
+            "mode": sandbox_mode or ("local" if sandbox_local else "cloud"),
             "name": None,
         },
         "android": {

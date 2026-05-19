@@ -6,10 +6,17 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
+
+# Match batch local sandbox: bypass system HTTP proxy for localhost Docker ports.
+_NO_PROXY = "127.0.0.1,localhost"
+for _key in ("NO_PROXY", "no_proxy"):
+    _existing = os.environ.get(_key, "").strip()
+    os.environ[_key] = f"{_NO_PROXY},{_existing}" if _existing else _NO_PROXY
 
 from ._cli import (
     check_python_version,
@@ -19,7 +26,6 @@ from ._cli import (
     print_runtime_info,
     run_step,
     section,
-    warn,
 )
 from .docker_diag import dump_cua_diagnostics, print_docker_summary
 
@@ -81,52 +87,51 @@ async def smoke_linux(args: argparse.Namespace) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     screenshot_path = output_dir / "linux_sandbox_screenshot.png"
 
-    section("Linux sandbox")
-    cm = Sandbox.ephemeral(Image.linux(), local=True)
-    sb = None
+    section("Linux sandbox (Docker/XFCE)")
     try:
-        sb = await run_step("create sandbox", cm.__aenter__(), args.timeout)
-        record(report, "create_sandbox", True)
+        async with Sandbox.ephemeral(Image.linux(kind="container"), local=True) as sb:
+            log("sandbox ready")
+            record(report, "create_sandbox", True)
 
-        shell = await run_step(
-            "shell.run(uname/pwd/whoami)",
-            sb.shell.run("uname -a && pwd && whoami && python3 --version"),
-            args.timeout,
-        )
-        print(f"shell.returncode={shell.returncode}", flush=True)
-        print("shell.stdout:", flush=True)
-        print(shell.stdout, flush=True)
-        if shell.stderr:
-            print("shell.stderr:", file=sys.stderr, flush=True)
-            print(shell.stderr, file=sys.stderr, flush=True)
-        shell_ok = shell.returncode == 0 and bool((shell.stdout or "").strip())
-        record(report, "shell", shell_ok, f"returncode={shell.returncode}")
-        if not shell_ok:
-            fail("shell command failed")
-            report.error = "shell failed"
-            dump_cua_diagnostics(args.log_tail)
-            _write_report(args.output_dir, report)
-            return 1
+            shell = await run_step(
+                "shell.run(uname/pwd/whoami)",
+                sb.shell.run("uname -a && pwd && whoami && python3 --version"),
+                args.timeout,
+            )
+            print(f"shell.returncode={shell.returncode}", flush=True)
+            print("shell.stdout:", flush=True)
+            print(shell.stdout, flush=True)
+            if shell.stderr:
+                print("shell.stderr:", file=sys.stderr, flush=True)
+                print(shell.stderr, file=sys.stderr, flush=True)
+            shell_ok = shell.returncode == 0 and bool((shell.stdout or "").strip())
+            record(report, "shell", shell_ok, f"returncode={shell.returncode}")
+            if not shell_ok:
+                fail("shell command failed")
+                report.error = "shell failed"
+                dump_cua_diagnostics(args.log_tail)
+                _write_report(args.output_dir, report)
+                return 1
 
-        await run_step("mouse.move", sb.mouse.move(100, 100), args.timeout)
-        record(report, "mouse_move", True)
-        await run_step("mouse.click", sb.mouse.click(100, 100), args.timeout)
-        record(report, "mouse_click", True)
-        await run_step("keyboard.press", sb.keyboard.press("Return"), args.timeout)
-        record(report, "keyboard_press", True)
+            await run_step("mouse.move", sb.mouse.move(100, 100), args.timeout)
+            record(report, "mouse_move", True)
+            await run_step("mouse.click", sb.mouse.click(100, 100), args.timeout)
+            record(report, "mouse_click", True)
+            await run_step("keyboard.press", sb.keyboard.press("Return"), args.timeout)
+            record(report, "keyboard_press", True)
 
-        png = await run_step("screenshot", sb.screenshot(), args.timeout)
-        screenshot_path.write_bytes(png)
-        report.screenshot = str(screenshot_path)
-        log(f"screenshot saved: {screenshot_path} ({len(png)} bytes)")
-        shot_ok = len(png) >= 1000
-        record(report, "screenshot", shot_ok, f"bytes={len(png)}")
-        if not shot_ok:
-            fail("screenshot is unexpectedly small")
-            report.error = "screenshot too small"
-            dump_cua_diagnostics(args.log_tail)
-            _write_report(args.output_dir, report)
-            return 1
+            png = await run_step("screenshot", sb.screenshot(), args.timeout)
+            screenshot_path.write_bytes(png)
+            report.screenshot = str(screenshot_path)
+            log(f"screenshot saved: {screenshot_path} ({len(png)} bytes)")
+            shot_ok = len(png) >= 1000
+            record(report, "screenshot", shot_ok, f"bytes={len(png)}")
+            if not shot_ok:
+                fail("screenshot is unexpectedly small")
+                report.error = "screenshot too small"
+                dump_cua_diagnostics(args.log_tail)
+                _write_report(args.output_dir, report)
+                return 1
 
         report.passed = True
         log("Linux sandbox smoke test passed")
@@ -146,13 +151,6 @@ async def smoke_linux(args: argparse.Namespace) -> int:
         dump_cua_diagnostics(args.log_tail)
         _write_report(args.output_dir, report)
         return 1
-    finally:
-        if sb is not None:
-            try:
-                await asyncio.wait_for(cm.__aexit__(None, None, None), timeout=30)
-                log("sandbox cleaned up")
-            except Exception as exc:
-                warn(f"sandbox cleanup failed: {type(exc).__name__}: {exc}")
 
 
 def _write_report(output_dir: Path, report: SmokeReport) -> None:

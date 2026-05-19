@@ -1,4 +1,4 @@
-"""Batch mode: run multiple product analyses in local Cua sandboxes."""
+"""Batch mode: run multiple product analyses in Cua sandboxes (local or cloud)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from typing import Any
 
 from .claude_driver import run_claude
 from .prompts import build_prompt
-from .sandbox_runtime import SandboxContext, build_sandbox_context
+from .sandbox_runtime import SandboxContext
 from .tasks import post_check, prepare_output_dir, write_metadata_seed
 from .ui import err, log
 
@@ -60,7 +60,7 @@ def run_batch(
     queue_path: Path,
     max_workers: int,
     *,
-    sandbox_image: str = "auto",
+    sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str] | None = None,
 ) -> BatchResult:
     """Synchronous wrapper used by CLI."""
@@ -68,7 +68,7 @@ def run_batch(
         _run_batch(
             queue_path,
             max_workers,
-            sandbox_image=sandbox_image,
+            sandbox_ctx=sandbox_ctx,
             sandbox_warnings=sandbox_warnings or [],
         )
     )
@@ -78,13 +78,12 @@ async def _run_batch(
     queue_path: Path,
     max_workers: int,
     *,
-    sandbox_image: str,
+    sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str],
 ) -> BatchResult:
     if max_workers < 1:
         raise ValueError("max_workers must be >= 1")
     rows = load_queue(queue_path)
-    sandbox_ctx = build_sandbox_context(sandbox_image, android_enabled=True)
     sem = asyncio.Semaphore(max_workers)
     tasks = [
         _run_one_with_semaphore(sem, row, index, sandbox_ctx, sandbox_warnings)
@@ -134,13 +133,14 @@ def _run_one(
         product_name,
         url,
         download_url,
-        runtime="sandbox-local",
+        runtime=sandbox_ctx.runtime,
         sandbox_image=sandbox_ctx.image,
         sandbox_local=sandbox_ctx.local,
+        sandbox_mode=sandbox_ctx.mode,
         android_enabled=sandbox_ctx.android_enabled,
     )
     log_file = out_dir / "run.log"
-    log(f"[batch:{index}] 输出目录: {out_dir}")
+    log(f"[batch:{index}] 输出目录: {out_dir} ({sandbox_ctx.mode} sandbox)")
 
     env = os.environ.copy()
     env.update(sandbox_ctx.env())
@@ -160,7 +160,7 @@ def _run_one(
         out_dir,
         meta["host_os"],
         meta["host_arch"],
-        runtime="sandbox-local",
+        runtime=sandbox_ctx.runtime,
         sandbox_image=sandbox_ctx.image,
         sandbox_local=sandbox_ctx.local,
         android_enabled=sandbox_ctx.android_enabled,
@@ -183,6 +183,7 @@ def _run_one(
         "out_dir": str(out_dir),
         "log_file": str(log_file),
         "sandbox_image": sandbox_ctx.image,
+        "sandbox_mode": sandbox_ctx.mode,
         "rc": rc,
         "error": None,
     }
@@ -199,6 +200,7 @@ def _exception_result(
         "out_dir": None,
         "log_file": None,
         "sandbox_image": sandbox_ctx.image,
+        "sandbox_mode": sandbox_ctx.mode,
         "rc": 1,
         "error": f"{type(exc).__name__}: {exc}",
     }

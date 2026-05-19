@@ -82,11 +82,11 @@ def ensure_cua_driver() -> None:
 
 
 def ensure_cua_sdk() -> None:
-    """Ensure the Cua Sandbox SDK import is available for sandbox workers."""
+    """Ensure the Cua Sandbox SDK import is available for batch sandbox workers."""
     if sys.version_info < (3, 12) or sys.version_info >= (3, 14):
         version = ".".join(str(part) for part in sys.version_info[:3])
         err(
-            "批量本地沙箱模式需要 Python 3.12 或 3.13 "
+            "批量沙箱模式需要 Python 3.12 或 3.13 "
             f"(当前 python 是 {version})。"
         )
         err("建议创建 3.12/3.13 虚拟环境后安装依赖:")
@@ -96,8 +96,21 @@ def ensure_cua_sdk() -> None:
         sys.exit(1)
     if importlib.util.find_spec("cua") is not None:
         return
-    err("未找到 `cua` Python 包。批量本地沙箱模式需要先安装 Cua Sandbox SDK:")
+    err("未找到 `cua` Python 包。批量沙箱模式需要先安装 Cua Sandbox SDK:")
     err("  python -m pip install -r requirements.txt")
+    sys.exit(1)
+
+
+def ensure_cua_api_key(api_key: str | None) -> str:
+    """Resolve CUA API key from CLI flag or CUA_API_KEY env for cloud sandbox."""
+    key = (api_key or "").strip() or os.environ.get("CUA_API_KEY", "").strip()
+    if key:
+        return key
+    err("云端 sandbox 需要 CUA API Key。")
+    err("  1. 在 https://cua.ai/signin 创建 API Key")
+    err("  2. export CUA_API_KEY=sk-...")
+    err("  3. 或传入 --cua-api-key sk-...")
+    err("文档: https://cua.ai/docs/cua/guide/get-started/set-up-sandbox")
     sys.exit(1)
 
 
