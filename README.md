@@ -139,7 +139,7 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 
 批量模式会在本机并发启动多个 `claude --print` worker。每个 worker 负责一个产品,并按 prompt/skill 要求用 Cua Sandbox SDK 创建自己的 **本地** sandbox(Docker/Lume/QEMU),在 sandbox 内操作浏览器、桌面应用或 Android emulator UI。host 上的前台应用不会被 batch worker 直接操作。
 
-每个 worker 的初始 prompt 会**明确要求:除写入 `reports/<slug>/` 产物外,全部操作系统级工作(浏览官网、curl、下载安装、点击、截图)只能在沙盒内完成**,并设置环境变量 `ANALYZER_BATCH_PARALLEL=1` 供 skill 识别。
+每个 worker 的初始 prompt 会**明确要求:除写入 `reports/<slug>/` 产物外,全部操作系统级工作(浏览官网、curl、下载安装、点击、截图)只能在沙盒内完成**,并设置环境变量 `ANALYZER_BATCH_PARALLEL=1` 供 skill 识别。同时会提醒 Claude:**在 host 上驱动 Cua SDK 必须用 Python 3.12/3.13**(推荐 `conda activate computer-use-py312`),不能用系统自带 3.9。
 
 **默认行为:本地 sandbox。** 未传 `--sandbox` 时一律走本机 Docker/Lume,即使环境里已有 `CUA_API_KEY` 也不会自动切到云端。
 

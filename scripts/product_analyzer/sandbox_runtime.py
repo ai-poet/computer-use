@@ -18,6 +18,11 @@ SANDBOX_IMAGES = {"auto", "linux", "macos", "windows"}
 LINUX_CONTAINER_IMAGE = "trycua/cua-xfce:latest"
 LINUX_DOCKER_PLATFORM = "linux/amd64"
 
+# Host-side Cua SDK requires Python 3.12/3.13 (see README conda setup).
+RECOMMENDED_CONDA_ENV = "computer-use-py312"
+PYTHON_VERSION_MIN = "3.12"
+PYTHON_VERSION_MAX_EXCLUSIVE = "3.14"
+
 _NO_PROXY_HOSTS = "127.0.0.1,localhost"
 
 
@@ -41,6 +46,9 @@ class SandboxContext:
             "ANALYZER_SANDBOX_MODE": self.mode,
             "ANALYZER_ANDROID_ENABLED": "1" if self.android_enabled else "0",
         }
+        out["ANALYZER_PYTHON_VERSION_MIN"] = PYTHON_VERSION_MIN
+        out["ANALYZER_PYTHON_VERSION_MAX"] = PYTHON_VERSION_MAX_EXCLUSIVE
+        out["ANALYZER_CONDA_ENV"] = RECOMMENDED_CONDA_ENV
         if self.local:
             out.update(_local_no_proxy_env())
             out["ANALYZER_LINUX_CONTAINER_IMAGE"] = LINUX_CONTAINER_IMAGE

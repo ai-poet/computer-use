@@ -80,6 +80,24 @@ def build_prompt(
 """
 
 
+def _sandbox_python_note() -> str:
+    from .sandbox_runtime import RECOMMENDED_CONDA_ENV
+
+    return f"""
+**Host 侧 Python 环境(驱动 Cua Sandbox SDK 必备)**:
+- 创建/连接 sandbox 的 Cua Sandbox SDK **仅支持 Python 3.12 或 3.13**;macOS 系统自带 3.9、Homebrew 3.11 等**不能** `import cua`。
+- **推荐 conda**:先 `conda activate {RECOMMENDED_CONDA_ENV}`(或自建 3.12 环境并 `pip install -r requirements.txt`),再用该环境里的 `python` 跑任何 `from cua import Sandbox` 的 asyncio 脚本。
+- 启动前自检(在 host 上、写沙盒代码前执行一次即可):
+  ```bash
+  conda activate {RECOMMENDED_CONDA_ENV}
+  python --version          # 应显示 3.12.x 或 3.13.x
+  python -c "import cua; print('cua ok')"
+  ```
+- 若必须用 Bash 调 host Python,写全路径或先 `conda activate`,**不要**裸用 `/usr/bin/python3`。
+- 沙盒**内** `sb.shell.run("python3 ...")` 用容器内 Python(处理 HTML/装包);与 host SDK 版本无关,但官网/GUI 操作仍须在沙盒内完成。
+"""
+
+
 def _batch_sandbox_banner(out_dir: Path, runtime: str) -> str:
     env_label = "本地 Docker 沙盒" if runtime == "sandbox-local" else "Cua Cloud 沙盒"
     return f"""
@@ -173,7 +191,7 @@ def _runtime_block(
 
 **{runtime} 运行约束**:
 - 你必须在本任务内用 Cua Sandbox SDK 创建并管理独立{label}沙箱;**全部操作系统级操作在沙盒内完成**,不要操作 host GUI。
-{batch_note}- 默认使用 ephemeral sandbox;任务结束前让 context manager 自动清理。
+{_sandbox_python_note()}{batch_note}- 默认使用 ephemeral sandbox;任务结束前让 context manager 自动清理。
 - `sandbox.image=auto` 时,优先按找到的桌面安装包选择 `Image.macos()` / `Image.windows()` / `Image.linux(kind="container")`,找不到桌面包则用 `Image.linux(kind="container")` 做网页分析。
 - 若检测到官方 APK 且 `android.enabled=true`,额外创建 `Sandbox.ephemeral(Image.android(), local={str(sandbox_local).lower()})` 做 Android 体验。
 - 参考代码:
