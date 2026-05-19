@@ -1,0 +1,8 @@
+{
+  "name": "analyzer-duolingo-2026-05-19",
+  "provider": "docker",
+  "api_url": "http://localhost:61985",
+  "image": "trycua/cua-xfce:latest",
+  "platform": "linux/amd64",
+  "local": true
+}
