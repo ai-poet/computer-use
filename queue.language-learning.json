@@ -8,5 +8,45 @@
     "category": "Language Learning",
     "product_name": "Babbel",
     "url": "https://www.babbel.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "Rosetta Stone",
+    "url": "https://www.rosettastone.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "Pimsleur",
+    "url": "https://www.pimsleur.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "Memrise",
+    "url": "https://www.memrise.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "Busuu",
+    "url": "https://www.busuu.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "italki",
+    "url": "https://www.italki.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "Drops",
+    "url": "https://languagedrops.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "LingoDeer",
+    "url": "https://www.lingodeer.com"
+  },
+  {
+    "category": "Language Learning",
+    "product_name": "Mondly",
+    "url": "https://www.mondly.com"
   }
 ]
