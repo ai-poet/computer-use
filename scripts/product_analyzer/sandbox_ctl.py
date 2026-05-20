@@ -10,11 +10,17 @@ import asyncio
 import json
 import os
 import re
+import atexit
+import shutil
+import signal
+import subprocess
 import sys
+import threading
 import urllib.request
 from pathlib import Path
 from typing import Any
 
+from .config import REPORTS_DIR
 from .sandbox_runtime import (
     LINUX_CONTAINER_IMAGE,
     LINUX_DOCKER_PLATFORM,
@@ -27,6 +33,13 @@ from .tasks import read_metadata, update_metadata
 SANDBOX_JSON = "sandbox.json"
 LAST_SHELL_JSON = ".sandbox_ctl_last_shell.json"
 _MIN_SCREENSHOT_BYTES = 1000
+ANALYZER_SANDBOX_PREFIX = "analyzer-"
+
+_cleanup_lock = threading.Lock()
+_cleanup_done = False
+_batch_exit_hooks_installed = False
+_prev_sigint_handler: Any = None
+_prev_sigterm_handler: Any = None
 
 
 def _emit(payload: dict, *, file: Path | None = None) -> None:
@@ -421,6 +434,218 @@ async def cmd_step_screen_size(out_dir: Path) -> int:
     return 0
 
 
+def _batch_cleanup_disabled() -> bool:
+    return os.environ.get("ANALYZER_BATCH_NO_CLEANUP", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def _collect_sandbox_names_from_reports() -> set[str]:
+    names: set[str] = set()
+    if not REPORTS_DIR.is_dir():
+        return names
+    for path in REPORTS_DIR.glob("*/sandbox.json"):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        name = (data.get("name") or "").strip()
+        if name:
+            names.add(name)
+    return names
+
+
+def _docker_cua_sandbox_container_names() -> set[str]:
+    """Container names with Cua sandbox label (running or stopped)."""
+    if not shutil.which("docker"):
+        return set()
+    proc = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "-aq",
+            "--filter",
+            "label=cua.sandbox=true",
+            "--format",
+            "{{.Names}}",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if proc.returncode != 0:
+        return set()
+    return {line.strip() for line in proc.stdout.splitlines() if line.strip()}
+
+
+def _docker_force_rm(names: set[str]) -> list[str]:
+    removed: list[str] = []
+    if not names or not shutil.which("docker"):
+        return removed
+    for name in sorted(names):
+        proc = subprocess.run(
+            ["docker", "rm", "-f", name],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if proc.returncode == 0:
+            removed.append(name)
+    return removed
+
+
+def _unlink_sandbox_json_for_name(name: str) -> None:
+    if not REPORTS_DIR.is_dir():
+        return
+    for path in REPORTS_DIR.glob("*/sandbox.json"):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if data.get("name") == name:
+            path.unlink(missing_ok=True)
+
+
+async def cmd_cleanup_all(*, prefix: str = ANALYZER_SANDBOX_PREFIX) -> int:
+    """Stop/remove local Cua Docker sandboxes (batch exit / manual cleanup)."""
+    apply_no_proxy_env()
+    from cua import Sandbox
+
+    docker_names = _docker_cua_sandbox_container_names()
+    targets: set[str] = set(docker_names)
+    targets |= _collect_sandbox_names_from_reports()
+
+    try:
+        listed = await Sandbox.list(local=True)
+        for info in listed:
+            if info.name:
+                targets.add(info.name)
+    except Exception as exc:
+        print(f"warning: Sandbox.list: {exc}", file=sys.stderr)
+
+    to_delete = set(docker_names)
+    to_delete |= {n for n in targets if n.startswith(prefix)}
+
+    deleted: list[str] = []
+    errors: list[str] = []
+    for name in sorted(to_delete):
+        try:
+            await Sandbox.delete(name, local=True)
+            deleted.append(name)
+            _unlink_sandbox_json_for_name(name)
+        except Exception as exc:
+            errors.append(f"{name}: {exc}")
+
+    docker_removed = _docker_force_rm(to_delete - set(deleted))
+    deleted.extend(n for n in docker_removed if n not in deleted)
+
+    leftover = _docker_cua_sandbox_container_names() - set(deleted)
+    if leftover:
+        docker_removed2 = _docker_force_rm(leftover)
+        deleted.extend(n for n in docker_removed2 if n not in deleted)
+
+    payload = {
+        "ok": not errors,
+        "deleted": deleted,
+        "errors": errors,
+        "count": len(deleted),
+    }
+    _emit(payload)
+    if deleted:
+        print(
+            f"sandbox_ctl cleanup: removed {len(deleted)} container(s)",
+            file=sys.stderr,
+            flush=True,
+        )
+    for err in errors:
+        print(f"sandbox_ctl cleanup: {err}", file=sys.stderr)
+    return 0 if not errors else 1
+
+
+def reset_batch_cleanup_gate() -> None:
+    """Allow a new batch run to run exit cleanup again."""
+    global _cleanup_done
+    with _cleanup_lock:
+        _cleanup_done = False
+
+
+def docker_cleanup_sync_quick() -> int:
+    """SIGINT-safe: ``docker rm -f`` Cua containers without asyncio (for signal handler)."""
+    if _batch_cleanup_disabled():
+        return 0
+    names = _docker_cua_sandbox_container_names()
+    names |= {
+        n
+        for n in _collect_sandbox_names_from_reports()
+        if n.startswith(ANALYZER_SANDBOX_PREFIX)
+    }
+    removed = _docker_force_rm(names)
+    if removed:
+        print(
+            f"sandbox_ctl: 已停止 {len(removed)} 个 Docker 沙盒容器",
+            file=sys.stderr,
+            flush=True,
+        )
+    return len(removed)
+
+
+def _batch_signal_handler(signum: int, frame: Any) -> None:
+    """First Ctrl+C: quick docker stop; then raise KeyboardInterrupt for ``finally``."""
+    try:
+        docker_cleanup_sync_quick()
+    except Exception:
+        pass
+    raise KeyboardInterrupt
+
+
+def install_batch_exit_hooks(*, local: bool) -> None:
+    """Register SIGINT/SIGTERM + atexit so forced exit still cleans Docker sandboxes."""
+    global _batch_exit_hooks_installed, _prev_sigint_handler, _prev_sigterm_handler
+    if not local or _batch_cleanup_disabled() or _batch_exit_hooks_installed:
+        return
+    _prev_sigint_handler = signal.getsignal(signal.SIGINT)
+    _prev_sigterm_handler = signal.getsignal(signal.SIGTERM)
+    signal.signal(signal.SIGINT, _batch_signal_handler)
+    signal.signal(signal.SIGTERM, _batch_signal_handler)
+    atexit.register(cleanup_all_local_sandboxes)
+    _batch_exit_hooks_installed = True
+
+
+def uninstall_batch_exit_hooks() -> None:
+    global _batch_exit_hooks_installed, _prev_sigint_handler, _prev_sigterm_handler
+    if not _batch_exit_hooks_installed:
+        return
+    if _prev_sigint_handler is not None:
+        signal.signal(signal.SIGINT, _prev_sigint_handler)
+    if _prev_sigterm_handler is not None:
+        signal.signal(signal.SIGTERM, _prev_sigterm_handler)
+    _prev_sigint_handler = None
+    _prev_sigterm_handler = None
+    _batch_exit_hooks_installed = False
+
+
+def cleanup_all_local_sandboxes(*, force: bool = False) -> None:
+    """Idempotent batch-exit hook: tear down Cua Docker sandboxes. Never raises."""
+    global _cleanup_done
+    if _batch_cleanup_disabled():
+        return
+    with _cleanup_lock:
+        if _cleanup_done and not force:
+            return
+        _cleanup_done = True
+    try:
+        asyncio.run(cmd_cleanup_all())
+    except Exception as exc:
+        print(f"sandbox_ctl cleanup: {exc}", file=sys.stderr, flush=True)
+        try:
+            docker_cleanup_sync_quick()
+        except Exception:
+            pass
+
+
 def teardown_out_dir(out_dir: Path) -> None:
     """Best-effort teardown for batch finally hook; never raises."""
     try:
@@ -448,6 +673,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("teardown", help="Delete sandbox and remove sandbox.json").add_argument(
         "out_dir", type=Path
+    )
+    sub.add_parser(
+        "cleanup-all",
+        help="Remove all local Cua Docker sandboxes (analyzer-* + label cua.sandbox=true)",
     )
     sub.add_parser("status", help="Print sandbox.json and probe /status").add_argument(
         "out_dir", type=Path
@@ -536,6 +765,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "teardown":
         return asyncio.run(cmd_teardown(args.out_dir))
+    if args.command == "cleanup-all":
+        return asyncio.run(cmd_cleanup_all())
     if args.command == "status":
         return cmd_status(args.out_dir)
     if args.command == "step":

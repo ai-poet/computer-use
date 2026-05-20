@@ -197,7 +197,7 @@ conda run -n computer-use-py312 python scripts/sandbox_ctl.py bootstrap "$OUTPUT
 
 或先 `conda activate computer-use-py312`,再 `python scripts/sandbox_ctl.py …`(勿用系统 `python3` 3.9)。
 
-**跑之前清理(可选)**:上次异常退出可能残留 Cua 容器,可先 `docker ps` 看 `cua-` / `analyzer-` 命名容器;批量结束会在 `finally` 里 **teardown**,但手工中断后建议对对应 `reports/*/sandbox.json` 执行 `python scripts/sandbox_ctl.py teardown <dir>`。
+**跑之前 / 退出后清理**:每个 worker 结束会在 `finally` 里对该任务 `teardown`;**整次 batch 退出**(正常结束、控制台 `q`、**Ctrl+C 强退**)后,编排器会自动 `cleanup-all`,删除本机所有 `analyzer-*` 沙盒及带 `cua.sandbox=true` 标签的 Docker 容器。Ctrl+C 时:**第一次**中断会先同步 `docker rm -f` 停容器,再经 `finally` 做完整 SDK 清理;另注册 `atexit` 兜底。跳过自动清理:`export ANALYZER_BATCH_NO_CLEANUP=1`。手动清理:`python scripts/sandbox_ctl.py cleanup-all`。
 
 **云端 batch**(`--sandbox cloud`):不需本机 Docker;需 [cua.ai](https://cua.ai/signin) 的 `CUA_API_KEY`(或 `--cua-api-key`),并确认账户配额够支撑 `max-workers` 并行 VM。
 

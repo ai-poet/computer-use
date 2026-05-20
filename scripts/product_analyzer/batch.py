@@ -15,7 +15,14 @@ from typing import Any
 from .batch_store import BatchRunStore, JobState
 from .claude_driver import run_claude
 from .prompts import build_prompt
-from .sandbox_ctl import teardown_out_dir
+from .sandbox_ctl import (
+    cleanup_all_local_sandboxes,
+    docker_cleanup_sync_quick,
+    install_batch_exit_hooks,
+    reset_batch_cleanup_gate,
+    teardown_out_dir,
+    uninstall_batch_exit_hooks,
+)
 from .sandbox_runtime import SandboxContext, write_cloud_mcp_config
 from .tasks import post_check, prepare_output_dir, write_metadata_seed
 from .ui import err, log
@@ -93,24 +100,12 @@ def run_batch(
         dashboard_active=not use_plain,
     )
 
-    if use_plain:
-        return asyncio.run(
-            _run_batch(
-                queue_path,
-                max_workers,
-                sandbox_ctx=sandbox_ctx,
-                sandbox_warnings=sandbox_warnings or [],
-                store=store,
-            )
-        )
+    reset_batch_cleanup_gate()
+    install_batch_exit_hooks(local=sandbox_ctx.local)
 
-    from .batch_dashboard import run_dashboard
-
-    worker_error: list[BaseException] = []
-
-    def _worker() -> None:
-        try:
-            result = asyncio.run(
+    try:
+        if use_plain:
+            return asyncio.run(
                 _run_batch(
                     queue_path,
                     max_workers,
@@ -119,18 +114,38 @@ def run_batch(
                     store=store,
                 )
             )
-            store.set_batch_complete(result.results)
-        except BaseException as exc:
-            worker_error.append(exc)
-            store.set_batch_complete([], error=exc)
 
-    thread = threading.Thread(target=_worker, daemon=True)
-    thread.start()
-    run_dashboard(store, sandbox_label=f"{sandbox_ctx.mode}/{sandbox_ctx.image}")
-    thread.join()
-    if worker_error:
-        raise worker_error[0]
-    return store.to_batch_result()
+        from .batch_dashboard import run_dashboard
+
+        worker_error: list[BaseException] = []
+
+        def _worker() -> None:
+            try:
+                result = asyncio.run(
+                    _run_batch(
+                        queue_path,
+                        max_workers,
+                        sandbox_ctx=sandbox_ctx,
+                        sandbox_warnings=sandbox_warnings or [],
+                        store=store,
+                    )
+                )
+                store.set_batch_complete(result.results)
+            except BaseException as exc:
+                worker_error.append(exc)
+                store.set_batch_complete([], error=exc)
+
+        thread = threading.Thread(target=_worker, daemon=True)
+        thread.start()
+        run_dashboard(store, sandbox_label=f"{sandbox_ctx.mode}/{sandbox_ctx.image}")
+        thread.join()
+        if worker_error:
+            raise worker_error[0]
+        return store.to_batch_result()
+    finally:
+        uninstall_batch_exit_hooks()
+        if sandbox_ctx.local:
+            cleanup_all_local_sandboxes()
 
 
 async def _run_batch(

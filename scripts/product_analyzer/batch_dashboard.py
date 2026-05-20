@@ -29,6 +29,10 @@ def run_dashboard(
     try:
         curses.wrapper(state.main)
     except KeyboardInterrupt:
+        from .sandbox_ctl import docker_cleanup_sync_quick
+
+        print("\nCtrl+C: 正在停止沙盒容器…", flush=True)
+        docker_cleanup_sync_quick()
         store.request_shutdown(cancel_pending=True)
 
 
