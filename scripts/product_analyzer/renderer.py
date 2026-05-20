@@ -11,22 +11,13 @@ from __future__ import annotations
 
 import json
 
-from .config import (
-    CYAN,
-    DIM,
-    GRAY,
-    GREEN,
-    ITAL,
-    RED,
-    RESET,
-    YELLOW,
-)
+from . import config
 
 
 def _trunc(s: str, n: int = 120) -> str:
     s = (s or "").replace("\n", " ⏎ ")
     if len(s) > n:
-        return s[:n] + f"{DIM}…{RESET}"
+        return s[:n] + f"{config.DIM}…{config.RESET}"
     return s
 
 
@@ -78,21 +69,21 @@ def _render_todos(todos: list) -> list[str]:
     """Render a TodoWrite list as ☐/◐/☑ lines."""
     out = []
     glyphs = {
-        "pending": ("☐", GRAY),
-        "in_progress": ("◐", YELLOW),
-        "completed": ("☑", GREEN),
+        "pending": ("☐", config.GRAY),
+        "in_progress": ("◐", config.YELLOW),
+        "completed": ("☑", config.GREEN),
     }
     for td in todos:
         if not isinstance(td, dict):
             continue
         status = td.get("status", "pending")
-        glyph, color = glyphs.get(status, ("·", GRAY))
+        glyph, color = glyphs.get(status, ("·", config.GRAY))
         text = td.get("activeForm") if status == "in_progress" else None
         text = text or td.get("content") or td.get("subject") or td.get("description") or ""
         if status == "completed":
-            line = f"  {color}{glyph} {DIM}{_trunc(text, 90)}{RESET}"
+            line = f"  {color}{glyph} {config.DIM}{_trunc(text, 90)}{config.RESET}"
         else:
-            line = f"  {color}{glyph} {_trunc(text, 90)}{RESET}"
+            line = f"  {color}{glyph} {_trunc(text, 90)}{config.RESET}"
         out.append(line)
     return out
 
@@ -137,7 +128,9 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
                 if sid:
                     state["session_id"] = sid
                 state["last_action"] = "thinking"
-            out.append(f"{DIM}── claude session · model={model} · cwd={cwd}{RESET}")
+            out.append(
+                f"{config.DIM}── claude session · model={model} · cwd={cwd}{config.RESET}"
+            )
         return out
 
     if t == "assistant":
@@ -154,9 +147,9 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
                 if txt:
                     if state is not None:
                         state["last_action"] = "thinking"
-                    out.append(f"{DIM}{ITAL}✻ Thinking{RESET}")
+                    out.append(f"{config.DIM}{config.ITAL}✻ Thinking{config.RESET}")
                     for line in txt.split("\n"):
-                        out.append(f"{DIM}  {line}{RESET}")
+                        out.append(f"{config.DIM}  {line}{config.RESET}")
             elif btype == "text":
                 txt = (block.get("text") or "").rstrip()
                 if txt:
@@ -166,8 +159,8 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
             elif btype == "tool_use":
                 name = block.get("name", "?")
                 summary = _summarize_tool_input(name, block.get("input"))
-                tail = f" {DIM}{summary}{RESET}" if summary else ""
-                out.append(f"{CYAN}● {name}{RESET}{tail}")
+                tail = f" {config.DIM}{summary}{config.RESET}" if summary else ""
+                out.append(f"{config.CYAN}● {name}{config.RESET}{tail}")
                 if state is not None:
                     state["last_action"] = f"running {name}"
                 inp = block.get("input")
@@ -189,10 +182,10 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
                 txt, _ = _flatten_tool_result(block.get("content"))
                 txt = (txt or "").strip()
                 is_err = bool(block.get("is_error"))
-                color = RED if is_err else GRAY
+                color = config.RED if is_err else config.GRAY
                 first = txt.split("\n", 1)[0] if txt else "(empty)"
                 tag = "↳ error" if is_err else "↳"
-                out.append(f"  {color}{tag} {_trunc(first, 110)}{RESET}")
+                out.append(f"  {color}{tag} {_trunc(first, 110)}{config.RESET}")
                 if state is not None:
                     state["last_action"] = "thinking"
         return out
@@ -206,8 +199,8 @@ def format_event(raw: str, state: dict | None = None) -> list[str] | None:
             bits.append(f"${cost:.4f}")
         if dur is not None:
             bits.append(f"{dur / 1000:.1f}s")
-        color = GREEN if sub == "success" else YELLOW
-        out.append(f"{color}{' · '.join(bits)}{RESET}")
+        color = config.GREEN if sub == "success" else config.YELLOW
+        out.append(f"{color}{' · '.join(bits)}{config.RESET}")
         if state is not None:
             state["last_action"] = None
         return out

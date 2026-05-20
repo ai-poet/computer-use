@@ -201,15 +201,18 @@ class BatchRunStore:
                 self._jobs[job_id].session_id = session_id
 
     def append_event(self, job_id: int, lines: list[str], state: dict) -> None:
-        plain_lines = [_strip_ansi(line) for line in lines if line]
-        action = state.get("last_action")
         sid = state.get("session_id")
         with self._lock:
             job = self._jobs[job_id]
-            for line in plain_lines:
-                job.events.append(line)
-            if action:
-                job.last_action = _strip_ansi(str(action))[:80]
+            for line in lines:
+                if line:
+                    job.events.append(line)
+            # 列表「最近动作」= 详情事件流最新一行(与 renderer 输出一致)
+            for line in reversed(lines):
+                plain = _strip_ansi(line).strip()
+                if plain:
+                    job.last_action = plain[:80]
+                    break
             if sid:
                 job.session_id = sid
 

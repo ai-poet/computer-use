@@ -84,6 +84,8 @@ def run_batch(
     """Synchronous wrapper used by CLI."""
     rows = load_queue(queue_path)
     use_plain = _plain_batch_enabled() if plain is None else plain
+    if not use_plain:
+        os.environ["ANALYZER_FORCE_COLOR"] = "1"
     store = BatchRunStore(
         rows,
         max_workers=max_workers,

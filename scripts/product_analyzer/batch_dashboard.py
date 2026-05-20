@@ -6,6 +6,7 @@ import curses
 import time
 from enum import Enum
 
+from .ansi_curses import addstr_ansi
 from .batch_store import BatchJobSnapshot, BatchRunStore, JobState
 
 
@@ -345,7 +346,7 @@ class _DashboardState:
         visible = events[self.detail_scroll : self.detail_scroll + view_h]
         for i, line in enumerate(visible):
             try:
-                stdscr.addstr(row + i, 0, _trunc(line, w - 1))
+                addstr_ansi(stdscr, row + i, 0, line, w - 1)
             except curses.error:
                 pass
 
