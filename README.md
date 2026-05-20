@@ -37,8 +37,15 @@ computer-use/
 │       ├── sandbox_ctl.py                       # bootstrap / step / teardown / status
 │       ├── prompts.py                           # build_prompt + build_resume_prompt
 │       ├── claude_driver.py                     # ESC + spawn + run_claude
+│       ├── batch_store.py                       # 批量任务状态(排队/运行/完成)
+│       ├── batch_dashboard.py                   # curses 批量控制台(列表/详情)
 │       ├── batch.py                             # CSV/JSON 队列 + 并发 worker
 │       └── cli.py                               # argparse + cmd_new/cmd_resume/cmd_batch
+├── queue*.json                                  # 批量队列(按品类拆分,见下方)
+│   ├── queue.china-travel.json                  # 来华旅行助手(10)
+│   ├── queue.coding-platforms.json              # 替代编程平台(10)
+│   ├── queue.desktop-pets.json                  # 桌面宠物(10)
+│   └── queue.language-learning.json             # 语言学习(10)
 ├── tests/sandbox/                               # linux_smoke、sandbox_ctl_smoke、键名归一化单测
 └── .claude/skills/
     ├── cua-driver/                              # 桌面自动化 skill(snapshot→act→verify)
@@ -47,7 +54,7 @@ computer-use/
         └── REPORT_TEMPLATE.md                   # 中文报告骨架
 ```
 
-模块依赖单向无环:`config → ui → renderer → preflight → tasks → sandbox_runtime → sandbox_ctl → prompts → claude_driver → batch → cli`。
+模块依赖单向无环:`config → ui → batch_store → batch_dashboard → renderer → preflight → tasks → sandbox_runtime → sandbox_ctl → prompts → claude_driver → batch → cli`。
 
 **`reports/` 与 git**:默认会提交 `report.md`、`metadata.json`、`sandbox.json`、`run.log`、`screenshots/` 等分析产物,便于对照 batch 进度与回归截图。仍忽略 `reports/**/downloads/`(安装包缓存)和 `reports/**/.sandbox_ctl_last_shell.json`(`step shell` 的临时 JSON,供 Bash 吞 stdout 时读取)。
 
@@ -159,7 +166,7 @@ python3 scripts/analyze_product.py "ProductiveKitty" \
 | **Cua CLI** | `cua --version` | 云端 MCP、`serve-mcp` 等;与 SDK 同环境安装 |
 | **Docker(本地 linux)** | `docker info` 正常 | 默认 `--sandbox-image linux` 时每 worker 一台 **独立** `trycua/cua-xfce` 容器 |
 | **镜像** | 预拉 `cua-xfce` | Apple Silicon:`docker pull --platform=linux/amd64 trycua/cua-xfce:latest`;避免首 worker 卡在 pull |
-| **队列** | `.json` / `.csv` | 每行 `product_name` + `url`,可选 `download_url`;例 [`queue.language-learning.json`](queue.language-learning.json) |
+| **队列** | `.json` / `.csv` | 每行 `product_name` + `url`,可选 `download_url`;见下方 [队列文件](#队列文件) |
 | **并发度** | `--max-workers N` | 每 worker ≈ 1 个 Claude 子进程 + 1 个沙盒容器;建议从 `2` 起,按 CPU/内存/Docker 上限调高 |
 | **磁盘** | `reports/` 可写 | 每产品独立目录 `reports/<slug>-日期[-N]/`,含 `run.log`、多张 PNG;同日重跑自动 `-2` 后缀 |
 | **代理** | 可选 | 访问官网若需代理在**宿主机** shell 配置;编排器会为 worker 设 `NO_PROXY=127.0.0.1,localhost`,避免 Docker 端口被代理成 502 |
@@ -270,7 +277,49 @@ python scripts/analyze_product.py --batch queue.json --sandbox cloud
 - **本地(默认)**:Linux 桌面用 Docker 镜像 **`trycua/cua-xfce:latest`**(轻量 XFCE + **Firefox**;无 Chromium);`bootstrap --open-browser` 由 `sandbox_ctl` 探测 `DISPLAY` 并启 Firefox。Apple Silicon 需 `linux/amd64` 平台(见下方 `docker pull`)。macOS/Windows 桌面包仍走 Lume/QEMU。
 - **云端(仅 `--sandbox cloud`)**:由 Cua Cloud 托管,需 API Key,无需本机 Docker
 
-零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。完整跑前清单见上文 **[批量并发跑前准备](#批量并发跑前准备清单)**。
+零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。队列输入直接回车或输入 `all` 会合并全部 `queue*.json`。完整跑前清单见上文 **[批量并发跑前准备](#批量并发跑前准备清单)**。
+
+#### 队列文件
+
+仓库根目录按品类拆成多个 `queue*.json`,无需手动合并。`--batch-all` 会按文件名排序加载并去重(相同 `product_name` + `url` 只保留一条)。
+
+| 文件 | 品类 | 条数 |
+|------|------|------|
+| [`queue.china-travel.json`](queue.china-travel.json) | Foreigner Travel to China Helper | 10 |
+| [`queue.coding-platforms.json`](queue.coding-platforms.json) | Alternative Coding Platforms | 10 |
+| [`queue.desktop-pets.json`](queue.desktop-pets.json) | Desktop Pet Company / Apps | 10 |
+| [`queue.language-learning.json`](queue.language-learning.json) | Language Learning | 10 |
+
+单条记录格式:
+
+```json
+{
+  "category": "Language Learning",
+  "product_name": "Duolingo",
+  "url": "https://www.duolingo.com"
+}
+```
+
+`category` 仅作标注,编排器只读 `product_name` / `url` / 可选 `download_url`。
+
+#### 批量控制台(TTY)
+
+在交互式终端跑批量时,默认进入 **curses 双层控制台**(无需额外依赖):
+
+- **列表层**:实时显示 `运行 / 排队 / 完成 / 失败` 数量、进度条、每条任务的最近动作
+- **详情层**:`Enter` 进入单任务事件流;`Esc` 可暂停该任务并输入补充指令续跑(其它 worker 不受影响);`b` 返回列表
+- **排队**:`--max-workers N` 限制同时运行的 Claude 数,超出部分在队列里等待(不会多开沙盒)
+- **退出**:`q` 确认退出;排队中的任务标记为已取消,运行中的等当前结束
+
+纯文本 / CI / 管道模式(无前缀行交织、无控制台):
+
+```bash
+python3 scripts/analyze_product.py --batch-all --max-workers 5 --batch-plain
+# 或
+ANALYZE_BATCH_PLAIN=1 python3 scripts/analyze_product.py --batch-all --max-workers 5
+```
+
+批量结束后会在当前目录写 [`batch-status.json`](batch-status.json)(任务状态快照,便于外部监控)。
 
 ### Android APK 沙盒(可选)
 
@@ -346,12 +395,26 @@ python -m tests.sandbox.linux_smoke --timeout 180
 跑两个并发 worker(默认本地 Linux sandbox,可省略 `--sandbox local`):
 
 ```bash
-# 仓库里示例队列是 queue.language-learning.json,不是 queue.json
-python scripts/analyze_product.py \
+# 单个队列文件
+python3 scripts/analyze_product.py \
   --batch queue.language-learning.json \
   --max-workers 2 \
   --sandbox-image linux
+
+# 全量:自动合并全部 queue*.json(当前 4 文件、40 条),并发 5,其余排队
+python3 scripts/analyze_product.py \
+  --batch-all \
+  --max-workers 5 \
+  --sandbox-image linux
+
+# 从指定目录扫描 queue*.json(默认仓库根目录)
+python3 scripts/analyze_product.py \
+  --batch-all \
+  --batch-dir /path/to/queues \
+  --max-workers 5
 ```
+
+`--batch` 与 `--batch-all` 二选一,不能同时使用。
 
 `--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径 — worker **只操作网页**。需要 APK 时请预拉上方 `cua-qemu-android` 镜像并加 `--android`(或 `--sandbox-image auto`);Android 沙盒若仍启动失败,按 skill 退回网页分析,不阻塞报告产出。
 
