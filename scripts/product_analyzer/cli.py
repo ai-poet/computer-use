@@ -250,10 +250,24 @@ def cmd_resume() -> int:
 
 def cmd_batch(args: argparse.Namespace) -> int:
     """Run a CSV/JSON queue with one sandbox (local or cloud) per product."""
-    from .batch import run_batch
+    import os
+
+    from .batch import load_queue, run_batch
 
     assert args.batch is not None
     sandbox_ctx, warnings = prepare_batch_context(args)
+    plain = getattr(args, "batch_plain", False) or os.environ.get(
+        "ANALYZE_BATCH_PLAIN", ""
+    ).strip() in ("1", "true", "yes")
+
+    rows = load_queue(args.batch)
+    if not plain:
+        log(
+            f"批量: {args.batch.name} · 共 {len(rows)} 条 · "
+            f"并发 {args.max_workers} · sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
+        )
+        log("进入批量控制台(↑/↓ 列表 · Enter 详情 · q 退出); "
+            "纯文本模式请加 --batch-plain")
 
     try:
         result = run_batch(
@@ -261,6 +275,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
             args.max_workers,
             sandbox_ctx=sandbox_ctx,
             sandbox_warnings=warnings,
+            plain=plain,
         )
     except KeyboardInterrupt:
         err("用户中断批量任务")
@@ -326,7 +341,9 @@ def _build_parser() -> argparse.ArgumentParser:
             "  全参:    python3 scripts/analyze_product.py NAME URL DOWNLOAD_URL\n"
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
             "  批量(默认本地): python3 scripts/analyze_product.py --batch queue.json "
-            "--sandbox-image linux\n"
+            "--max-workers 10 --sandbox-image linux\n"
+            "  批量纯文本: python3 scripts/analyze_product.py --batch queue.json "
+            "--batch-plain\n"
             "  批量云端: python3 scripts/analyze_product.py --batch queue.json "
             "--sandbox cloud --cua-api-key sk-...\n"
         ),
@@ -357,7 +374,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--max-workers",
         type=int,
         default=2,
-        help="批量模式最大并发 sandbox 数。默认 2。",
+        help="批量模式最大并发 sandbox 数。默认 2。超出部分排队等待。",
+    )
+    parser.add_argument(
+        "--batch-plain",
+        action="store_true",
+        help="批量模式禁用 curses 控制台,使用前缀行日志(适合 CI/管道)。",
     )
     parser.add_argument(
         "--sandbox-image",

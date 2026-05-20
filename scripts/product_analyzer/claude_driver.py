@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 from .config import DIM, RESET, YELLOW
@@ -60,6 +61,7 @@ def _spawn_claude(
     *,
     env: dict[str, str] | None = None,
     mcp_config: Path | None = None,
+    quiet: bool = False,
 ) -> subprocess.Popen:
     cmd = [
         "claude", "--print",
@@ -72,7 +74,8 @@ def _spawn_claude(
         cmd += ["--resume", resume_id]
     if mcp_config is not None:
         cmd += ["--mcp-config", str(mcp_config)]
-    log(f"启动 claude 子进程: {' '.join(cmd)}")
+    if not quiet:
+        log(f"启动 claude 子进程: {' '.join(cmd)}")
     proc = subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
@@ -121,6 +124,10 @@ def run_claude(
     env: dict[str, str] | None = None,
     terminal_prefix: str | None = None,
     mcp_config: Path | None = None,
+    esc_flag: dict | None = None,
+    event_sink: Callable[[list[str], dict], None] | None = None,
+    mirror_stdout: bool = True,
+    supplement_provider: Callable[[], str | None] | None = None,
 ) -> int:
     """Run claude in stream-json mode with ESC-pause + resume support.
 
@@ -142,6 +149,10 @@ def run_claude(
         env: optional environment for the Claude subprocess
         terminal_prefix: prefix for mirrored non-interactive terminal output
         mcp_config: optional JSON file for ``claude --mcp-config`` (cloud batch Cua MCP)
+        esc_flag: external pause flag (dashboard); skips internal ESC watcher
+        event_sink: receive formatted lines + state (batch dashboard)
+        mirror_stdout: when False, do not print to terminal (events still go to sink)
+        supplement_provider: after ESC, obtain resume text (batch dashboard)
     """
     raw_dump_path = os.environ.get("ANALYZE_RAW_LOG")
     raw_fh = open(raw_dump_path, "a", encoding="utf-8") if raw_dump_path else None
@@ -153,16 +164,27 @@ def run_claude(
 
     try:
         while True:
+            use_external_esc = esc_flag is not None
+            local_esc = esc_flag if use_external_esc else {"esc": False}
             proc = _spawn_claude(
-                current_prompt, resume_id, env=env, mcp_config=mcp_config
+                current_prompt,
+                resume_id,
+                env=env,
+                mcp_config=mcp_config,
+                quiet=bool(event_sink and not mirror_stdout),
             )
             assert proc.stdout is not None
-            esc_flag = {"esc": False}
             stop_flag = {"done": False}
             watcher: threading.Thread | None = None
-            if not non_interactive and sys.stdin.isatty():
+            if (
+                not use_external_esc
+                and not non_interactive
+                and sys.stdin.isatty()
+            ):
                 watcher = threading.Thread(
-                    target=_esc_watcher_unix, args=(esc_flag, stop_flag, proc), daemon=True
+                    target=_esc_watcher_unix,
+                    args=(local_esc, stop_flag, proc),
+                    daemon=True,
                 )
                 watcher.start()
                 print(f"{DIM}    (按 ESC 暂停并补充指令){RESET}")
@@ -184,29 +206,38 @@ def run_claude(
                     if not line:
                         continue
                     pretty = format_event(line, state)
+                    out_lines: list[str]
+                    if pretty is None:
+                        out_lines = [line]
+                    else:
+                        out_lines = pretty
+                    if event_sink is not None:
+                        event_sink(out_lines, dict(state))
                     if spinner is not None:
-                        if pretty is None:
-                            spinner.write_above(line)
-                        else:
-                            for p in pretty:
-                                spinner.write_above(p)
+                        for p in out_lines:
+                            spinner.write_above(p)
                         spinner.set_label(state.get("last_action") or "thinking")
-                    elif non_interactive and terminal_prefix:
-                        if pretty is None:
-                            _write_prefixed(terminal_prefix, [line])
-                        elif pretty:
-                            _write_prefixed(terminal_prefix, pretty)
+                    elif mirror_stdout and non_interactive and terminal_prefix:
+                        _write_prefixed(terminal_prefix, out_lines)
+                    elif mirror_stdout and not non_interactive and event_sink is None:
+                        for p in out_lines:
+                            print(p, flush=True)
                     # Persist session_id the first time it changes — gives a
                     # resume target even if claude is killed mid-stream.
                     sid_now = state.get("session_id")
                     if out_dir and sid_now and sid_now != persisted_sid:
                         update_metadata(out_dir, last_session_id=sid_now)
                         persisted_sid = sid_now
-                    if esc_flag.get("esc"):
+                    if local_esc.get("esc"):
                         if spinner is not None:
                             spinner.stop()
-                        print(f"\n{YELLOW}ESC 收到,已停掉当前 claude 子进程…{RESET}", flush=True)
+                        if mirror_stdout:
+                            print(
+                                f"\n{YELLOW}ESC 收到,已停掉当前 claude 子进程…{RESET}",
+                                flush=True,
+                            )
                         try:
+                            proc.terminate()
                             proc.wait(timeout=5)
                         except subprocess.TimeoutExpired:
                             proc.kill()
@@ -227,11 +258,11 @@ def run_claude(
             if watcher and watcher.is_alive():
                 watcher.join(timeout=1)
 
-            if not esc_flag.get("esc"):
+            if not local_esc.get("esc"):
                 final_rc = proc.wait()
                 break
 
-            if non_interactive:
+            if non_interactive and supplement_provider is None:
                 final_rc = proc.wait()
                 break
 
@@ -243,7 +274,10 @@ def run_claude(
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.wait()
-            sup = _read_supplement()
+            if supplement_provider is not None:
+                sup = supplement_provider()
+            else:
+                sup = _read_supplement()
             if not sup:
                 err("放弃续跑")
                 final_rc = 130
@@ -256,7 +290,9 @@ def run_claude(
             else:
                 resume_id = sid
                 current_prompt = sup
-            log(f"续跑(session={sid or 'n/a'})…")
+            local_esc["esc"] = False
+            if mirror_stdout:
+                log(f"续跑(session={sid or 'n/a'})…")
     finally:
         if raw_fh:
             raw_fh.close()

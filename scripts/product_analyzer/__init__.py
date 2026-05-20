@@ -4,6 +4,8 @@
 
     config       路径常量 + ANSI 配色 + USE_COLOR 开关
     ui           log/err/prompt_str/Spinner — 终端 I/O
+    batch_store  BatchJob / BatchRunStore — 批量任务状态(线程安全)
+    batch_dashboard  curses 批量控制台(列表/详情/暂停续跑)
     renderer     format_event 全家 — stream-json → 美化输出
     preflight    detect_host/ensure_claude_cli/ensure_cua_driver
     tasks        slugify / metadata I/O / list_tasks / pick_resume_target

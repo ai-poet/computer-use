@@ -7,10 +7,12 @@ import csv
 import json
 import os
 import sys
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .batch_store import BatchRunStore, JobState
 from .claude_driver import run_claude
 from .prompts import build_prompt
 from .sandbox_ctl import teardown_out_dir
@@ -65,22 +67,68 @@ def load_queue(path: Path) -> list[dict[str, str | None]]:
     return normalized
 
 
+def _plain_batch_enabled() -> bool:
+    if os.environ.get("ANALYZE_BATCH_PLAIN", "").strip() in ("1", "true", "yes"):
+        return True
+    return not sys.stdout.isatty()
+
+
 def run_batch(
     queue_path: Path,
     max_workers: int,
     *,
     sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str] | None = None,
+    plain: bool | None = None,
 ) -> BatchResult:
     """Synchronous wrapper used by CLI."""
-    return asyncio.run(
-        _run_batch(
-            queue_path,
-            max_workers,
-            sandbox_ctx=sandbox_ctx,
-            sandbox_warnings=sandbox_warnings or [],
-        )
+    rows = load_queue(queue_path)
+    use_plain = _plain_batch_enabled() if plain is None else plain
+    store = BatchRunStore(
+        rows,
+        max_workers=max_workers,
+        queue_name=queue_path.name,
+        dashboard_active=not use_plain,
     )
+
+    if use_plain:
+        return asyncio.run(
+            _run_batch(
+                queue_path,
+                max_workers,
+                sandbox_ctx=sandbox_ctx,
+                sandbox_warnings=sandbox_warnings or [],
+                store=store,
+            )
+        )
+
+    from .batch_dashboard import run_dashboard
+
+    worker_error: list[BaseException] = []
+
+    def _worker() -> None:
+        try:
+            result = asyncio.run(
+                _run_batch(
+                    queue_path,
+                    max_workers,
+                    sandbox_ctx=sandbox_ctx,
+                    sandbox_warnings=sandbox_warnings or [],
+                    store=store,
+                )
+            )
+            store.set_batch_complete(result.results)
+        except BaseException as exc:
+            worker_error.append(exc)
+            store.set_batch_complete([], error=exc)
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    run_dashboard(store, sandbox_label=f"{sandbox_ctx.mode}/{sandbox_ctx.image}")
+    thread.join()
+    if worker_error:
+        raise worker_error[0]
+    return store.to_batch_result()
 
 
 async def _run_batch(
@@ -89,13 +137,16 @@ async def _run_batch(
     *,
     sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str],
+    store: BatchRunStore,
 ) -> BatchResult:
     if max_workers < 1:
         raise ValueError("max_workers must be >= 1")
     rows = load_queue(queue_path)
     sem = asyncio.Semaphore(max_workers)
     tasks = [
-        _run_one_with_semaphore(sem, row, index, sandbox_ctx, sandbox_warnings)
+        _run_one_with_semaphore(
+            sem, row, index, sandbox_ctx, sandbox_warnings, store
+        )
         for index, row in enumerate(rows, start=1)
     ]
     gathered = await asyncio.gather(*tasks, return_exceptions=True)
@@ -107,11 +158,21 @@ async def _run_batch(
         else:
             result_row = result
         results.append(result_row)
+        if store.dashboard_active:
+            continue
         status = "OK" if result_row["rc"] == 0 else f"FAIL rc={result_row['rc']}"
         log(
             f"[batch] {status}: {result_row['product']} -> "
             f"{result_row.get('out_dir') or '?'}"
         )
+
+    try:
+        store.write_status_json(Path.cwd() / "batch-status.json")
+    except OSError:
+        pass
+
+    if not store.dashboard_active:
+        store.set_batch_complete(results)
     return BatchResult(total=len(rows), results=results)
 
 
@@ -121,9 +182,39 @@ async def _run_one_with_semaphore(
     index: int,
     sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str],
+    store: BatchRunStore,
 ) -> dict[str, Any]:
-    async with sem:
-        return await asyncio.to_thread(_run_one, row, index, sandbox_ctx, sandbox_warnings)
+    store.mark_queued(index)
+    if store.should_skip_job(index):
+        return _cancelled_result(row, sandbox_ctx, index)
+    try:
+        async with sem:
+            if store.should_skip_job(index):
+                return _cancelled_result(row, sandbox_ctx, index)
+            return await asyncio.to_thread(
+                _run_one, row, index, sandbox_ctx, sandbox_warnings, store
+            )
+    except Exception as exc:
+        store.mark_done(index, rc=1, error=f"{type(exc).__name__}: {exc}")
+        return _exception_result(row, exc, sandbox_ctx)
+
+
+def _cancelled_result(
+    row: dict[str, str | None],
+    sandbox_ctx: SandboxContext,
+    index: int,
+) -> dict[str, Any]:
+    return {
+        "product": row.get("product_name") or "",
+        "url": row.get("url") or "",
+        "out_dir": None,
+        "log_file": None,
+        "sandbox_image": sandbox_ctx.image,
+        "sandbox_mode": sandbox_ctx.mode,
+        "rc": 130,
+        "error": "cancelled",
+        "job_id": index,
+    }
 
 
 def _run_one(
@@ -131,12 +222,22 @@ def _run_one(
     index: int,
     sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str],
+    store: BatchRunStore,
 ) -> dict[str, Any]:
     product_name = row["product_name"] or ""
     url = row["url"] or ""
     download_url = row.get("download_url")
 
+    if store.should_skip_job(index):
+        return _cancelled_result(row, sandbox_ctx, index)
+
     out_dir = prepare_output_dir(product_name)
+    log_file = out_dir / "run.log"
+    store.mark_running(index, out_dir=str(out_dir), log_file=str(log_file))
+
+    if not store.dashboard_active:
+        log(f"[batch:{index}] 输出目录: {out_dir} ({sandbox_ctx.mode} sandbox)")
+
     meta = write_metadata_seed(
         out_dir,
         product_name,
@@ -148,8 +249,6 @@ def _run_one(
         sandbox_mode=sandbox_ctx.mode,
         android_enabled=sandbox_ctx.android_enabled,
     )
-    log_file = out_dir / "run.log"
-    log(f"[batch:{index}] 输出目录: {out_dir} ({sandbox_ctx.mode} sandbox)")
 
     env = os.environ.copy()
     env.update(sandbox_ctx.env())
@@ -183,6 +282,14 @@ def _run_one(
     if sandbox_ctx.mode == "cloud" and sandbox_ctx.api_key:
         mcp_config = write_cloud_mcp_config(out_dir, api_key=sandbox_ctx.api_key)
 
+    mirror = not store.dashboard_active
+    supplement_provider = (
+        store.make_supplement_provider(index) if store.dashboard_active else None
+    )
+
+    def _event_sink(lines: list[str], state: dict) -> None:
+        store.append_event(index, lines, state)
+
     try:
         rc = run_claude(
             prompt,
@@ -192,13 +299,22 @@ def _run_one(
             env=env,
             terminal_prefix=f"[batch:{index} {product_name}] ",
             mcp_config=mcp_config,
+            esc_flag=store.esc_flag(index),
+            event_sink=_event_sink if store.dashboard_active else None,
+            mirror_stdout=mirror,
+            supplement_provider=supplement_provider,
         )
     finally:
         teardown_out_dir(out_dir)
 
     post_check(out_dir)
+    error = None
     if rc != 0:
-        err(f"[batch:{index}] {product_name} 失败,详见 {log_file}")
+        error = f"exit {rc}"
+        if not store.dashboard_active:
+            err(f"[batch:{index}] {product_name} 失败,详见 {log_file}")
+
+    store.mark_done(index, rc=rc, error=error)
     return {
         "product": product_name,
         "url": url,
@@ -207,7 +323,8 @@ def _run_one(
         "sandbox_image": sandbox_ctx.image,
         "sandbox_mode": sandbox_ctx.mode,
         "rc": rc,
-        "error": None,
+        "error": error,
+        "job_id": index,
     }
 
 
