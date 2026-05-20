@@ -29,6 +29,8 @@ python3 scripts/analyze_product.py --resume
 # 批量:默认本地 sandbox;TTY 下为 curses 控制台(排队/运行可视化);仅 --sandbox cloud 时走云端
 python3 scripts/analyze_product.py --batch queue.json --max-workers 10 --sandbox-image auto
 python3 scripts/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
+# 批量全量:自动合并仓库根目录 queue*.json(当前 4 类 40 条)
+python3 scripts/analyze_product.py --batch-all --max-workers 5 --sandbox-image linux
 # 批量纯文本(CI/管道): ANALYZE_BATCH_PLAIN=1 或 --batch-plain
 python3 scripts/analyze_product.py --batch queue.json --batch-plain --max-workers 2
 

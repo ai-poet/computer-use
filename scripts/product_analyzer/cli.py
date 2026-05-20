@@ -121,15 +121,20 @@ def prepare_batch_context(args: argparse.Namespace):
 
 def collect_batch_args() -> argparse.Namespace:
     """Interactive prompts for menu option 3 (batch)."""
-    queue_raw = prompt_str(
-        "队列文件路径(.csv 或 .json): ",
-        validate=lambda s: len(s.strip()) > 0,
-    )
-    queue_path = Path(queue_raw.strip()).expanduser()
-    if not queue_path.exists():
-        raise FileNotFoundError(queue_path)
-    if queue_path.suffix.lower() not in (".csv", ".json"):
-        raise ValueError("队列文件必须是 .csv 或 .json")
+    scope_raw = prompt_str(
+        "队列 [文件路径 / all=全部 queue*.json, 默认 all]: ",
+        validate=lambda s: s == "" or len(s.strip()) > 0,
+        allow_empty=True,
+    ).strip().lower()
+    batch_all = scope_raw in ("", "all", "*")
+    queue_path: Path | None = None
+    queue_root: Path | None = None
+    if not batch_all:
+        queue_path = Path(scope_raw).expanduser()
+        if not queue_path.exists():
+            raise FileNotFoundError(queue_path)
+        if queue_path.suffix.lower() not in (".csv", ".json"):
+            raise ValueError("队列文件必须是 .csv 或 .json")
 
     workers_raw = prompt_str(
         "最大并发数 [默认 2]: ",
@@ -154,6 +159,8 @@ def collect_batch_args() -> argparse.Namespace:
 
     return argparse.Namespace(
         batch=queue_path,
+        batch_all=batch_all,
+        batch_dir=queue_root,
         max_workers=max_workers,
         sandbox_image=sandbox_image,
         sandbox="cloud" if mode == "cloud" else "local",
@@ -252,28 +259,45 @@ def cmd_batch(args: argparse.Namespace) -> int:
     """Run a CSV/JSON queue with one sandbox (local or cloud) per product."""
     import os
 
-    from .batch import load_queue, run_batch
+    from .batch import resolve_batch_rows, run_batch
 
-    assert args.batch is not None
+    batch_all = getattr(args, "batch_all", False)
+    if args.batch is None and not batch_all:
+        err("请指定 --batch 或 --batch-all")
+        return 1
     sandbox_ctx, warnings = prepare_batch_context(args)
     plain = getattr(args, "batch_plain", False) or os.environ.get(
         "ANALYZE_BATCH_PLAIN", ""
     ).strip() in ("1", "true", "yes")
 
-    rows = load_queue(args.batch)
+    rows, queue_name, paths = resolve_batch_rows(
+        queue_path=args.batch,
+        batch_all=batch_all,
+        queue_root=getattr(args, "batch_dir", None),
+    )
     if not plain:
-        log(
-            f"批量: {args.batch.name} · 共 {len(rows)} 条 · "
-            f"并发 {args.max_workers} · sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
-        )
+        if batch_all:
+            file_list = ", ".join(p.name for p in paths)
+            log(
+                f"批量(全量): {len(paths)} 个队列 · {file_list} · "
+                f"共 {len(rows)} 条 · 并发 {args.max_workers} · "
+                f"sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
+            )
+        else:
+            log(
+                f"批量: {queue_name} · 共 {len(rows)} 条 · "
+                f"并发 {args.max_workers} · sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
+            )
         log("进入批量控制台(↑/↓ 列表 · Enter 详情 · q 退出); "
             "纯文本模式请加 --batch-plain")
 
     try:
         result = run_batch(
-            args.batch,
             args.max_workers,
             sandbox_ctx=sandbox_ctx,
+            queue_path=args.batch,
+            batch_all=batch_all,
+            queue_root=getattr(args, "batch_dir", None),
             sandbox_warnings=warnings,
             plain=plain,
         )
@@ -342,6 +366,8 @@ def _build_parser() -> argparse.ArgumentParser:
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
             "  批量(默认本地): python3 scripts/analyze_product.py --batch queue.json "
             "--max-workers 10 --sandbox-image linux\n"
+            "  批量全量:    python3 scripts/analyze_product.py --batch-all "
+            "--max-workers 5 --sandbox-image linux\n"
             "  批量纯文本: python3 scripts/analyze_product.py --batch queue.json "
             "--batch-plain\n"
             "  批量云端: python3 scripts/analyze_product.py --batch queue.json "
@@ -368,7 +394,18 @@ def _build_parser() -> argparse.ArgumentParser:
         "--batch",
         type=Path,
         default=None,
-        help="CSV/JSON 队列路径。启用后每个产品使用独立 Cua sandbox(本地或云端)。",
+        help="CSV/JSON 队列路径。与 --batch-all 二选一。",
+    )
+    parser.add_argument(
+        "--batch-all",
+        action="store_true",
+        help="自动合并仓库根目录下全部 queue*.json 队列(无需手动合并 JSON)。",
+    )
+    parser.add_argument(
+        "--batch-dir",
+        type=Path,
+        default=None,
+        help="--batch-all 时扫描队列文件的目录。默认仓库根目录。",
     )
     parser.add_argument(
         "--max-workers",
@@ -417,9 +454,12 @@ def main(argv: list[str] | None = None) -> int:
     log("预检:claude CLI")
     ensure_claude_cli()
 
-    if args.batch is not None:
+    if args.batch is not None or args.batch_all:
         if args.resume:
-            err("--batch 与 --resume 不能同时使用")
+            err("--batch/--batch-all 与 --resume 不能同时使用")
+            return 1
+        if args.batch is not None and args.batch_all:
+            err("--batch 与 --batch-all 不能同时使用")
             return 1
         log("预检:Cua Sandbox SDK")
         ensure_cua_sdk()
