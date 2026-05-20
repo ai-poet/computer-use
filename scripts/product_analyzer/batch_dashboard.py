@@ -40,6 +40,7 @@ class _DashboardState:
         self.cursor = 0
         self.detail_job_id: int | None = None
         self.detail_scroll = 0
+        self.detail_follow_tail = True
         self.help_scroll = 0
         self.supplement_buffer = ""
         self.quit_choice = 0
@@ -159,6 +160,7 @@ class _DashboardState:
         elif key in (curses.KEY_ENTER, 10, 13):
             self.detail_job_id = jobs[self.cursor].job_id
             self.detail_scroll = 0
+            self.detail_follow_tail = True
             self.view = ViewMode.DETAIL
 
     def _on_key_detail(self, key: int, jobs: list[BatchJobSnapshot]) -> None:
@@ -172,13 +174,21 @@ class _DashboardState:
             return
 
         if key in (curses.KEY_PPAGE,):
+            self.detail_follow_tail = False
             self.detail_scroll = max(0, self.detail_scroll - 5)
         elif key in (curses.KEY_NPAGE,):
+            self.detail_follow_tail = False
             self.detail_scroll += 5
         elif key in (curses.KEY_UP, ord("k")):
+            self.detail_follow_tail = False
             self.detail_scroll = max(0, self.detail_scroll - 1)
         elif key in (curses.KEY_DOWN, ord("j")):
             self.detail_scroll += 1
+        elif key in (ord("g"), curses.KEY_END):
+            self.detail_follow_tail = True
+        elif key in (ord("G"),):
+            self.detail_follow_tail = False
+            self.detail_scroll = 0
 
         if key == 27:  # ESC
             if job.state == JobState.RUNNING:
@@ -338,10 +348,15 @@ class _DashboardState:
         row += 1
 
         events = job.event_lines
-        view_h = h - row - 3
+        view_h = max(1, h - row - 3)
         max_scroll = max(0, len(events) - view_h)
-        self.detail_scroll = min(self.detail_scroll, max_scroll)
-        self.detail_scroll = max(0, self.detail_scroll)
+        if self.detail_follow_tail:
+            self.detail_scroll = max_scroll
+        else:
+            self.detail_scroll = min(self.detail_scroll, max_scroll)
+            self.detail_scroll = max(0, self.detail_scroll)
+            if self.detail_scroll >= max_scroll:
+                self.detail_follow_tail = True
 
         visible = events[self.detail_scroll : self.detail_scroll + view_h]
         for i, line in enumerate(visible):
@@ -350,12 +365,13 @@ class _DashboardState:
             except curses.error:
                 pass
 
+        follow = "跟随底部" if self.detail_follow_tail else "已暂停跟随"
         if job.state == JobState.RUNNING:
-            hint = "Esc 暂停本任务 · b 返回列表 · j/k 滚动"
+            hint = f"Esc 暂停 · b 返回 · j/k 翻阅 · g 回底部({follow})"
         elif job.state == JobState.PAUSED:
-            hint = "Esc 输入补充指令续跑 · b 返回列表"
+            hint = f"Esc 补充指令 · b 返回 · g 回底部({follow})"
         else:
-            hint = "b 返回列表 · j/k 滚动"
+            hint = f"b 返回 · j/k 翻阅 · g 回底部({follow})"
         try:
             stdscr.addstr(h - 2, 0, _trunc(hint, w - 1), curses.A_DIM)
         except curses.error:
@@ -382,7 +398,9 @@ class _DashboardState:
             "详情视图:",
             "  Esc         运行中:暂停; 已暂停:输入补充指令",
             "  b           返回列表(暂停仍占并发槽)",
-            "  j/k, PgUp/Dn  滚动事件",
+            "  j/k, PgUp/Dn  翻阅历史(暂停自动滚到底)",
+            "  g / End       滚到最新并恢复自动跟随",
+            "  G             滚到事件顶部",
             "",
             "补充输入:",
             "  Enter       提交并 --resume",
