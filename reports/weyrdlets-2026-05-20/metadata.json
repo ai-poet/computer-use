@@ -1,0 +1,42 @@
+{
+  "product_name": "Weyrdlets",
+  "url": "https://weyrdworks.com",
+  "download_url": "https://store.steampowered.com/app/2366060/Weyrdlets__Idle_Desktop_Pets/",
+  "host_os": "darwin",
+  "host_arch": "arm64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-weyrdlets-2026-05-20-2",
+    "api_url": "http://localhost:55270"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-20T17:26:10+08:00",
+  "finished_at": "2026-05-20T18:00:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "2c3788aa-1804-4097-bafb-f3a8f57ee68e",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网主视觉图:宠物钓鱼场景与品牌 Logo"},
+    {"file": "screenshots/02_web_customize.png", "view": "web-customize", "caption": "宠物定制界面:选择配件、颜色变体、3D 预览"},
+    {"file": "screenshots/03_web_desktop.png", "view": "web-desktop", "caption": "桌面宠物模式:Windows 桌面上的宠物与浮动控制面板"},
+    {"file": "screenshots/04_web_pets.png", "view": "web-pets", "caption": "游戏主场景:宠物在 3D 世界钓鱼互动"},
+    {"file": "screenshots/05_web_home.png", "view": "web-home", "caption": "家园建造模式:放置家具、装饰宠物房屋"},
+    {"file": "screenshots/06_web_status.png", "view": "web-status", "caption": "宠物状态面板:属性、性格雷达图、发现进度"},
+    {"file": "screenshots/07_web_adopt.gif", "view": "web-adopt", "caption": "领养互动动画:宠物领养与互动过程"},
+    {"file": "screenshots/08_web_shop.png", "view": "web-shop", "caption": "商店界面:Calcubot Store 物品购买"}
+  ],
+  "warnings": [
+    "web-only: product only available on Steam for Windows/macOS; no Linux build for sandbox",
+    "sandbox Firefox repeatedly crashed when loading weyrdworks.com/weyrdlets (likely due to external scripts like Facebook Pixel); browser screenshots could not be captured in sandbox",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "Steam store page pricing and details obtained via host curl; desktop application could not be installed or driven in Linux sandbox"
+  ]
+}

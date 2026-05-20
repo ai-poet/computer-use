@@ -1,0 +1,98 @@
+{
+  "queue": "queue.desktop-pets.json",
+  "max_workers": 5,
+  "counts": {
+    "total": 10,
+    "queued": 0,
+    "running": 0,
+    "paused": 0,
+    "done": 8,
+    "failed": 2,
+    "cancelled": 0,
+    "finished": 10,
+    "active_slots": 0,
+    "max_workers": 5
+  },
+  "jobs": [
+    {
+      "job_id": 1,
+      "product_name": "Desktop Mate",
+      "state": "failed",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/desktop-mate-2026-05-20",
+      "rc": 130,
+      "error": "exit 130"
+    },
+    {
+      "job_id": 2,
+      "product_name": "Weyrdlets",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/weyrdlets-2026-05-20-2",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 3,
+      "product_name": "Shimeji-ee",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/shimeji-ee-2026-05-20-2",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 4,
+      "product_name": "Dinoki",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/dinoki-2026-05-20-2",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 5,
+      "product_name": "DPET — Desktop Pet Engine",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/dpet-desktop-pet-engine-2026-05-20",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 6,
+      "product_name": "Desktop Goose",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/desktop-goose-2026-05-20",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 7,
+      "product_name": "Rusty's Retirement",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/rustys-retirement-2026-05-20",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 8,
+      "product_name": "Bongo Cat",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/bongo-cat-2026-05-20",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 9,
+      "product_name": "Tiny Pasture",
+      "state": "done",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/tiny-pasture-2026-05-20",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 10,
+      "product_name": "Wobbledogs",
+      "state": "failed",
+      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/wobbledogs-2026-05-20",
+      "rc": -2,
+      "error": "exit -2"
+    }
+  ]
+}

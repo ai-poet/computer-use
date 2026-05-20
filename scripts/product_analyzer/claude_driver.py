@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -53,6 +54,21 @@ def _esc_watcher_unix(flag: dict, stop: dict, proc: subprocess.Popen) -> None:
             termios.tcsetattr(fd, termios.TCSADRAIN, old)
         except (termios.error, OSError):
             pass
+
+
+def _external_esc_poller(
+    flag: dict, stop: dict, proc: subprocess.Popen
+) -> None:
+    """Dashboard sets ``flag['esc']=True``; terminate *proc* promptly so the
+    stdout loop unblocks even when claude is idle (no stream-json lines)."""
+    while not stop.get("done"):
+        if flag.get("esc"):
+            try:
+                proc.terminate()
+            except (ProcessLookupError, OSError):
+                pass
+            return
+        time.sleep(0.05)
 
 
 def _spawn_claude(
@@ -176,9 +192,16 @@ def run_claude(
             assert proc.stdout is not None
             stop_flag = {"done": False}
             watcher: threading.Thread | None = None
-            if (
-                not use_external_esc
-                and not non_interactive
+            esc_poller: threading.Thread | None = None
+            if use_external_esc:
+                esc_poller = threading.Thread(
+                    target=_external_esc_poller,
+                    args=(local_esc, stop_flag, proc),
+                    daemon=True,
+                )
+                esc_poller.start()
+            elif (
+                not non_interactive
                 and sys.stdin.isatty()
             ):
                 watcher = threading.Thread(
@@ -257,6 +280,8 @@ def run_claude(
             stop_flag["done"] = True
             if watcher and watcher.is_alive():
                 watcher.join(timeout=1)
+            if esc_poller and esc_poller.is_alive():
+                esc_poller.join(timeout=1)
 
             if not local_esc.get("esc"):
                 final_rc = proc.wait()

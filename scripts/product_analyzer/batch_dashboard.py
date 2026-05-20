@@ -67,8 +67,6 @@ class _DashboardState:
         interval = 1.0 / 8.0
         while not self.store.wait_until_done(timeout=interval):
             self._handle_input(stdscr)
-            if self.view == ViewMode.DETAIL:
-                self._maybe_enter_supplement(self.store.snapshot())
             self._draw(stdscr)
             if self.view == ViewMode.QUIT_CONFIRM and self.quit_choice == 1:
                 self.store.request_shutdown(cancel_pending=True)
@@ -113,11 +111,10 @@ class _DashboardState:
             return
 
         if self.view == ViewMode.SUPPLEMENT:
-            if key in (27,):  # Esc cancels supplement
-                if self.detail_job_id is not None:
-                    self.store.cancel_supplement(self.detail_job_id)
+            if key in (27,):  # Esc: back to detail, keep paused (manual intervention window)
                 self.view = ViewMode.DETAIL
                 self.supplement_buffer = ""
+                self._set_status("已暂停,可另开终端人工干预; Esc 再进补充输入")
                 return
             if key in (curses.KEY_ENTER, 10, 13):
                 if self.detail_job_id is not None:
@@ -125,14 +122,17 @@ class _DashboardState:
                     if text:
                         self.store.submit_supplement(self.detail_job_id, text)
                         self._set_status("已提交补充指令,续跑中…")
+                        self.store.mark_running_from_pause(self.detail_job_id)
                     else:
-                        self.store.cancel_supplement(self.detail_job_id)
-                        self._set_status("已取消续跑")
+                        self._set_status("补充为空,仍暂停; Esc 返回详情")
                 self.view = ViewMode.DETAIL
                 self.supplement_buffer = ""
                 return
             if key in (curses.KEY_BACKSPACE, 127, 8):
                 self.supplement_buffer = self.supplement_buffer[:-1]
+                return
+            if key in (ord("\\"),):
+                self.supplement_buffer += "\n"
                 return
             if 32 <= key <= 126:
                 self.supplement_buffer += chr(key)
@@ -205,13 +205,7 @@ class _DashboardState:
                 self.view = ViewMode.LIST
 
         if job.state == JobState.PAUSED and self.view == ViewMode.DETAIL:
-            # Auto-enter supplement when paused (once per pause)
             pass
-
-    def _maybe_enter_supplement(self, jobs: list[BatchJobSnapshot]) -> None:
-        job = self._current_job(jobs)
-        if job and job.state == JobState.PAUSED:
-            self.view = ViewMode.SUPPLEMENT
 
     def _current_job(self, jobs: list[BatchJobSnapshot]) -> BatchJobSnapshot | None:
         if self.detail_job_id is None:
@@ -264,7 +258,8 @@ class _DashboardState:
         bar = "█" * filled + "░" * (bar_w - filled)
         stats = (
             f"并发 {counts.active_slots}/{counts.max_workers}  "
-            f"运行 {counts.running}  排队 {counts.queued}  "
+            f"运行 {counts.running}  启动 {counts.starting}  "
+            f"收尾 {counts.finishing}  排队 {counts.queued}  "
             f"完成 {counts.done}  失败 {counts.failed}  "
             f"进度 {bar} {done}/{counts.total}"
         )
@@ -301,7 +296,10 @@ class _DashboardState:
             attr = curses.A_REVERSE if sel else curses.A_NORMAL
             attr |= _state_color(job.state)
             name = _trunc(job.product_name, 18)
-            action = _trunc(job.last_action, max(10, w - 45))
+            if job.state == JobState.QUEUED:
+                action = "—"
+            else:
+                action = _trunc(job.last_action, max(10, w - 45))
             line = (
                 f"{job.job_id:>3}  {name:<18} {job.state_label:<6} "
                 f"{job.elapsed_display:>7}  {action}"
@@ -372,8 +370,10 @@ class _DashboardState:
         follow = "跟随底部" if self.detail_follow_tail else "已暂停跟随"
         if job.state == JobState.RUNNING:
             hint = f"Esc 暂停 · b 返回 · j/k 翻阅 · g 回底部({follow})"
+        elif job.state == JobState.FINISHING:
+            hint = f"claude 已结束,销毁 sandbox 中 · b 返回 · g 回底部({follow})"
         elif job.state == JobState.PAUSED:
-            hint = f"Esc 补充指令 · b 返回 · g 回底部({follow})"
+            hint = f"Esc 补充指令 · b 返回 · 可另开终端改 out_dir({follow})"
         else:
             hint = f"b 返回 · j/k 翻阅 · g 回底部({follow})"
         try:
@@ -383,9 +383,19 @@ class _DashboardState:
 
     def _draw_supplement_bar(self, stdscr: curses.window, h: int, w: int) -> None:
         curses.curs_set(1)
-        prompt = f"补充> {self.supplement_buffer}"
+        jobs = self.store.snapshot()
+        job = self._current_job(jobs)
+        hint = "Enter 提交续跑 · Esc 返回详情(仍暂停) · \\ 换行"
+        if job and job.out_dir:
+            hint = f"人工干预: 另开终端编辑 {job.out_dir} · {hint}"
         try:
-            stdscr.addstr(h - 1, 0, _trunc(prompt, w - 1), curses.A_REVERSE)
+            stdscr.addstr(h - 2, 0, _trunc(hint, w - 1), curses.A_DIM)
+        except curses.error:
+            pass
+        prompt = self.supplement_buffer.replace("\n", " ⏎ ")
+        line = f"补充> {prompt}"
+        try:
+            stdscr.addstr(h - 1, 0, _trunc(line, w - 1), curses.A_REVERSE)
         except curses.error:
             pass
 
@@ -400,17 +410,28 @@ class _DashboardState:
             "  ?           本帮助",
             "",
             "详情视图:",
-            "  Esc         运行中:暂停; 已暂停:输入补充指令",
+            "  Esc         运行中:暂停; 已暂停:输入补充指令; 收尾/完成:返回列表",
             "  b           返回列表(暂停仍占并发槽)",
             "  j/k, PgUp/Dn  翻阅历史(暂停自动滚到底)",
             "  g / End       滚到最新并恢复自动跟随",
             "  G             滚到事件顶部",
             "",
             "补充输入:",
-            "  Enter       提交并 --resume",
-            "  Esc         取消续跑",
+            "  Enter       提交并 --resume 续跑",
+            "  Esc         返回详情(任务仍暂停,可人工改 out_dir)",
+            "  \\           换行(多行补充)",
             "",
-            "说明: 暂停期间仍占用一个并发槽,避免超额启动 claude。",
+            "人工干预(暂停期间):",
+            "  另开终端进入详情里显示的 out 目录",
+            "  可手动改 report.md / 调 sandbox_ctl / 看 run.log",
+            "  完成后回控制台 Esc → 输入补充指令 → Enter 续跑",
+            "",
+            "放弃本任务: 列表层 q 退出批量,或补充里 Ctrl+C",
+            "",
+            "状态说明:",
+            "  启动 = 已占并发槽,建目录/起 claude 前",
+            "  收尾 = claude 已输出 result,正在销毁 sandbox(仍占并发槽)",
+            "说明: 暂停/收尾期间仍占用一个并发槽,避免超额启动 claude。",
         ]
         stdscr.addstr(0, 0, " 帮助 ", curses.A_BOLD)
         view_h = h - 2
@@ -438,6 +459,8 @@ class _DashboardState:
 def _state_color(state: JobState) -> int:
     if state == JobState.RUNNING:
         return curses.color_pair(4)
+    if state in (JobState.STARTING, JobState.FINISHING):
+        return curses.color_pair(2)
     if state == JobState.QUEUED:
         return curses.color_pair(2)
     if state == JobState.DONE:

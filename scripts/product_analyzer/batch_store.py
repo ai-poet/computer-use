@@ -14,7 +14,9 @@ from typing import Any, Callable
 
 class JobState(str, Enum):
     QUEUED = "queued"
+    STARTING = "starting"
     RUNNING = "running"
+    FINISHING = "finishing"
     PAUSED = "paused"
     DONE = "done"
     FAILED = "failed"
@@ -23,12 +25,16 @@ class JobState(str, Enum):
 
 STATE_LABEL: dict[JobState, str] = {
     JobState.QUEUED: "排队",
+    JobState.STARTING: "启动",
     JobState.RUNNING: "运行",
+    JobState.FINISHING: "收尾",
     JobState.PAUSED: "已暂停",
     JobState.DONE: "完成",
     JobState.FAILED: "失败",
     JobState.CANCELLED: "已取消",
 }
+
+_RESULT_LINE = re.compile(r"── result:\s*(\S+)")
 
 
 def _strip_ansi(text: str) -> str:
@@ -48,6 +54,7 @@ class BatchJob:
     finished_at: float | None = None
     rc: int | None = None
     error: str | None = None
+    claude_rc: int | None = None
     last_action: str = "—"
     session_id: str | None = None
     esc_flag: dict = field(default_factory=lambda: {"esc": False})
@@ -95,7 +102,9 @@ class BatchJobSnapshot:
 class BatchCounts:
     total: int
     queued: int
+    starting: int
     running: int
+    finishing: int
     paused: int
     done: int
     failed: int
@@ -151,9 +160,31 @@ class BatchRunStore:
     def mark_queued(self, job_id: int) -> None:
         with self._lock:
             job = self._jobs[job_id]
-            if job.state == JobState.CANCELLED:
+            if job.state in (
+                JobState.CANCELLED,
+                JobState.STARTING,
+                JobState.RUNNING,
+                JobState.FINISHING,
+                JobState.PAUSED,
+                JobState.DONE,
+                JobState.FAILED,
+            ):
                 return
             job.state = JobState.QUEUED
+            job.last_action = "—"
+            job.started_at = None
+            job.out_dir = None
+            job.log_file = None
+
+    def mark_starting(self, job_id: int, *, msg: str = "占用并发槽,准备中…") -> None:
+        with self._lock:
+            job = self._jobs[job_id]
+            if job.state == JobState.CANCELLED:
+                return
+            job.state = JobState.STARTING
+            job.last_action = msg[:80]
+            if job.started_at is None:
+                job.started_at = time.time()
 
     def mark_running(self, job_id: int, *, out_dir: str, log_file: str) -> None:
         with self._lock:
@@ -172,6 +203,23 @@ class BatchRunStore:
             job.state = JobState.PAUSED
             if session_id:
                 job.session_id = session_id
+
+    def mark_running_from_pause(self, job_id: int) -> None:
+        with self._lock:
+            job = self._jobs[job_id]
+            if job.state == JobState.PAUSED:
+                job.state = JobState.RUNNING
+                job.esc_flag["esc"] = False
+
+    def mark_finishing(self, job_id: int, *, msg: str | None = None) -> None:
+        with self._lock:
+            job = self._jobs[job_id]
+            if job.state in (JobState.RUNNING, JobState.PAUSED):
+                job.state = JobState.FINISHING
+            elif job.state not in (JobState.FINISHING, JobState.DONE, JobState.FAILED):
+                job.state = JobState.FINISHING
+            if msg:
+                job.last_action = msg[:80]
 
     def mark_done(self, job_id: int, *, rc: int, error: str | None = None) -> None:
         with self._lock:
@@ -211,7 +259,12 @@ class BatchRunStore:
             for line in reversed(lines):
                 plain = _strip_ansi(line).strip()
                 if plain:
-                    job.last_action = plain[:80]
+                    if job.state != JobState.QUEUED:
+                        job.last_action = plain[:80]
+                    m = _RESULT_LINE.search(plain)
+                    if m and job.state == JobState.RUNNING:
+                        job.state = JobState.FINISHING
+                        job.claude_rc = 0 if m.group(1) == "success" else 1
                     break
             if sid:
                 job.session_id = sid
@@ -295,12 +348,19 @@ class BatchRunStore:
         c = {s: 0 for s in JobState}
         for job in jobs:
             c[job.state] += 1
-        active = c[JobState.RUNNING] + c[JobState.PAUSED]
+        active = (
+            c[JobState.STARTING]
+            + c[JobState.RUNNING]
+            + c[JobState.FINISHING]
+            + c[JobState.PAUSED]
+        )
         finished = c[JobState.DONE] + c[JobState.FAILED] + c[JobState.CANCELLED]
         return BatchCounts(
             total=len(jobs),
             queued=c[JobState.QUEUED],
+            starting=c[JobState.STARTING],
             running=c[JobState.RUNNING],
+            finishing=c[JobState.FINISHING],
             paused=c[JobState.PAUSED],
             done=c[JobState.DONE],
             failed=c[JobState.FAILED],

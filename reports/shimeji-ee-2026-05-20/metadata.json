@@ -1,0 +1,35 @@
+{
+  "product_name": "Shimeji-ee",
+  "url": "https://kilkakon.com/shimeji/",
+  "download_url": "https://kilkakon.com/shimeji/shimejiee.zip",
+  "host_os": "darwin",
+  "host_arch": "arm64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-shimeji-ee-2026-05-20-2",
+    "api_url": "http://localhost:55253"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-20T17:26:10+08:00",
+  "finished_at": "2026-05-20T17:50:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "694dc036-8f24-489f-8d74-a9adb4807d3e",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页，含产品标题、角色演示图、下载按钮和导航"}
+  ],
+  "warnings": [
+    "web-only: product explicitly states 'runs only on Windows'; sandbox is Linux, cannot run Windows app",
+    "browser crash: Google AdSense script (pagead2.googlesyndication.com) causes Firefox tab to crash repeatedly in sandbox",
+    "android: disabled by configuration; no Android sandbox created",
+    "only 1 screenshot captured due to browser instability; additional pages (characters.php, affordances.php) content retrieved via host curl"
+  ]
+}

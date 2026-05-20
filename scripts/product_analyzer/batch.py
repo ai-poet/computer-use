@@ -273,6 +273,7 @@ async def _run_one_with_semaphore(
         async with sem:
             if store.should_skip_job(index):
                 return _cancelled_result(row, sandbox_ctx, index)
+            store.mark_starting(index)
             return await asyncio.to_thread(
                 _run_one, row, index, sandbox_ctx, sandbox_warnings, store
             )
@@ -387,6 +388,8 @@ def _run_one(
             supplement_provider=supplement_provider,
         )
     finally:
+        if store.dashboard_active:
+            store.mark_finishing(index, msg="销毁 sandbox…")
         teardown_out_dir(out_dir)
 
     post_check(out_dir)

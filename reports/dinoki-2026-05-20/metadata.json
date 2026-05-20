@@ -1,0 +1,37 @@
+{
+  "product_name": "Dinoki",
+  "url": "https://dinoki.ai",
+  "download_url": null,
+  "host_os": "darwin",
+  "host_arch": "arm64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-dinoki-2026-05-20-2",
+    "api_url": "http://localhost:55285"
+  },
+  "started_at": "2026-05-20T17:26:10+08:00",
+  "finished_at": "2026-05-20T17:47:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "86674783-7214-4236-b263-658ed93960b9",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页——显示 deployment temporarily paused，服务不可用"},
+    {"file": "screenshots/02_web_docs.png", "view": "web-docs", "caption": "文档站——Firefox 标签页崩溃/无法加载，服务不可用"}
+  ],
+  "warnings": [
+    "官网 dinoki.ai 显示 'This deployment is temporarily paused'，完全无法访问任何页面内容",
+    "docs.dinoki.ai 文档站同样无法访问，Firefox 标签页崩溃或长时间空白加载",
+    "Dinoki 产品仅提供 macOS 和 Windows 版本，无 Linux 版，当前 Linux 沙盒中无可运行安装包",
+    "沙盒内 Firefox 在访问部分页面时表现不稳定（标签页崩溃、空白加载），无法获取 AlternativeTo/HackerNews 等第三方页面截图",
+    "所有产品界面描述基于 WebSearch 收集的 IndieHackers 文章、AlternativeTo listing、中文下载站信息交叉验证，非一手体验"
+  ],
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  }
+}
