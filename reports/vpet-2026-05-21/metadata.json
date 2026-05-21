@@ -1,0 +1,28 @@
+{
+  "product_name": "VPet (虚拟桌宠模拟器)",
+  "url": "https://store.steampowered.com/app/1920960/VPet/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": null,
+    "api_url": null
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-21T23:53:03+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "c4c25a76-272e-4473-9dda-cdbbd2755601",
+  "screenshots": [],
+  "warnings": []
+}
