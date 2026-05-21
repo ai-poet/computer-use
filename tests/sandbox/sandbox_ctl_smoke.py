@@ -22,7 +22,7 @@ from typing import Any
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CTL = _REPO_ROOT / "scripts" / "sandbox_ctl.py"
 _DEFAULT_OUT = _REPO_ROOT / "tmp" / "sandbox-ctl-smoke"
-_DEFAULT_URL = "https://example.com"
+_DEFAULT_URL = "https://juejin.cn"
 _MIN_SCREENSHOT_BYTES = 1000
 
 
