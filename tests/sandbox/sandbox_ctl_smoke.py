@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Smoke test for scripts/product_analyzer/sandbox_ctl.py (local Docker + Firefox).
 
-Exercises the same path batch workers use:
-  bootstrap --open-browser --url → step screenshot/scroll/click on the loaded page.
+Covers two paths in one run:
+  1. Browser (batch worker): bootstrap --open-browser --url → dismiss modal → scroll/click.
+  2. Desktop regression: move, right-click, scroll, terminal hotkey, type.
 
 Artifacts land under --output-dir (default tmp/sandbox-ctl-smoke/).
 """
@@ -148,20 +149,36 @@ def _shot(
     return True
 
 
-def _run_browser_scenario(out_dir: Path, url: str, report: SmokeReport) -> tuple[bool, list[str]]:
-    """Browser-first path: homepage screenshot → scroll → click in page content."""
+def _dismiss_overlays(out_dir: Path, report: SmokeReport) -> None:
+    """Close Firefox translation / cookie banners before scroll or click."""
+    for label, keys in (
+        ("dismiss overlay (escape)", "escape"),
+        ("dismiss overlay (escape x2)", "escape"),
+    ):
+        _must_ok(report, label, _run_ctl(["step", "key", str(out_dir), keys]), soft=True)
+        time.sleep(0.25)
+
+
+def _run_browser_scenario(
+    out_dir: Path,
+    url: str,
+    report: SmokeReport,
+    cx: int,
+    cy: int,
+) -> tuple[bool, list[str]]:
+    """Batch-worker path: homepage → dismiss modal → scroll → click → reopen URL."""
     saved: list[str] = []
-    cx, cy = _screen_center(out_dir, report)
 
     time.sleep(2.0)
     if not _shot(report, out_dir, "01_web_homepage.png", saved):
         return False, saved
 
+    _dismiss_overlays(out_dir, report)
+
     if not _must_ok(
         report,
         "scroll page",
         _run_ctl(["step", "scroll", str(out_dir), str(cx), str(cy), "--scroll-y", "-8"]),
-        soft=True,
     ):
         return False, saved
     time.sleep(0.8)
@@ -173,7 +190,6 @@ def _run_browser_scenario(out_dir: Path, url: str, report: SmokeReport) -> tuple
         report,
         "click page",
         _run_ctl(["step", "click", str(out_dir), str(cx), str(cy)]),
-        soft=True,
     ):
         return False, saved
     time.sleep(0.5)
@@ -209,6 +225,103 @@ def _run_browser_scenario(out_dir: Path, url: str, report: SmokeReport) -> tuple
     return True, saved
 
 
+def _run_desktop_scenario(
+    out_dir: Path,
+    report: SmokeReport,
+    cx: int,
+    cy: int,
+) -> tuple[bool, list[str]]:
+    """XFCE desktop regression: mouse, scroll, terminal, keyboard."""
+    saved: list[str] = []
+
+    if not _must_ok(
+        report,
+        "mouse move corner",
+        _run_ctl(["step", "move", str(out_dir), "80", "80"]),
+    ):
+        return False, saved
+
+    if not _must_ok(
+        report,
+        "mouse move center",
+        _run_ctl(["step", "move", str(out_dir), str(cx), str(cy)]),
+    ):
+        return False, saved
+
+    if not _shot(report, out_dir, "05_desktop_after_move.png", saved, soft=True):
+        return False, saved
+
+    if not _must_ok(
+        report,
+        "right click",
+        _run_ctl(
+            ["step", "click", str(out_dir), str(cx), str(cy), "--button", "right"],
+        ),
+    ):
+        return False, saved
+    time.sleep(0.5)
+
+    if not _shot(report, out_dir, "06_desktop_after_right_click.png", saved):
+        return False, saved
+
+    _must_ok(report, "dismiss context menu", _run_ctl(["step", "key", str(out_dir), "escape"]))
+
+    if not _must_ok(
+        report,
+        "scroll desktop",
+        _run_ctl(["step", "scroll", str(out_dir), str(cx), str(cy), "--scroll-y", "-5"]),
+    ):
+        return False, saved
+    time.sleep(0.3)
+
+    if not _shot(report, out_dir, "07_desktop_after_scroll.png", saved, soft=True):
+        return False, saved
+
+    if not _must_ok(
+        report,
+        "open terminal (ctrl+alt+t)",
+        _run_ctl(["step", "key", str(out_dir), "ctrl+alt+t"]),
+        soft=True,
+    ):
+        return False, saved
+    time.sleep(1.5)
+
+    if not _shot(report, out_dir, "08_desktop_terminal.png", saved, soft=True):
+        return False, saved
+
+    if not _must_ok(
+        report,
+        "type in terminal",
+        _run_ctl(["step", "type", str(out_dir), "echo sandbox-ctl-smoke-ok"]),
+    ):
+        return False, saved
+
+    if not _must_ok(
+        report,
+        "enter in terminal",
+        _run_ctl(["step", "key", str(out_dir), "enter"]),
+    ):
+        return False, saved
+    time.sleep(0.8)
+
+    if not _shot(report, out_dir, "09_desktop_after_typing.png", saved, soft=True):
+        return False, saved
+
+    _must_ok(
+        report,
+        "double click",
+        _run_ctl(
+            ["step", "click", str(out_dir), str(cx), str(cy), "--button", "double"],
+        ),
+        soft=True,
+    )
+
+    if not _shot(report, out_dir, "10_desktop_final.png", saved, soft=True):
+        return False, saved
+
+    return True, saved
+
+
 def _write_report(out_dir: Path, report: SmokeReport) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     payload: dict[str, Any] = {
@@ -227,7 +340,7 @@ def _write_report(out_dir: Path, report: SmokeReport) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="sandbox_ctl browser smoke test (bootstrap + Firefox + mouse/keyboard steps)",
+        description="sandbox_ctl smoke test (browser + desktop mouse/keyboard steps)",
     )
     parser.add_argument("--check-only", action="store_true")
     parser.add_argument(
@@ -288,10 +401,20 @@ def main() -> int:
         return 1
     print(boot.stdout.strip())
 
-    ui_ok, screenshots = _run_browser_scenario(out_dir, report.url, report)
-    report.screenshots = screenshots
-    if not ui_ok:
+    cx, cy = _screen_center(out_dir, report)
+
+    browser_ok, screenshots = _run_browser_scenario(out_dir, report.url, report, cx, cy)
+    if not browser_ok:
+        report.screenshots = screenshots
         report.error = "browser scenario failed"
+        _write_report(out_dir, report)
+        _run_ctl(["teardown", str(out_dir)])
+        return 1
+
+    desktop_ok, desktop_shots = _run_desktop_scenario(out_dir, report, cx, cy)
+    report.screenshots = screenshots + desktop_shots
+    if not desktop_ok:
+        report.error = "desktop scenario failed"
         _write_report(out_dir, report)
         _run_ctl(["teardown", str(out_dir)])
         return 1
@@ -310,7 +433,7 @@ def main() -> int:
     print(f"\nAll screenshots saved under: {shots_dir}")
     for path in sorted(shots_dir.glob("*.png")):
         print(f"  - {path}")
-    print("sandbox_ctl browser smoke passed")
+    print("sandbox_ctl smoke passed")
     return 0
 
 

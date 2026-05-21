@@ -1,7 +1,7 @@
 {
   "passed": false,
   "output_dir": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke",
-  "url": "https://example.com",
+  "url": "https://juejin.cn",
   "screenshots_dir": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/screenshots",
   "screenshots": [],
   "error": "bootstrap failed",
@@ -9,7 +9,7 @@
     {
       "name": "bootstrap",
       "ok": false,
-      "detail": "error: sandbox.json already exists; run teardown first"
+      "detail": "RuntimeError: Docker is not installed or not running"
     }
   ]
 }

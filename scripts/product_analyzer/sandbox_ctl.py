@@ -466,7 +466,21 @@ async def cmd_step_scroll(
     apply_no_proxy_env()
     info = load_sandbox_info(out_dir)
     async with _connect_from_info(info) as sb:
-        await sb.mouse.scroll(x, y, scroll_x, scroll_y)
+        # cua_sandbox Mouse.scroll sends {x,y,scroll_x,scroll_y}, but computer-server
+        # LinuxAutomationHandler.scroll(x,y) treats x/y as wheel deltas and drops
+        # scroll_x/scroll_y (see trycua/cua computer_server/handlers/linux.py). LocalTransport
+        # does move+scroll correctly; HTTP transport to Docker does not. Work around by
+        # moving first, then scroll_down/up (vertical) or raw scroll deltas (horizontal).
+        await sb.mouse.move(x, y)
+        transport = sb._transport
+        if scroll_y < 0:
+            await transport.send("scroll_down", clicks=abs(scroll_y))
+        elif scroll_y > 0:
+            await transport.send("scroll_up", clicks=scroll_y)
+        if scroll_x < 0:
+            await transport.send("scroll", x=-abs(scroll_x), y=0)
+        elif scroll_x > 0:
+            await transport.send("scroll", x=abs(scroll_x), y=0)
     _emit({"ok": True, "x": x, "y": y, "scroll_x": scroll_x, "scroll_y": scroll_y})
     return 0
 
