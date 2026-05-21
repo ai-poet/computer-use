@@ -1,0 +1,28 @@
+{
+  "product_name": "Mac Pet",
+  "url": "https://mac-pet.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-mac-pet-2026-05-22",
+    "api_url": "http://localhost:37359"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:55:40+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "726b0e4a-6150-478e-83db-c6213d6074f0",
+  "screenshots": [],
+  "warnings": []
+}
