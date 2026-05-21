@@ -123,5 +123,40 @@
     "category": "AI Coding Workbench — Pure Relay",
     "product_name": "instcopilot-api",
     "url": "https://instcopilot-api.com"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "4Router",
+    "url": "https://4router.net"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "CUBENCE",
+    "url": "https://cubence.com"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "YesCode",
+    "url": "https://co.yes.vg"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "FoxCode",
+    "url": "https://foxcode.rjj.cc"
+  },
+  {
+    "category": "AI Coding Workbench — OpenClaw Wrapper",
+    "product_name": "QClaw (腾讯)",
+    "url": "https://qclaw.qq.com"
+  },
+  {
+    "category": "AI Coding Workbench — OpenClaw Wrapper",
+    "product_name": "CoPaw (阿里通义)",
+    "url": "https://copaw.bot"
+  },
+  {
+    "category": "AI Coding Workbench — OpenClaw Wrapper",
+    "product_name": "JVS Claw (阿里云)",
+    "url": "https://jvsclaw.aliyun.com"
   }
 ]
