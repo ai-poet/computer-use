@@ -1,15 +1,171 @@
 {
-  "passed": false,
+  "passed": true,
   "output_dir": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke",
   "url": "https://juejin.cn",
   "screenshots_dir": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/screenshots",
-  "screenshots": [],
-  "error": "bootstrap failed",
+  "screenshots": [
+    "screenshots/01_web_homepage.png",
+    "screenshots/02_web_after_scroll.png",
+    "screenshots/03_web_after_click.png",
+    "screenshots/04_web_reopen_url.png",
+    "screenshots/05_desktop_after_move.png",
+    "screenshots/06_desktop_after_right_click.png",
+    "screenshots/07_desktop_after_scroll.png",
+    "screenshots/08_desktop_terminal.png",
+    "screenshots/09_desktop_after_typing.png",
+    "screenshots/10_desktop_final.png"
+  ],
+  "error": null,
   "steps": [
     {
       "name": "bootstrap",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\"}"
+    },
+    {
+      "name": "screen-size",
+      "ok": true,
+      "detail": "{\"ok\": true, \"width\": 1024, \"height\": 768}"
+    },
+    {
+      "name": "screen_size",
+      "ok": true,
+      "detail": "1024x768"
+    },
+    {
+      "name": "screenshot 01_web_homepage.png",
+      "ok": true,
+      "detail": "bytes=200126"
+    },
+    {
+      "name": "dismiss overlay (escape)",
+      "ok": true,
+      "detail": "RuntimeError: Remote error: Unknown key in hotkey: escape"
+    },
+    {
+      "name": "dismiss overlay (escape x2)",
+      "ok": true,
+      "detail": "RuntimeError: Remote error: Unknown key in hotkey: escape"
+    },
+    {
+      "name": "scroll page",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 512, \"y\": 424, \"scroll_x\": 0, \"scroll_y\": -8}"
+    },
+    {
+      "name": "screenshot 02_web_after_scroll.png",
+      "ok": true,
+      "detail": "bytes=200109"
+    },
+    {
+      "name": "click page",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"left\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 03_web_after_click.png",
+      "ok": true,
+      "detail": "bytes=200109"
+    },
+    {
+      "name": "firefox running",
+      "ok": true,
+      "detail": "{\"ok\": true, \"returncode\": 0, \"stdout\": \"firefox_ok\\n\", \"stderr\": \"\", \"command\": \"pgrep -x firefox >/dev/null && echo firefox_ok\", \"artifact\": \"/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/.sandbox_ctl_last_shell.json\"}"
+    },
+    {
+      "name": "sleep disabled (xset)",
+      "ok": true,
+      "detail": "{\"ok\": true, \"returncode\": 0, \"stdout\": \"xset_skip\\n\", \"stderr\": \"\", \"command\": \"export DISPLAY=${DISPLAY:-:1}; command -v xset >/dev/null && xset q | grep -E 'Monitor is|Screen is' || echo xset_skip\", \"artifact\": \"/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/.sandbox_ctl_last_shell.json\"}"
+    },
+    {
+      "name": "open-url no-launch",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\"}"
+    },
+    {
+      "name": "screenshot 04_web_reopen_url.png",
+      "ok": true,
+      "detail": "bytes=261828"
+    },
+    {
+      "name": "mouse move corner",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 80, \"y\": 80}"
+    },
+    {
+      "name": "mouse move center",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 05_desktop_after_move.png",
+      "ok": true,
+      "detail": "bytes=268158"
+    },
+    {
+      "name": "right click",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"right\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 06_desktop_after_right_click.png",
+      "ok": true,
+      "detail": "bytes=227075"
+    },
+    {
+      "name": "dismiss context menu",
       "ok": false,
-      "detail": "RuntimeError: Docker is not installed or not running"
+      "detail": "RuntimeError: Remote error: Unknown key in hotkey: escape"
+    },
+    {
+      "name": "scroll desktop",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 512, \"y\": 424, \"scroll_x\": 0, \"scroll_y\": -5}"
+    },
+    {
+      "name": "screenshot 07_desktop_after_scroll.png",
+      "ok": true,
+      "detail": "bytes=226985"
+    },
+    {
+      "name": "open terminal (ctrl+alt+t)",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"ctrl+alt+t\"}"
+    },
+    {
+      "name": "screenshot 08_desktop_terminal.png",
+      "ok": true,
+      "detail": "bytes=265219"
+    },
+    {
+      "name": "type in terminal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"chars\": 25}"
+    },
+    {
+      "name": "enter in terminal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"enter\"}"
+    },
+    {
+      "name": "screenshot 09_desktop_after_typing.png",
+      "ok": true,
+      "detail": "bytes=219232"
+    },
+    {
+      "name": "double click",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"double\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 10_desktop_final.png",
+      "ok": true,
+      "detail": "bytes=200559"
+    },
+    {
+      "name": "teardown",
+      "ok": true,
+      "detail": "{\"ok\": true, \"deleted\": \"analyzer-sandbox-ctl-smoke\"}"
     }
   ]
 }

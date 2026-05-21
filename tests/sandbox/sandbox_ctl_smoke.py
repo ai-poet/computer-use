@@ -253,6 +253,17 @@ def _run_desktop_scenario(
 
     if not _must_ok(
         report,
+        "scroll desktop",
+        _run_ctl(["step", "scroll", str(out_dir), str(cx), str(cy), "--scroll-y", "-5"]),
+    ):
+        return False, saved
+    time.sleep(0.3)
+
+    if not _shot(report, out_dir, "06_desktop_after_scroll.png", saved, soft=True):
+        return False, saved
+
+    if not _must_ok(
+        report,
         "right click",
         _run_ctl(
             ["step", "click", str(out_dir), str(cx), str(cy), "--button", "right"],
@@ -261,21 +272,10 @@ def _run_desktop_scenario(
         return False, saved
     time.sleep(0.5)
 
-    if not _shot(report, out_dir, "06_desktop_after_right_click.png", saved):
+    if not _shot(report, out_dir, "07_desktop_after_right_click.png", saved):
         return False, saved
 
     _must_ok(report, "dismiss context menu", _run_ctl(["step", "key", str(out_dir), "escape"]))
-
-    if not _must_ok(
-        report,
-        "scroll desktop",
-        _run_ctl(["step", "scroll", str(out_dir), str(cx), str(cy), "--scroll-y", "-5"]),
-    ):
-        return False, saved
-    time.sleep(0.3)
-
-    if not _shot(report, out_dir, "07_desktop_after_scroll.png", saved, soft=True):
-        return False, saved
 
     if not _must_ok(
         report,
