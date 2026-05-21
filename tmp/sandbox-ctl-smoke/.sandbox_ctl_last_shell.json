@@ -1,0 +1,1 @@
+{"ok": true, "returncode": 0, "stdout": "Linux 3da54dba5f8c 6.17.0-29-generic #29~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon May 11 10:30:58 UTC 2 x86_64 x86_64 x86_64 GNU/Linux\n", "stderr": "", "command": "uname -a", "artifact": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/.sandbox_ctl_last_shell.json"}

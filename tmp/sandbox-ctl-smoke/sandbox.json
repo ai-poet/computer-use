@@ -1,0 +1,8 @@
+{
+  "name": "analyzer-sandbox-ctl-smoke",
+  "provider": "docker",
+  "api_url": "http://localhost:49257",
+  "image": "trycua/cua-xfce:latest",
+  "platform": "linux/amd64",
+  "local": true
+}
