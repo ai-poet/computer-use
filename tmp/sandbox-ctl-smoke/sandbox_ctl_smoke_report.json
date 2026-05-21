@@ -20,7 +20,7 @@
     {
       "name": "bootstrap",
       "ok": true,
-      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\"}"
+      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\", \"load_wait_s\": 10.0}"
     },
     {
       "name": "screen-size",
@@ -35,7 +35,7 @@
     {
       "name": "screenshot 01_web_homepage.png",
       "ok": true,
-      "detail": "bytes=27409"
+      "detail": "bytes=199836"
     },
     {
       "name": "dismiss overlay (escape)",
@@ -55,7 +55,7 @@
     {
       "name": "screenshot 02_web_after_scroll.png",
       "ok": true,
-      "detail": "bytes=22879"
+      "detail": "bytes=301104"
     },
     {
       "name": "click page",
@@ -65,7 +65,7 @@
     {
       "name": "screenshot 03_web_after_click.png",
       "ok": true,
-      "detail": "bytes=22773"
+      "detail": "bytes=199496"
     },
     {
       "name": "firefox running",
@@ -80,12 +80,12 @@
     {
       "name": "open-url no-launch",
       "ok": true,
-      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\"}"
+      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\", \"load_wait_s\": 10.0}"
     },
     {
       "name": "screenshot 04_web_reopen_url.png",
       "ok": true,
-      "detail": "bytes=26161"
+      "detail": "bytes=249750"
     },
     {
       "name": "mouse move corner",
@@ -100,7 +100,7 @@
     {
       "name": "screenshot 05_desktop_after_move.png",
       "ok": true,
-      "detail": "bytes=27945"
+      "detail": "bytes=251628"
     },
     {
       "name": "scroll desktop",
@@ -110,7 +110,7 @@
     {
       "name": "screenshot 06_desktop_after_scroll.png",
       "ok": true,
-      "detail": "bytes=27934"
+      "detail": "bytes=341384"
     },
     {
       "name": "right click",
@@ -120,7 +120,7 @@
     {
       "name": "screenshot 07_desktop_after_right_click.png",
       "ok": true,
-      "detail": "bytes=24205"
+      "detail": "bytes=345477"
     },
     {
       "name": "dismiss context menu",
@@ -135,7 +135,7 @@
     {
       "name": "screenshot 08_desktop_terminal.png",
       "ok": true,
-      "detail": "bytes=24206"
+      "detail": "bytes=341306"
     },
     {
       "name": "type in terminal",
@@ -150,7 +150,7 @@
     {
       "name": "screenshot 09_desktop_after_typing.png",
       "ok": true,
-      "detail": "bytes=24206"
+      "detail": "bytes=306098"
     },
     {
       "name": "double click",
@@ -160,7 +160,7 @@
     {
       "name": "screenshot 10_desktop_final.png",
       "ok": true,
-      "detail": "bytes=24282"
+      "detail": "bytes=306224"
     },
     {
       "name": "teardown",
