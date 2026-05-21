@@ -1,0 +1,43 @@
+{
+  "product_name": "守护与智友 (Ai Vpet)",
+  "url": "https://store.steampowered.com/app/3029820/Ai_Vpet/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-ai-vpet-2026-05-22",
+    "api_url": "http://localhost:45553"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T00:19:09+08:00",
+  "finished_at": "2026-05-22T00:38:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "332ede2e-75fb-4a88-8950-bb4634815b59",
+  "screenshots": [
+    {"file": "screenshots/01_web_header.jpg", "view": "web-header", "caption": "Steam 商店 header 宣传图"},
+    {"file": "screenshots/02_web_capsule.jpg", "view": "web-capsule", "caption": "Steam 库列表展示图"},
+    {"file": "screenshots/03_web_page_bg.jpg", "view": "web-page-bg", "caption": "Steam 商店页面背景"},
+    {"file": "screenshots/05_web_screenshot2.jpg", "view": "web-screenshot", "caption": "产品截图：女仆装角色"},
+    {"file": "screenshots/06_web_screenshot3.jpg", "view": "web-screenshot2", "caption": "产品截图：蝴蝶装饰角色"},
+    {"file": "screenshots/07_web_desktop.png", "view": "web-desktop", "caption": "沙盒 XFCE 桌面环境"},
+    {"file": "screenshots/08_web_steamdb_cf.png", "view": "web-steamdb-cf", "caption": "SteamDB Cloudflare 验证页"},
+    {"file": "screenshots/09_web_steamdb.png", "view": "web-steamdb", "caption": "SteamDB 页面"}
+  ],
+  "warnings": [
+    "web-only: product is Windows-only (Steam software), no Linux/macOS package available",
+    "Steam store page rendered only footer in sandbox Firefox; full content extracted via wget HTML parsing",
+    "SteamDB requires Cloudflare human verification, could not access alternative data source",
+    "Sandbox XFCE screen lock occurred during analysis, unlocked successfully",
+    "android: sandbox not started; android.enabled=false, web-only product path"
+  ]
+}

@@ -9,8 +9,8 @@
     "image": "linux",
     "local": true,
     "mode": "local",
-    "name": null,
-    "api_url": null
+    "name": "analyzer-mihoyo-lumi-2026-05-21",
+    "api_url": "http://localhost:58895"
   },
   "android": {
     "enabled": false,

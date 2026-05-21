@@ -1,0 +1,40 @@
+{
+  "product_name": "木鱼专注",
+  "url": "http://dolphinflow.cn/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-product-b803ac-2026-05-22",
+    "api_url": "http://localhost:33823"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T00:07:56+08:00",
+  "finished_at": "2026-05-22T00:32:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "d9037c80-cea5-483d-88fa-7594ee9cadc5",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页（连接被重置错误页）"},
+    {"file": "screenshots/02_web_appstore.png", "view": "web-appstore", "caption": "应用宝产品页"},
+    {"file": "screenshots/03_web_appstore_detail.png", "view": "web-appstore-detail", "caption": "应用宝详情页（电脑版使用说明）"},
+    {"file": "screenshots/04_web_mergeek.png", "view": "web-mergeek", "caption": "Mergeek 产品展示页"},
+    {"file": "screenshots/05_web_mergeek_detail.png", "view": "web-mergeek-detail", "caption": "Mergeek 详情页"},
+    {"file": "screenshots/06_web_mergeek_features.png", "view": "web-mergeek-features", "caption": "Mergeek 功能介绍页"},
+    {"file": "screenshots/07_web_mergeek_bottom.png", "view": "web-mergeek-bottom", "caption": "Mergeek 底部分页（目标用户）"}
+  ],
+  "warnings": [
+    "web-only: 官网 http://dolphinflow.cn/ 无法访问（连接被重置，curl 返回空回复）",
+    "web-only: 产品为纯移动端应用（Android/iOS），无 Linux 桌面端安装包",
+    "android: android.enabled=false，未尝试 Android 沙盒路径"
+  ]
+}

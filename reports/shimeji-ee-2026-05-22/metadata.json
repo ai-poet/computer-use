@@ -1,0 +1,28 @@
+{
+  "product_name": "Shimeji-ee",
+  "url": "https://kilkakon.com/shimeji/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-shimeji-ee-2026-05-22",
+    "api_url": "http://localhost:32943"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:42:12+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "bd67973c-6095-4cd9-933e-1c61d4a1bd86",
+  "screenshots": [],
+  "warnings": []
+}

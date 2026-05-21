@@ -1,0 +1,28 @@
+{
+  "product_name": "天选姬 (ASUS TUF)",
+  "url": "https://www.asus.com/tuf-gaming/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-asus-tuf-2026-05-22",
+    "api_url": "http://localhost:46725"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:28:52+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "a942ff28-eefc-4921-937d-98d640018d28",
+  "screenshots": [],
+  "warnings": []
+}
