@@ -255,6 +255,30 @@ def cmd_resume() -> int:
     return 0
 
 
+def _batch_queue_paths(args: argparse.Namespace) -> list[Path] | None:
+    """Normalize ``--batch`` to an ordered list of queue paths."""
+    raw = getattr(args, "batch", None)
+    if raw is None:
+        return None
+    if isinstance(raw, list):
+        return raw
+    return [raw]
+
+
+def _log_batch_result(result, *, label: str) -> None:
+    ok = result.total - len(result.failed)
+    log(f"{label}: total={result.total} ok={ok} failed={len(result.failed)}")
+    for row in result.results:
+        status = "OK" if row["rc"] == 0 else f"FAIL rc={row['rc']}"
+        log(
+            f"  [{status}] {row['product']} "
+            f"sandbox={row.get('sandbox_mode')}/{row.get('sandbox_image')} "
+            f"out={row.get('out_dir')} log={row.get('log_file')}"
+        )
+        if row.get("error"):
+            err(f"    error: {row['error']}")
+
+
 def cmd_batch(args: argparse.Namespace) -> int:
     """Run a CSV/JSON queue with one sandbox (local or cloud) per product."""
     import os
@@ -262,18 +286,63 @@ def cmd_batch(args: argparse.Namespace) -> int:
     from .batch import resolve_batch_rows, run_batch
 
     batch_all = getattr(args, "batch_all", False)
-    if args.batch is None and not batch_all:
+    batch_paths = _batch_queue_paths(args)
+    if not batch_paths and not batch_all:
         err("请指定 --batch 或 --batch-all")
         return 1
     sandbox_ctx, warnings = prepare_batch_context(args)
     plain = getattr(args, "batch_plain", False) or os.environ.get(
         "ANALYZE_BATCH_PLAIN", ""
     ).strip() in ("1", "true", "yes")
+    queue_root = getattr(args, "batch_dir", None)
 
+    if batch_paths and len(batch_paths) > 1:
+        if not plain:
+            file_list = " → ".join(path.name for path in batch_paths)
+            log(
+                f"批量(序列): {file_list} · 并发 {args.max_workers} · "
+                f"sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
+            )
+            log("进入批量控制台(↑/↓ 列表 · Enter 详情 · q 退出); "
+                "纯文本模式请加 --batch-plain")
+        worst_rc = 0
+        for index, queue_path in enumerate(batch_paths, start=1):
+            rows, queue_name, _paths = resolve_batch_rows(
+                queue_path=queue_path,
+                batch_all=False,
+                queue_root=queue_root,
+            )
+            if not plain:
+                log(
+                    f"批量序列 [{index}/{len(batch_paths)}]: {queue_name} · "
+                    f"共 {len(rows)} 条"
+                )
+            try:
+                result = run_batch(
+                    args.max_workers,
+                    sandbox_ctx=sandbox_ctx,
+                    queue_path=queue_path,
+                    batch_all=False,
+                    queue_root=queue_root,
+                    sandbox_warnings=warnings,
+                    plain=plain,
+                )
+            except KeyboardInterrupt:
+                err("用户中断批量任务")
+                return 130
+            _log_batch_result(
+                result,
+                label=f"批量完成 [{index}/{len(batch_paths)}] {queue_name}",
+            )
+            if result.failed:
+                worst_rc = 2
+        return worst_rc
+
+    queue_path = batch_paths[0] if batch_paths else None
     rows, queue_name, paths = resolve_batch_rows(
-        queue_path=args.batch,
+        queue_path=queue_path,
         batch_all=batch_all,
-        queue_root=getattr(args, "batch_dir", None),
+        queue_root=queue_root,
     )
     if not plain:
         if batch_all:
@@ -295,26 +364,16 @@ def cmd_batch(args: argparse.Namespace) -> int:
         result = run_batch(
             args.max_workers,
             sandbox_ctx=sandbox_ctx,
-            queue_path=args.batch,
+            queue_path=queue_path,
             batch_all=batch_all,
-            queue_root=getattr(args, "batch_dir", None),
+            queue_root=queue_root,
             sandbox_warnings=warnings,
             plain=plain,
         )
     except KeyboardInterrupt:
         err("用户中断批量任务")
         return 130
-    ok = result.total - len(result.failed)
-    log(f"批量完成: total={result.total} ok={ok} failed={len(result.failed)}")
-    for row in result.results:
-        status = "OK" if row["rc"] == 0 else f"FAIL rc={row['rc']}"
-        log(
-            f"  [{status}] {row['product']} "
-            f"sandbox={row.get('sandbox_mode')}/{row.get('sandbox_image')} "
-            f"out={row.get('out_dir')} log={row.get('log_file')}"
-        )
-        if row.get("error"):
-            err(f"    error: {row['error']}")
+    _log_batch_result(result, label="批量完成")
     return 2 if result.failed else 0
 
 
@@ -366,6 +425,8 @@ def _build_parser() -> argparse.ArgumentParser:
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
             "  批量(默认本地): python3 scripts/analyze_product.py --batch queue.json "
             "--max-workers 10 --sandbox-image linux\n"
+            "  批量序列:    python3 scripts/analyze_product.py "
+            "--batch queue.a.json --batch queue.b.json --max-workers 2\n"
             "  批量全量:    python3 scripts/analyze_product.py --batch-all "
             "--max-workers 5 --sandbox-image linux\n"
             "  批量纯文本: python3 scripts/analyze_product.py --batch queue.json "
@@ -393,8 +454,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--batch",
         type=Path,
+        action="append",
+        metavar="QUEUE",
         default=None,
-        help="CSV/JSON 队列路径。与 --batch-all 二选一。",
+        help=(
+            "CSV/JSON 队列路径。可重复指定多次,按命令行顺序依次跑;"
+            "与 --batch-all 二选一。"
+        ),
     )
     parser.add_argument(
         "--batch-all",
@@ -454,11 +520,11 @@ def main(argv: list[str] | None = None) -> int:
     log("预检:claude CLI")
     ensure_claude_cli()
 
-    if args.batch is not None or args.batch_all:
+    if _batch_queue_paths(args) is not None or args.batch_all:
         if args.resume:
             err("--batch/--batch-all 与 --resume 不能同时使用")
             return 1
-        if args.batch is not None and args.batch_all:
+        if _batch_queue_paths(args) is not None and args.batch_all:
             err("--batch 与 --batch-all 不能同时使用")
             return 1
         log("预检:Cua Sandbox SDK")

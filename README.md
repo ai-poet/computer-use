@@ -403,6 +403,15 @@ python3 scripts/analyze_product.py \
   --max-workers 2 \
   --sandbox-image linux
 
+# 多个队列按优先级顺序跑(重复 --batch,顺序由命令行决定)
+python3 scripts/analyze_product.py \
+  --batch queue.desktop-pets.json \
+  --batch queue.coding-platforms.json \
+  --batch queue.china-travel.json \
+  --batch queue.language-learning.json \
+  --max-workers 2 \
+  --sandbox-image linux
+
 # 全量:自动合并全部 queue*.json(当前 4 文件、40 条),并发 5,其余排队
 python3 scripts/analyze_product.py \
   --batch-all \
@@ -416,7 +425,7 @@ python3 scripts/analyze_product.py \
   --max-workers 5
 ```
 
-`--batch` 与 `--batch-all` 二选一,不能同时使用。
+`--batch` 与 `--batch-all` 二选一,不能同时使用。`--batch` 可重复指定,按命令行顺序依次跑完每个队列后再跑下一个。
 
 `--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径 — worker **只操作网页**。需要 APK 时请预拉上方 `cua-qemu-android` 镜像并加 `--android`(或 `--sandbox-image auto`);Android 沙盒若仍启动失败,按 skill 退回网页分析,不阻塞报告产出。
 
