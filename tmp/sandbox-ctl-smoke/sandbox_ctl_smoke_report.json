@@ -9,8 +9,8 @@
     "screenshots/03_web_after_click.png",
     "screenshots/04_web_reopen_url.png",
     "screenshots/05_desktop_after_move.png",
-    "screenshots/06_desktop_after_right_click.png",
-    "screenshots/07_desktop_after_scroll.png",
+    "screenshots/06_desktop_after_scroll.png",
+    "screenshots/07_desktop_after_right_click.png",
     "screenshots/08_desktop_terminal.png",
     "screenshots/09_desktop_after_typing.png",
     "screenshots/10_desktop_final.png"
@@ -35,17 +35,17 @@
     {
       "name": "screenshot 01_web_homepage.png",
       "ok": true,
-      "detail": "bytes=200126"
+      "detail": "bytes=27409"
     },
     {
       "name": "dismiss overlay (escape)",
       "ok": true,
-      "detail": "RuntimeError: Remote error: Unknown key in hotkey: escape"
+      "detail": "{\"ok\": true, \"keys\": \"escape\"}"
     },
     {
       "name": "dismiss overlay (escape x2)",
       "ok": true,
-      "detail": "RuntimeError: Remote error: Unknown key in hotkey: escape"
+      "detail": "{\"ok\": true, \"keys\": \"escape\"}"
     },
     {
       "name": "scroll page",
@@ -55,7 +55,7 @@
     {
       "name": "screenshot 02_web_after_scroll.png",
       "ok": true,
-      "detail": "bytes=200109"
+      "detail": "bytes=22879"
     },
     {
       "name": "click page",
@@ -65,7 +65,7 @@
     {
       "name": "screenshot 03_web_after_click.png",
       "ok": true,
-      "detail": "bytes=200109"
+      "detail": "bytes=22773"
     },
     {
       "name": "firefox running",
@@ -85,7 +85,7 @@
     {
       "name": "screenshot 04_web_reopen_url.png",
       "ok": true,
-      "detail": "bytes=261828"
+      "detail": "bytes=26161"
     },
     {
       "name": "mouse move corner",
@@ -100,22 +100,7 @@
     {
       "name": "screenshot 05_desktop_after_move.png",
       "ok": true,
-      "detail": "bytes=268158"
-    },
-    {
-      "name": "right click",
-      "ok": true,
-      "detail": "{\"ok\": true, \"action\": \"right\", \"x\": 512, \"y\": 424}"
-    },
-    {
-      "name": "screenshot 06_desktop_after_right_click.png",
-      "ok": true,
-      "detail": "bytes=227075"
-    },
-    {
-      "name": "dismiss context menu",
-      "ok": false,
-      "detail": "RuntimeError: Remote error: Unknown key in hotkey: escape"
+      "detail": "bytes=27945"
     },
     {
       "name": "scroll desktop",
@@ -123,9 +108,24 @@
       "detail": "{\"ok\": true, \"x\": 512, \"y\": 424, \"scroll_x\": 0, \"scroll_y\": -5}"
     },
     {
-      "name": "screenshot 07_desktop_after_scroll.png",
+      "name": "screenshot 06_desktop_after_scroll.png",
       "ok": true,
-      "detail": "bytes=226985"
+      "detail": "bytes=27934"
+    },
+    {
+      "name": "right click",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"right\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 07_desktop_after_right_click.png",
+      "ok": true,
+      "detail": "bytes=24205"
+    },
+    {
+      "name": "dismiss context menu",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"escape\"}"
     },
     {
       "name": "open terminal (ctrl+alt+t)",
@@ -135,7 +135,7 @@
     {
       "name": "screenshot 08_desktop_terminal.png",
       "ok": true,
-      "detail": "bytes=265219"
+      "detail": "bytes=24206"
     },
     {
       "name": "type in terminal",
@@ -150,7 +150,7 @@
     {
       "name": "screenshot 09_desktop_after_typing.png",
       "ok": true,
-      "detail": "bytes=219232"
+      "detail": "bytes=24206"
     },
     {
       "name": "double click",
@@ -160,7 +160,7 @@
     {
       "name": "screenshot 10_desktop_final.png",
       "ok": true,
-      "detail": "bytes=200559"
+      "detail": "bytes=24282"
     },
     {
       "name": "teardown",

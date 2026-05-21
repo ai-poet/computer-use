@@ -169,7 +169,6 @@ def _run_browser_scenario(
     """Batch-worker path: homepage → dismiss modal → scroll → click → reopen URL."""
     saved: list[str] = []
 
-    time.sleep(2.0)
     if not _shot(report, out_dir, "01_web_homepage.png", saved):
         return False, saved
 
@@ -217,7 +216,6 @@ def _run_browser_scenario(
 
     reopen = _run_ctl(["step", "open-url", str(out_dir), url, "--no-launch"])
     _must_ok(report, "open-url no-launch", reopen, soft=True)
-    time.sleep(1.5)
 
     if not _shot(report, out_dir, "04_web_reopen_url.png", saved, soft=True):
         return False, saved

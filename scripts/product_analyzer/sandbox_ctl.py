@@ -34,6 +34,7 @@ SANDBOX_JSON = "sandbox.json"
 LAST_SHELL_JSON = ".sandbox_ctl_last_shell.json"
 _MIN_SCREENSHOT_BYTES = 1000
 ANALYZER_SANDBOX_PREFIX = "analyzer-"
+_PAGE_LOAD_WAIT_S = 10.0
 
 _cleanup_lock = threading.Lock()
 _cleanup_done = False
@@ -189,8 +190,8 @@ async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> 
     await cmd_step_type(out_dir, url)
     await asyncio.sleep(0.2)
     await cmd_step_key(out_dir, "enter")
-    await asyncio.sleep(2.0)
-    _emit({"ok": True, "action": "open-url", "url": url})
+    await asyncio.sleep(_PAGE_LOAD_WAIT_S)
+    _emit({"ok": True, "action": "open-url", "url": url, "load_wait_s": _PAGE_LOAD_WAIT_S})
     return 0
 
 
