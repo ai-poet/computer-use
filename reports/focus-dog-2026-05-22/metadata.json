@@ -1,0 +1,28 @@
+{
+  "product_name": "Focus Dog",
+  "url": "https://focusdog.app/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": null,
+    "api_url": null
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:05:56+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "7823f654-ccdd-4eef-b587-af9afd4859ad",
+  "screenshots": [],
+  "warnings": []
+}
