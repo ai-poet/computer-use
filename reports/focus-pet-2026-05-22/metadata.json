@@ -1,0 +1,28 @@
+{
+  "product_name": "Focus Pet",
+  "url": "https://apps.apple.com/us/app/focus-pet-your-work-companion/id6748871261",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-focus-pet-2026-05-22",
+    "api_url": "http://localhost:35375"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:58:02+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "fe4f889f-8ce5-4bc7-8a40-9b75b6cda822",
+  "screenshots": [],
+  "warnings": []
+}

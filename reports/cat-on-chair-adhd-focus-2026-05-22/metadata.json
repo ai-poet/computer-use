@@ -9,8 +9,8 @@
     "image": "linux",
     "local": true,
     "mode": "local",
-    "name": null,
-    "api_url": null
+    "name": "analyzer-cat-on-chair-adhd-focus-2026-05-22",
+    "api_url": "http://localhost:53505"
   },
   "android": {
     "enabled": false,
@@ -24,5 +24,7 @@
   "mode": null,
   "last_session_id": null,
   "screenshots": [],
-  "warnings": ["android: disabled by prompt; web-only product path"]
+  "warnings": [
+    "android: disabled by prompt; web-only product path"
+  ]
 }
