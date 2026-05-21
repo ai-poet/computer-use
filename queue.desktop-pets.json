@@ -1,52 +1,157 @@
 [
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Desktop Mate",
-    "url": "https://store.steampowered.com/app/3301060/Desktop_Mate/"
+    "category": "Desktop Pet — Subject",
+    "product_name": "ProductiveKitty",
+    "url": "https://productivekitty.masterwordai.com"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Weyrdlets",
-    "url": "https://weyrdworks.com"
+    "category": "Desktop Pet — China Market",
+    "product_name": "VPet (虚拟桌宠模拟器)",
+    "url": "https://store.steampowered.com/app/1920960/VPet/"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Shimeji-ee",
-    "url": "https://kilkakon.com/shimeji/"
+    "category": "Desktop Pet — China Market",
+    "product_name": "Doudou Game Companion (逗逗游戏伙伴)",
+    "url": "https://www.doudou.fun/"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Dinoki",
-    "url": "https://dinoki.ai"
+    "category": "Desktop Pet — China Market",
+    "product_name": "miHoYo 人工桌面 (Lumi 鹿鸣)",
+    "url": "https://lumi.mihoyo.com/"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "DPET — Desktop Pet Engine",
-    "url": "https://store.steampowered.com/app/1980920/DPET__Desktop_Pet_Engine/"
+    "category": "Desktop Pet — China Market",
+    "product_name": "互动桌面宠物",
+    "url": "https://apps.apple.com/app/id1488910190"
   },
   {
-    "category": "Desktop Pet Company / Apps",
+    "category": "Desktop Pet — China Market",
+    "product_name": "木鱼专注",
+    "url": "http://dolphinflow.cn/"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "桌面萌娘 2: 魔法引擎",
+    "url": "https://store.steampowered.com/app/1096550/Desktop_Magic_Engine/"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "Custom Desktop Pet (自定义桌面宠物)",
+    "url": "https://store.steampowered.com/app/2297040/Custom_Desktop_Pet/"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "守护与智友 (Ai Vpet)",
+    "url": "https://store.steampowered.com/app/3029820/Ai_Vpet/"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "My Wolf — Desktop Wild Pet (我的小狼)",
+    "url": "https://store.steampowered.com/app/1110890/MY_WOLF__Desktop_Wild_Pet/"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "天选姬 (ASUS TUF)",
+    "url": "https://www.asus.com/tuf-gaming/"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "Bongo Cat / Bongo Cat Display",
+    "url": "https://bongo.cat"
+  },
+  {
+    "category": "Desktop Pet — China Market",
+    "product_name": "Pets Therapy",
+    "url": "https://pets-therapy.com/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
     "product_name": "Desktop Goose",
     "url": "https://samperson.itch.io/desktop-goose"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Rusty's Retirement",
-    "url": "https://store.steampowered.com/app/2666330/Rustys_Retirement/"
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Shimeji-ee",
+    "url": "https://kilkakon.com/shimeji/"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Bongo Cat",
-    "url": "https://bongo.cat"
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Mac Pet",
+    "url": "https://mac-pet.com"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Tiny Pasture",
-    "url": "https://store.steampowered.com/app/2802730/Tiny_Pasture/"
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Cat On Chair: ADHD Focus",
+    "url": "https://catonchair.app/"
   },
   {
-    "category": "Desktop Pet Company / Apps",
-    "product_name": "Wobbledogs",
-    "url": "https://www.wobbledogs.com"
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Focus Pet",
+    "url": "https://apps.apple.com/us/app/focus-pet-your-work-companion/id6748871261"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Focus Dog",
+    "url": "https://focusdog.app/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Finch: Self-Care Pet",
+    "url": "https://finchcare.com/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Habitica",
+    "url": "https://habitica.com/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Forest",
+    "url": "https://www.forestapp.cc/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Focus Bear",
+    "url": "https://www.focusbear.io/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Fluffle",
+    "url": "https://fluffle.space"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "eSheep / Neko",
+    "url": "https://esheep.petrucci.ch/"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Desktop Pet (desktoppet.app)",
+    "url": "https://desktoppet.app"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "FocusBud",
+    "url": "https://gabesilverstein.com/focusbud.html"
+  },
+  {
+    "category": "Desktop Pet — Western Market",
+    "product_name": "Eggzy — Focus & Time Keeper",
+    "url": "https://apps.apple.com/app/eggzy-focus-time-keeper/id1407295296"
+  },
+  {
+    "category": "Desktop Pet — Adjacent Platform",
+    "product_name": "Wallpaper Engine",
+    "url": "https://store.steampowered.com/app/431960/Wallpaper_Engine/"
+  },
+  {
+    "category": "Desktop Pet — Adjacent Platform",
+    "product_name": "Setapp",
+    "url": "https://setapp.com/"
+  },
+  {
+    "category": "Desktop Pet — Adjacent Platform",
+    "product_name": "Deepwrk",
+    "url": "https://www.deepwrk.io/"
   }
 ]
