@@ -296,51 +296,17 @@ def cmd_batch(args: argparse.Namespace) -> int:
     ).strip() in ("1", "true", "yes")
     queue_root = getattr(args, "batch_dir", None)
 
-    if batch_paths and len(batch_paths) > 1:
-        if not plain:
-            file_list = " → ".join(path.name for path in batch_paths)
-            log(
-                f"批量(序列): {file_list} · 并发 {args.max_workers} · "
-                f"sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
-            )
-            log("进入批量控制台(↑/↓ 列表 · Enter 详情 · q 退出); "
-                "纯文本模式请加 --batch-plain")
-        worst_rc = 0
-        for index, queue_path in enumerate(batch_paths, start=1):
-            rows, queue_name, _paths = resolve_batch_rows(
-                queue_path=queue_path,
-                batch_all=False,
-                queue_root=queue_root,
-            )
-            if not plain:
-                log(
-                    f"批量序列 [{index}/{len(batch_paths)}]: {queue_name} · "
-                    f"共 {len(rows)} 条"
-                )
-            try:
-                result = run_batch(
-                    args.max_workers,
-                    sandbox_ctx=sandbox_ctx,
-                    queue_path=queue_path,
-                    batch_all=False,
-                    queue_root=queue_root,
-                    sandbox_warnings=warnings,
-                    plain=plain,
-                )
-            except KeyboardInterrupt:
-                err("用户中断批量任务")
-                return 130
-            _log_batch_result(
-                result,
-                label=f"批量完成 [{index}/{len(batch_paths)}] {queue_name}",
-            )
-            if result.failed:
-                worst_rc = 2
-        return worst_rc
+    queue_path: Path | None = None
+    queue_paths: list[Path] | None = None
+    if batch_paths:
+        if len(batch_paths) == 1:
+            queue_path = batch_paths[0]
+        else:
+            queue_paths = batch_paths
 
-    queue_path = batch_paths[0] if batch_paths else None
     rows, queue_name, paths = resolve_batch_rows(
         queue_path=queue_path,
+        queue_paths=queue_paths,
         batch_all=batch_all,
         queue_root=queue_root,
     )
@@ -351,6 +317,12 @@ def cmd_batch(args: argparse.Namespace) -> int:
                 f"批量(全量): {len(paths)} 个队列 · {file_list} · "
                 f"共 {len(rows)} 条 · 并发 {args.max_workers} · "
                 f"sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
+            )
+        elif queue_paths:
+            file_list = " → ".join(p.name for p in paths)
+            log(
+                f"批量(序列): {file_list} · 共 {len(rows)} 条 · "
+                f"并发 {args.max_workers} · sandbox={sandbox_ctx.mode}/{sandbox_ctx.image}"
             )
         else:
             log(
@@ -365,6 +337,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
             args.max_workers,
             sandbox_ctx=sandbox_ctx,
             queue_path=queue_path,
+            queue_paths=queue_paths,
             batch_all=batch_all,
             queue_root=queue_root,
             sandbox_warnings=warnings,
@@ -458,7 +431,7 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="QUEUE",
         default=None,
         help=(
-            "CSV/JSON 队列路径。可重复指定多次,按命令行顺序依次跑;"
+            "CSV/JSON 队列路径。可重复指定多次,按命令行顺序合并为一条队列并共享批量控制台;"
             "与 --batch-all 二选一。"
         ),
     )
