@@ -114,7 +114,7 @@ def _connect_from_info(info: dict[str, Any]) -> Any:
 
 # cua-xfce Linux image ships Firefox only (no Chromium). Probe DISPLAY from /tmp/.X11-unix
 # (often :1, not :0) before launching.
-_LINUX_FIREFOX_LAUNCH_SHELL = (
+_LINUX_DISPLAY_PROBE = (
     'D="${DISPLAY:-}"; '
     'if [ -z "$D" ] || [ ! -S "/tmp/.X11-unix/X${D#:}" ] 2>/dev/null; then '
     "for x in /tmp/.X11-unix/X*; do "
@@ -123,16 +123,59 @@ _LINUX_FIREFOX_LAUNCH_SHELL = (
     "done; "
     "fi; "
     'export DISPLAY="${D:-:1}"; '
-    "if pgrep -x firefox >/dev/null 2>&1; then exit 0; fi; "
-    "firefox --new-window about:blank >/dev/null 2>&1 & "
-    "sleep 3; "
-    "pgrep -x firefox >/dev/null"
+)
+
+_LINUX_FIREFOX_LAUNCH_SHELL = (
+    _LINUX_DISPLAY_PROBE
+    + "if pgrep -x firefox >/dev/null 2>&1; then exit 0; fi; "
+    + "firefox --new-window about:blank >/dev/null 2>&1 & "
+    + "sleep 3; "
+    + "pgrep -x firefox >/dev/null"
+)
+
+# Best-effort: keep XFCE desktop awake during long batch runs (xset + xfconf + systemd).
+_LINUX_XFCE_DISABLE_SLEEP_SHELL = (
+    _LINUX_DISPLAY_PROBE
+    + "if command -v xset >/dev/null 2>&1; then "
+    + "xset s off -dpms s noblank 2>/dev/null || true; "
+    + "fi; "
+    + "if command -v xfconf-query >/dev/null 2>&1; then "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/inactivity-sleep-mode-on-ac -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/inactivity-sleep-mode-on-battery -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/blank-on-ac -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/blank-on-battery -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/dpms-on-ac-sleep -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/dpms-on-ac-off -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c screensaver -p /saver/enabled -s false 2>/dev/null || true; "
+    + "xfconf-query -c screensaver -p /saver/idle-activation/enabled -s false 2>/dev/null || true; "
+    + "fi; "
+    + "if command -v systemctl >/dev/null 2>&1; then "
+    + "systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target "
+    + "2>/dev/null || true; "
+    + "fi; "
+    + "exit 0"
 )
 
 
 async def _launch_browser_once(out_dir: Path) -> int:
     """One-time shell helper to start Firefox; navigation after this is mouse/keyboard."""
     return await cmd_step_shell(out_dir, _LINUX_FIREFOX_LAUNCH_SHELL)
+
+
+async def _disable_linux_xfce_sleep(out_dir: Path) -> None:
+    """Best-effort disable screen blank/suspend on cua-xfce; never fails bootstrap."""
+    rc = await cmd_step_shell(out_dir, _LINUX_XFCE_DISABLE_SLEEP_SHELL)
+    if rc != 0:
+        print(
+            "warning: sandbox_ctl could not fully disable XFCE sleep (non-fatal)",
+            file=sys.stderr,
+        )
 
 
 async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> int:
@@ -214,6 +257,9 @@ async def cmd_bootstrap(
     await sb.disconnect()
 
     _emit({"ok": True, "sandbox": info})
+
+    if local and image_key in ("auto", "linux"):
+        await _disable_linux_xfce_sleep(out_dir)
 
     if open_browser:
         target = (url or os.environ.get("ANALYZER_PRODUCT_URL") or "").strip()

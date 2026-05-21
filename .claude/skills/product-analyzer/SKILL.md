@@ -243,6 +243,7 @@ python scripts/sandbox_ctl.py step scroll "$OUTPUT_DIR" 512 400 --scroll-y -8
 #### Linux 桌面 (`trycua/cua-xfce`)
 
 - 镜像**只预装 Firefox**,没有 Chromium。`bootstrap --open-browser` / `step open-url` 会由 `sandbox_ctl` 探测 `DISPLAY`(读 `/tmp/.X11-unix`,常见 **`:1`**,勿写死 `:0`)并启动 Firefox,再用 `ctrl+l` → 输入 URL → `enter`。
+- **`bootstrap` 会自动关闭 XFCE 休眠/屏保**(`xset`、`xfce4-power-manager`、`screensaver`);Claude **不要**再手动跑电源管理命令,除非截图仍黑屏。
 - **禁止**把 `chromium …`、`apt install chromium` 当主路径;会失败或浪费时间。
 - 若 bootstrap 后只有空白小窗/面板:先 `step screenshot`,再 **click** 任务栏 Firefox 图标,或 `step open-url "$URL"`(Firefox 已跑则加 `--no-launch`)。
 - 官网导航、Cookie、下载 hunt 均在 **Firefox 窗口内**用鼠标 + 键盘完成。
