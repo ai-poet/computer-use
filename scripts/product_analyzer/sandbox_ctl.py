@@ -102,14 +102,12 @@ def _connect_from_info(info: dict[str, Any]) -> Any:
     name = info["name"]
     local = bool(info.get("local", True))
     api_key = os.environ.get("CUA_API_KEY") if not local else None
-    if info.get("api_url") and not local:
-        return Sandbox.connect(
-            name,
-            local=False,
-            api_key=api_key,
-            http_url=info["api_url"],
-        )
-    return Sandbox.connect(name, local=local, api_key=api_key)
+    kwargs: dict[str, Any] = {"name": name, "local": local, "api_key": api_key}
+    api_url = (info.get("api_url") or "").strip()
+    if api_url:
+        # Prefer stored computer-server URL (Sandbox.connect http_url=… per SDK docs).
+        kwargs["http_url"] = api_url
+    return Sandbox.connect(**kwargs)
 
 
 # cua-xfce Linux image ships Firefox only (no Chromium). Probe DISPLAY from /tmp/.X11-unix
@@ -423,18 +421,41 @@ async def cmd_step_type(out_dir: Path, text: str) -> int:
     return 0
 
 
-# computer-server / cua_auto hotkey() only accepts lowercase names (see cua_auto.keyboard._SPECIAL).
-# Do not emit pynput-style PascalCase (Return, Escape) — HTTP transport rejects them.
+# computer-server (pynput) Key names differ from SDK docs examples — normalize before hotkey.
+# Linux: Key.esc not escape; Key.cmd not meta; Key.page_up not pageup; etc.
 _KEY_ALIASES: dict[str, str] = {
-    "escape": "escape",
-    "esc": "escape",
+    "escape": "esc",
+    "esc": "esc",
     "enter": "enter",
     "return": "enter",
+    "ret": "enter",
+    "tab": "tab",
+    "space": "space",
+    " ": "space",
+    "backspace": "backspace",
+    "bs": "backspace",
+    "delete": "delete",
+    "del": "delete",
+    "insert": "insert",
+    "ins": "insert",
+    "home": "home",
+    "end": "end",
+    "pageup": "page_up",
+    "page_up": "page_up",
+    "pgup": "page_up",
+    "pagedown": "page_down",
+    "page_down": "page_down",
+    "pgdn": "page_down",
+    "up": "up",
+    "down": "down",
+    "left": "left",
+    "right": "right",
     "control": "ctrl",
-    "command": "meta",
-    "cmd": "meta",
-    "win": "meta",
-    "super": "meta",
+    "command": "cmd",
+    "cmd": "cmd",
+    "win": "cmd",
+    "super": "cmd",
+    "meta": "cmd",
     "option": "alt",
 }
 
@@ -455,7 +476,11 @@ async def cmd_step_key(out_dir: Path, keys: str) -> int:
     info = load_sandbox_info(out_dir)
     key_list = _normalize_keys(keys)
     async with _connect_from_info(info) as sb:
-        await sb.keyboard.keypress(key_list)
+        # SDK Keyboard.keypress → hotkey; single keys also work via press_key.
+        if len(key_list) == 1:
+            await sb._transport.send("press_key", key=key_list[0])
+        else:
+            await sb.keyboard.keypress(key_list)
     _emit({"ok": True, "keys": keys})
     return 0
 

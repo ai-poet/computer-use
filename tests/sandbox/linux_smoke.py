@@ -143,7 +143,7 @@ async def _run_ui_scenario(sb: Any, shots_dir: Path, timeout: float, report: Smo
         all_ok = False
 
     # Dismiss context menu if open
-    await run_step("keyboard keypress Escape", sb.keyboard.keypress("escape"), timeout)
+    await run_step("keyboard keypress Escape", sb.keyboard.keypress("esc"), timeout)
     record(report, "keyboard_escape", True)
 
     await run_step("mouse.scroll down", sb.mouse.scroll(cx, cy, scroll_y=-5), timeout)
