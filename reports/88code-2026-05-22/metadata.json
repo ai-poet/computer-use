@@ -1,0 +1,43 @@
+{
+  "product_name": "88code",
+  "url": "https://www.88code.org",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-88code-2026-05-22",
+    "api_url": "http://localhost:47029"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:59:39+08:00",
+  "finished_at": "2026-05-22T02:15:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "6b9c28f1-4db0-499c-99b0-614f482cda9d",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "88code.org 官网 403 地域限制页面"},
+    {"file": "screenshots/02_web_inscode_home.png", "view": "web-inscode-home", "caption": "InsCode (快马) 首页，AI 应用生成入口"},
+    {"file": "screenshots/03_web_inscode_templates.png", "view": "web-inscode-templates", "caption": "InsCode 项目模板卡片区"},
+    {"file": "screenshots/04_web_inscode_workspace.png", "view": "web-inscode-workspace", "caption": "InsCode AI 编程工作区（三栏 IDE 布局）"},
+    {"file": "screenshots/05_web_inscode_workspace_scroll.png", "view": "web-inscode-workspace-scroll", "caption": "工作区滚动后：调试建议、文件上传、AI 输入"},
+    {"file": "screenshots/06_web_taotoken_home.png", "view": "web-taotoken-home", "caption": "TaoToken 首页，Token 计费平台入口"},
+    {"file": "screenshots/07_web_taotoken_pricing.png", "view": "web-taotoken-pricing", "caption": "TaoToken 模型定价列表（首屏）"},
+    {"file": "screenshots/08_web_taotoken_pricing_scroll.png", "view": "web-taotoken-pricing-scroll", "caption": "TaoToken 模型定价列表（滚动后更多模型）"}
+  ],
+  "warnings": [
+    "web-only: 88code.org 官网全站返回 403 'This site is not available in your region'，所有路径（/about, /pricing 等）均被 Photon-Edge CDN 地域限制屏蔽",
+    "web-only: 无法获取桌面端安装包，官网不可访问导致无法定位下载链接",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "88code.org 301 重定向至 www.88code.ai，两者均返回 403",
+    "产品实际入口在 InsCode 平台 (inscode.net)，88code.org 作为独立官网目前不可达"
+  ]
+}

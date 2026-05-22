@@ -1,0 +1,41 @@
+{
+  "product_name": "Deepwrk",
+  "url": "https://www.deepwrk.io/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-deepwrk-2026-05-22",
+    "api_url": "http://localhost:49435"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "batch": {
+    "parallel": true
+  },
+  "started_at": "2026-05-22T14:00:00+08:00",
+  "finished_at": "2026-05-22T14:28:00+08:00",
+  "mode": "web-only",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage_full.png", "view": "web-homepage-full", "caption": "官网首页完整长截图"},
+    {"file": "screenshots/02_web_pricing_full.png", "view": "web-pricing-full", "caption": "定价页完整长截图"},
+    {"file": "screenshots/03_web_features.png", "view": "web-features", "caption": "功能介绍页（Accountability Partner App）"},
+    {"file": "screenshots/04_web_app_login.png", "view": "web-app-login", "caption": "Web App 登录页"}
+  ],
+  "warnings": [
+    "sandbox network unavailable: DNS resolves but TCP connection times out to all external hosts; analysis used host-side Chrome headless screenshots and curl as fallback",
+    "product is web-only: no desktop installer (.dmg/.exe/.deb/AppImage) found on official website",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "no mobile app download links (App Store/Play Store) prominently displayed on homepage"
+  ],
+  "last_session_id": null
+}

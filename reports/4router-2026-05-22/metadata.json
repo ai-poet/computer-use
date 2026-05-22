@@ -1,0 +1,42 @@
+{
+  "product_name": "4Router",
+  "url": "https://4router.net",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-4router-2026-05-22",
+    "api_url": "http://localhost:52649"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T04:02:55+08:00",
+  "finished_at": "2026-05-22T04:38:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "66703725-af42-416e-86b4-667724beebf9",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页，展示品牌、标语和模型卡片"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "首页功能卡片区：Unified Access、Policy Routing、Observability、Reliable Delivery"},
+    {"file": "screenshots/03_web_pricing.png", "view": "web-pricing", "caption": "模型定价页，展示 GPT-4o、Claude 3.7 Sonnet 等模型价格"},
+    {"file": "screenshots/04_web_pricing_more.png", "view": "web-pricing-more", "caption": "定价页更多模型（Claude Opus、GPT-4.1 系列）"},
+    {"file": "screenshots/05_web_about.png", "view": "web-about", "caption": "关于页面，展示服务条款和隐私政策"},
+    {"file": "screenshots/06_web_docs.png", "view": "web-docs", "caption": "文档中心，左侧导航含 Claude Code 代理配置等教程"},
+    {"file": "screenshots/07_web_login.png", "view": "web-login", "caption": "登录页，支持用户名/密码和 linuxDo 第三方登录"}
+  ],
+  "warnings": [
+    "web-only: 4Router is a pure Web API service, no desktop client installable package found on the website",
+    "android: android.enabled=false, sandbox not started; web-only product path",
+    "login-required: Console and Model pages require authentication, analyzed only the public-facing pages",
+    "broken-routes: /model and /documentation return 404; actual docs are at /docs",
+    "System Notice popup appears on first visit and blocks the homepage content"
+  ]
+}

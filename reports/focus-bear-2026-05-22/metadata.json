@@ -1,0 +1,39 @@
+{
+  "product_name": "Focus Bear",
+  "url": "https://www.focusbear.io/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-focus-bear-2026-05-22",
+    "api_url": "http://localhost:60739"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:22:03+08:00",
+  "finished_at": "2026-05-22T01:45:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "f7306cb3-f577-448d-82ba-7c9e9ee47b08",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页首屏"},
+    {"file": "screenshots/02_web_pricing.png", "view": "web-pricing", "caption": "定价页完整视图"},
+    {"file": "screenshots/03_web_features.png", "view": "web-features", "caption": "功能页完整视图"},
+    {"file": "screenshots/04_web_faqs.png", "view": "web-faqs", "caption": "FAQ页完整视图"},
+    {"file": "screenshots/05_web_science.png", "view": "web-science", "caption": "科学背书页完整视图"},
+    {"file": "screenshots/06_web_about.png", "view": "web-about", "caption": "关于/创始人页完整视图"}
+  ],
+  "warnings": [
+    "web-only: product has no Linux desktop installer (only Mac .dmg and Windows .exe available)",
+    "sandbox: Docker bridge network NAT rules missing; containers cannot reach external network; used host-side Chrome headless for screenshots instead",
+    "android: sandbox not started; android.enabled=false; Play Store link recorded but APK not downloaded"
+  ]
+}

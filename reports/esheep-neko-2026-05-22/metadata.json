@@ -1,0 +1,41 @@
+{
+  "product_name": "eSheep / Neko",
+  "url": "https://esheep.petrucci.ch/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-esheep-neko-2026-05-22",
+    "api_url": "http://localhost:56727"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:29:57+08:00",
+  "finished_at": "2026-05-22T01:45:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "a01c0d14-4185-482a-b81c-47eda3892c1d",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页，展示 Blog、Editor、Download 面板及底部导航"},
+    {"file": "screenshots/02_web_download.png", "view": "web-download", "caption": "下载页面，Windows .exe/.zip 下载及 Microsoft Store 入口"},
+    {"file": "screenshots/03_web_help.png", "view": "web-help", "caption": "帮助页面，使用指南和安装说明"},
+    {"file": "screenshots/04_web_info.png", "view": "web-info", "caption": "信息页面，产品背景和原作介绍"},
+    {"file": "screenshots/05_web_credits.png", "view": "web-credits", "caption": "致谢页面，感谢原作团队"},
+    {"file": "screenshots/06_web_editor.png", "view": "web-editor", "caption": "在线编辑器入口页面"},
+    {"file": "screenshots/07_web_video.png", "view": "web-video", "caption": "视频演示页面"},
+    {"file": "screenshots/11_web_changelog.png", "view": "web-changelog", "caption": "更新日志，版本历史记录"}
+  ],
+  "warnings": [
+    "web-only: product only provides Windows installer (.exe) and UWP (Microsoft Store); no Linux package found at https://esheep.petrucci.ch/?pagina=download",
+    "android: android.enabled=false; web-only product path",
+    "github-pages: https://adrianotiger.github.io/desktopPet/ failed to load (PR_CONNECT_RESET_ERROR) in sandbox browser"
+  ]
+}

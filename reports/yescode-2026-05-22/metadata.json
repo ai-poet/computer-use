@@ -1,0 +1,41 @@
+{
+  "product_name": "YesCode",
+  "url": "https://co.yes.vg",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-yescode-2026-05-22",
+    "api_url": "http://localhost:49153"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T04:06:29+08:00",
+  "finished_at": "2026-05-22T04:25:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "e0298317-970c-4b50-a0c7-70bde5e23035",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页返回 HTTP 451 地理限制"},
+    {"file": "screenshots/02_web_huntifyai_overview.png", "view": "web-huntifyai-overview", "caption": "HuntifyAI 工具目录页顶部概览"},
+    {"file": "screenshots/03_web_huntifyai_whatis.png", "view": "web-huntifyai-whatis", "caption": "HuntifyAI 产品定义与功能列表"},
+    {"file": "screenshots/04_web_huntifyai_features.png", "view": "web-huntifyai-features", "caption": "HuntifyAI 六大功能模块详解"},
+    {"file": "screenshots/05_web_huntifyai_pricing.png", "view": "web-huntifyai-pricing", "caption": "HuntifyAI 定价档位与平台信息"},
+    {"file": "screenshots/06_web_huntifyai_alternatives.png", "view": "web-huntifyai-alternatives", "caption": "HuntifyAI 同类竞品推荐"},
+    {"file": "screenshots/03_web_yescode_org.png", "view": "web-yescode-org", "caption": "yescode.org（另一 yes-code 运动网站）"}
+  ],
+  "warnings": [
+    "web-only: 官网 co.yes.vg 返回 HTTP 451 'You are out of our service region'，存在地理区域限制，无法直接访问产品主站",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "产品信息主要来自第三方工具目录站 HuntifyAI（huntifyai.com/tools/yescode-vg），定价数据标注 as of May 2, 2025 可能已过期",
+    "未实际验证 curl 安装流程、API 延迟和故障转移功能"
+  ]
+}

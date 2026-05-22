@@ -1,0 +1,42 @@
+{
+  "product_name": "FocusBud",
+  "url": "https://gabesilverstein.com/focusbud.html",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-focusbud-2026-05-22",
+    "api_url": "http://localhost:43831"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:36:41+08:00",
+  "finished_at": "2026-05-22T01:53:56+08:00",
+  "mode": "web-only",
+  "last_session_id": "6feaea79-0fe3-46e8-b2e1-12ee9aa98400",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页顶部，FocusBud 品牌展示"},
+    {"file": "screenshots/02_web_homepage_scroll1.png", "view": "web-homepage-scroll1", "caption": "项目详情：团队、角色、问题陈述"},
+    {"file": "screenshots/03_web_homepage_scroll2.png", "view": "web-homepage-scroll2", "caption": "产品渲染图与工具使用"},
+    {"file": "screenshots/04_web_homepage_bottom.png", "view": "web-homepage-bottom", "caption": "二手研究、竞品分析、用户画像"},
+    {"file": "screenshots/06_web_design_process.png", "view": "web-design-process", "caption": "五步设计流程与草图"},
+    {"file": "screenshots/08_web_mockups.png", "view": "web-mockups", "caption": "UI 核心流程：Home → Start → In Session → Summary"},
+    {"file": "screenshots/09_web_ui_detail.png", "view": "web-ui-detail", "caption": "会话总结界面与项目反思"},
+    {"file": "screenshots/10_web_footer.png", "view": "web-footer", "caption": "页脚：其他项目推荐与社交媒体"},
+    {"file": "screenshots/16_web_figma_prototype.png", "view": "web-figma-prototype", "caption": "Figma 可交互原型：Sessions 日历视图"}
+  ],
+  "warnings": [
+    "web-only: FocusBud is a conceptual design project (Spring 2021, 6 weeks) with no downloadable/installable product. No app store links, no install packages found on the official page.",
+    "android: android.enabled=false; Android sandbox not started. No APK or Play Store link was hunted.",
+    "figma-prototype: Limited interactivity without Figma login; only static calendar view accessible."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "product_name": "88code Desktop",
+  "url": "https://github.com/byebye-code/88code-desktop",
+  "download_url": "https://github.com/byebye-code/88code-desktop/releases/download/V1.1.0/code-desktop_1.1.0_ubuntu_amd64.deb",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-88code-desktop-2026-05-22",
+    "api_url": "http://localhost:60083"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:03:53+08:00",
+  "finished_at": "2026-05-22T02:20:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "32372e1c-95b0-4ca7-bbdd-04621aef05ed",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "GitHub仓库首页"},
+    {"file": "screenshots/02_web_releases.png", "view": "web-releases", "caption": "GitHub Releases V1.1.0版本说明"},
+    {"file": "screenshots/03_web_releases_scrolled.png", "view": "web-releases-assets", "caption": "Assets下载区"},
+    {"file": "screenshots/04_web_readme.png", "view": "web-readme-features", "caption": "README功能特性"},
+    {"file": "screenshots/05_web_readme_scrolled.png", "view": "web-readme-codex", "caption": "README Codex/VSCode/备份配置"},
+    {"file": "screenshots/06_web_readme_bottom.png", "view": "web-readme-techstack", "caption": "README技术栈与开发说明"},
+    {"file": "screenshots/07_app_main.png", "view": "app-main", "caption": "应用主界面Claude Code客户端配置"},
+    {"file": "screenshots/08_app_codex.png", "view": "app-vscode-tab", "caption": "VSCode配置标签与依赖提示"}
+  ],
+  "warnings": [
+    "android: android.enabled=false; sandbox not started; web-only product path",
+    "app-interaction: Tauri WebView mouse/keyboard input limited in sandbox environment; left sidebar navigation, button clicks, and text input did not produce visible UI changes. Application main window was successfully launched and captured."
+  ]
+}

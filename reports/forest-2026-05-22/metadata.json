@@ -1,0 +1,40 @@
+{
+  "product_name": "Forest",
+  "url": "https://www.forestapp.cc/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-forest-2026-05-22",
+    "api_url": "http://localhost:39827"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:11:04+08:00",
+  "finished_at": "2026-05-22T01:35:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "4cecefbf-ba6b-4730-9994-69b08befc291",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页 Hero 区全景"},
+    {"file": "screenshots/02_web_how_it_works.png", "view": "web-how-it-works", "caption": "核心玩法三步说明"},
+    {"file": "screenshots/03_web_build_forest.png", "view": "web-build-forest", "caption": "虚拟森林长期积累展示"},
+    {"file": "screenshots/04_web_scenarios.png", "view": "web-scenarios", "caption": "使用场景插画"},
+    {"file": "screenshots/05_web_trees_planted.png", "view": "web-trees-planted", "caption": "公益种树：已种植树木数量与合作组织说明"},
+    {"file": "screenshots/06_web_reviews.png", "view": "web-reviews", "caption": "用户评价轮播"},
+    {"file": "screenshots/07_web_media.png", "view": "web-media", "caption": "全球媒体报道背书"}
+  ],
+  "warnings": [
+    "web-only: Forest only offers iOS/Android mobile apps and Chrome browser extension; no Linux desktop package available at https://www.forestapp.cc/",
+    "android: android.enabled=false; Android sandbox not started; web-only product path",
+    "chrome-webstore: Chrome Web Store page failed to load in sandbox Firefox environment"
+  ]
+}

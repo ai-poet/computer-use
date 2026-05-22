@@ -1,0 +1,53 @@
+{
+  "product_name": "Hermes Agent",
+  "url": "https://hermes-agent.nousresearch.com",
+  "download_url": "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-hermes-agent-2026-05-22",
+    "api_url": "http://localhost:33865"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "batch": {
+    "parallel": true
+  },
+  "started_at": "2026-05-22T03:28:25+08:00",
+  "finished_at": "2026-05-22T04:01:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "203edf5c-e93a-42c6-b76d-3d3b54e9d24e",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "官网 Features 区域"},
+    {"file": "screenshots/03_web_homepage-bottom.png", "view": "web-homepage-bottom", "caption": "官网底部信息"},
+    {"file": "screenshots/04_web_docs.png", "view": "web-docs", "caption": "文档站首页"},
+    {"file": "screenshots/05_web_docs-install.png", "view": "web-docs-install", "caption": "文档 Install 部分"},
+    {"file": "screenshots/06_web_docs-quickstart.png", "view": "web-docs-quickstart", "caption": "文档 Quickstart 链接"},
+    {"file": "screenshots/07_web_docs-installation.png", "view": "web-docs-installation", "caption": "Installation 详细页面"},
+    {"file": "screenshots/08_web_docs-install-detail.png", "view": "web-docs-install-detail", "caption": "Windows/Termux 安装说明"},
+    {"file": "screenshots/09_web_messaging-platforms.png", "view": "web-messaging-platforms", "caption": "支持的消息平台列表"},
+    {"file": "screenshots/10_web_discord-setup.png", "view": "web-discord-setup", "caption": "Discord 集成指南"},
+    {"file": "screenshots/11_app_cli-help.png", "view": "app-cli-help", "caption": "CLI help 输出"},
+    {"file": "screenshots/12_app_cli-version.png", "view": "app-cli-version", "caption": "CLI version 输出"},
+    {"file": "screenshots/13_app_cli-config.png", "view": "app-cli-config", "caption": "CLI config 输出"},
+    {"file": "screenshots/14_app_cli-doctor.png", "view": "app-cli-doctor", "caption": "CLI doctor 诊断输出"}
+  ],
+  "warnings": [
+    "android: disabled by configuration; web-only product path for mobile",
+    "sandbox: no curl available in container, used git clone + pip install as fallback",
+    "product: Hermes Agent is a CLI tool (not a GUI desktop app); analyzed via terminal screenshots",
+    "TUI not experienced: requires API key configuration to launch interactive TUI",
+    "Dashboard not built: requires Node.js + npm build step for web UI frontend",
+    "docs: some Features sub-pages returned 404 (e.g. /docs/features, /docs/features/overview)"
+  ]
+}

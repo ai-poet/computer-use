@@ -1,0 +1,48 @@
+{
+  "product_name": "ZCode",
+  "url": "https://zcode-ai.com",
+  "download_url": "https://cdn.zcode-ai.com/zcode/electron/releases/2.7.0/ZCode-2.7.0-linux-x64.AppImage",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-zcode-2026-05-22",
+    "api_url": "http://localhost:56333"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:58:33+08:00",
+  "finished_at": "2026-05-22T03:25:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "9d241a10-6cc9-42fb-a9b8-1bbb98832cd1",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网中文首页全景"},
+    {"file": "screenshots/02_web_homepage_scroll1.png", "view": "web-homepage-product", "caption": "首页产品 IDE 界面预览"},
+    {"file": "screenshots/03_web_homepage_scroll2.png", "view": "web-homepage-features", "caption": "首页三大功能特性区"},
+    {"file": "screenshots/04_web_homepage_top.png", "view": "web-homepage-top", "caption": "首页顶部含下载按钮"},
+    {"file": "screenshots/08_web_docs.png", "view": "web-docs-welcome", "caption": "文档站点欢迎页"},
+    {"file": "screenshots/10_web_docs_direct.png", "view": "web-docs-content", "caption": "文档站点详细内容"},
+    {"file": "screenshots/12_web_docs_scroll.png", "view": "web-docs-vision", "caption": "文档愿景与目标用户描述"},
+    {"file": "screenshots/18_web_homepage_return.png", "view": "web-homepage-return", "caption": "首页解锁后状态"},
+    {"file": "screenshots/27_web_en_homepage.png", "view": "web-en-homepage", "caption": "英文版首页"},
+    {"file": "screenshots/29_web_en_scroll1.png", "view": "web-en-capabilities", "caption": "英文版 CAPABILITIES 区域"},
+    {"file": "screenshots/30_web_en_scroll2.png", "view": "web-en-features", "caption": "英文版三大功能特性"},
+    {"file": "screenshots/31_web_en_bottom.png", "view": "web-en-bottom", "caption": "英文版页面底部"},
+    {"file": "screenshots/32_web_docs_welcome.png", "view": "web-docs-welcome-detail", "caption": "文档欢迎页详细内容"}
+  ],
+  "warnings": [
+    "web-only: Linux AppImage 启动失败 — Electron 主进程异常: Cannot find module 'buffer-crc32' (app.asar 内 yazl 依赖缺失)",
+    "web-only: 官网 /pricing 返回 404，无定价页面",
+    "web-only: 官网 /download 返回 404，无独立下载页",
+    "web-only: 未找到 Windows 版本安装包",
+    "android: sandbox not started; android.enabled=false; web-only product path"
+  ]
+}

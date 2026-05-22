@@ -1,0 +1,50 @@
+{
+  "product_name": "DuckCoding Desktop",
+  "url": "https://github.com/DuckCoding-dev/DuckCoding",
+  "download_url": "https://github.com/DuckCoding-dev/DuckCoding/releases/download/v1.5.7/DuckCoding_1.5.7_amd64.deb",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-duckcoding-desktop-2026-05-22",
+    "api_url": "http://localhost:52167"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:08:35+08:00",
+  "finished_at": "2026-05-22T02:59:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "fa5c5df5-1880-418d-8bf9-df1b3974eb0e",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "GitHub 仓库首页"},
+    {"file": "screenshots/02_web_overview.png", "view": "web-overview", "caption": "README 核心功能区"},
+    {"file": "screenshots/03_web_quickstart.png", "view": "web-quickstart", "caption": "README 快速开始/下载信息"},
+    {"file": "screenshots/04_web_releases.png", "view": "web-releases", "caption": "GitHub Release v1.5.7 Assets"},
+    {"file": "screenshots/06_web_comparison.png", "view": "web-comparison", "caption": "DuckCoding vs 手动配置对比表"},
+    {"file": "screenshots/07_web_features.png", "view": "web-features", "caption": "README 功能详解"},
+    {"file": "screenshots/08_web_architecture.png", "view": "web-architecture", "caption": "设计与架构/FAQ"},
+    {"file": "screenshots/09_web_official.png", "view": "web-official", "caption": "官网域名变更通知弹窗"},
+    {"file": "screenshots/10_app_welcome.png", "view": "app-welcome", "caption": "应用欢迎界面（引导 1/6）"},
+    {"file": "screenshots/11_app_tool_config.png", "view": "app-tool-config", "caption": "配置工具实例（引导 2/6）"},
+    {"file": "screenshots/12_app_proxy.png", "view": "app-proxy", "caption": "全局代理配置（引导 3/6）"},
+    {"file": "screenshots/13_app_tool_mgmt.png", "view": "app-tool-mgmt", "caption": "工具管理主界面+添加实例弹窗"},
+    {"file": "screenshots/14_app_settings.png", "view": "app-settings", "caption": "全局设置页面（引导中）"},
+    {"file": "screenshots/15_app_ai_tools.png", "view": "app-ai-tools", "caption": "支持的 AI 编程工具（引导 4/6）"}
+  ],
+  "warnings": [
+    "android: android.enabled=false, skipping Android sandbox",
+    "app: onboarding flow is mandatory (6 steps) and navigation is locked during onboarding",
+    "app: mouse clicks occasionally unresponsive in Tauri WebView, keyboard navigation (Tab+Enter) used as workaround",
+    "app: onboarding step 2 requires configuring tool instance before proceeding, creating a blocker",
+    "website: duckcoding.com redirects to duckcoding.ai API platform, different product from desktop app",
+    "website: official site requires login to view pricing/content, minimal info available without account"
+  ]
+}

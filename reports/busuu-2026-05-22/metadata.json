@@ -1,0 +1,28 @@
+{
+  "product_name": "Busuu",
+  "url": "https://www.busuu.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": null,
+    "api_url": null
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T04:42:29+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "f10e85d8-b1ab-409d-8aca-8a9b01097b2a",
+  "screenshots": [],
+  "warnings": []
+}

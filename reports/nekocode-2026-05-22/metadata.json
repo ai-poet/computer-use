@@ -1,0 +1,39 @@
+{
+  "product_name": "NekoCode",
+  "url": "https://nekocode.ai",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-nekocode-2026-05-22",
+    "api_url": "http://localhost:32837"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:54:26+08:00",
+  "finished_at": "2026-05-22T04:06:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "6523529b-1eb3-4dff-9180-487dcf414312",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "API配置步骤"},
+    {"file": "screenshots/03_web_start_using.png", "view": "web-start-using", "caption": "开始使用区"},
+    {"file": "screenshots/04_web_pricing.png", "view": "web-pricing", "caption": "定价页顶部"},
+    {"file": "screenshots/05_web_pricing_plans.png", "view": "web-pricing-plans", "caption": "套餐详情"},
+    {"file": "screenshots/06_web_pricing_models.png", "view": "web-pricing-models", "caption": "模型计费表"},
+    {"file": "screenshots/07_web_about.png", "view": "web-about", "caption": "关于页"}
+  ],
+  "warnings": [
+    "web-only: Neko Code is a pure web API relay service with no desktop application package; users install Claude Code CLI via npm and configure ANTHROPIC_BASE_URL to use the service",
+    "android: sandbox not started; android.enabled=false, skipping Android analysis"
+  ]
+}

@@ -1,8 +1,0 @@
-{
-  "name": "analyzer-focus-dog-2026-05-22",
-  "provider": "docker",
-  "api_url": "http://localhost:56227",
-  "image": "trycua/cua-xfce:latest",
-  "platform": "linux/amd64",
-  "local": true
-}

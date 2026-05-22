@@ -1,0 +1,38 @@
+{
+  "product_name": "Eggzy — Focus & Time Keeper",
+  "url": "https://apps.apple.com/app/eggzy-focus-time-keeper/id1407295296",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-eggzy-focus--time-keeper-2026-05-22",
+    "api_url": "http://localhost:55823"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T02:00:00+08:00",
+  "finished_at": "2026-05-22T02:30:00+08:00",
+  "mode": "web-only",
+  "screenshots": [
+    {"file": "screenshots/01_web_appstore_today.png", "view": "web-appstore-today", "caption": "App Store 中国区 Today 页（访问 Eggzy URL 被重定向）"},
+    {"file": "screenshots/02_web_appstore_redirect.png", "view": "web-appstore-redirect", "caption": "直接访问 US URL 仍被重定向到 Today 页"},
+    {"file": "screenshots/03_web_search_empty.png", "view": "web-search-empty", "caption": "Bing 搜索 Eggzy Focus Time Keeper iOS 结果（内容无关）"}
+  ],
+  "warnings": [
+    "web-only: App ID 1407295296 not found in iTunes API across all 9 regions (US/GB/CA/AU/CN/HK/TW/JP/KR)",
+    "web-only: App Store webpage forcibly redirects to regional Today page; product detail page unreachable",
+    "web-only: Web search (Google/DuckDuckGo/Bing) returns no relevant results for 'Eggzy Focus Time Keeper'",
+    "web-only: Wayback Machine has no snapshots for the given App Store URL",
+    "product appears unavailable on App Store; report based on name inference and web evidence only",
+    "iOS-only app cannot be installed on Linux sandbox; desktop analysis skipped"
+  ]
+}

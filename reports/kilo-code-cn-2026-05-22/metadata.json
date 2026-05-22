@@ -1,0 +1,48 @@
+{
+  "product_name": "Kilo Code (CN)",
+  "url": "https://kilo.org.cn",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-kilo-code-cn-2026-05-22",
+    "api_url": "http://localhost:43895"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:06:55+08:00",
+  "finished_at": "2026-05-22T03:31:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "199dd887-760b-40d7-a672-24803f81e1b8",
+  "screenshots": [
+    {"file": "screenshots/02_web_homepage_clean.png", "view": "web-homepage", "caption": "官网首页首屏"},
+    {"file": "screenshots/03_web_homepage_scroll1.png", "view": "web-features", "caption": "首页功能介绍区"},
+    {"file": "screenshots/04_web_homepage_scroll2.png", "view": "web-ai-roi", "caption": "首页 AI 投资回报区"},
+    {"file": "screenshots/05_web_homepage_bottom.png", "view": "web-qa-mode", "caption": "首页提问模式区"},
+    {"file": "screenshots/06_web_homepage_footer.png", "view": "web-features-grid", "caption": "首页底部六大特性模块"},
+    {"file": "screenshots/08_web_pricing.png", "view": "web-pricing", "caption": "定价总览页"},
+    {"file": "screenshots/10_web_pricing_kilo_code.png", "view": "web-pricing-kilo-code", "caption": "Kilo Code 定价详情"},
+    {"file": "screenshots/15_web_docs.png", "view": "web-docs", "caption": "中文文档首页"},
+    {"file": "screenshots/16_web_install_ext.png", "view": "web-marketplace", "caption": "VS Code Marketplace 扩展页"},
+    {"file": "screenshots/17_web_marketplace_scroll.png", "view": "web-marketplace-features", "caption": "Marketplace 功能详情"},
+    {"file": "screenshots/19_app_vscode_main.png", "view": "app-vscode-main", "caption": "VS Code 主界面含 Kilo Code CHAT 面板"},
+    {"file": "screenshots/23_app_extensions.png", "view": "app-kilo-sidebar", "caption": "Kilo Code 侧边栏扩展面板"},
+    {"file": "screenshots/28_app_kilo_response.png", "view": "app-login-required", "caption": "发送消息后触发的登录弹窗"},
+    {"file": "screenshots/32_app_kilo_commands.png", "view": "app-commands", "caption": "命令面板中的 Kilo Code 命令列表"},
+    {"file": "screenshots/33_app_vscode_final.png", "view": "app-vscode-final", "caption": "VS Code + Kilo Code 完整界面"}
+  ],
+  "warnings": [
+    "android: android.enabled=false, sandbox not created; mode set to skipped",
+    "login-required: AI Chat features require GitHub/Google/Apple sign-in; analyzed UI shell only",
+    "product is VS Code extension (not standalone desktop app); installed via marketplace CLI"
+  ]
+}

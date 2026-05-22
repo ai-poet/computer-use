@@ -1,0 +1,43 @@
+{
+  "product_name": "QClaw (腾讯)",
+  "url": "https://qclaw.qq.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-qclaw-2026-05-22",
+    "api_url": "http://localhost:45817"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T08:00:00+08:00",
+  "finished_at": "2026-05-22T08:25:00+08:00",
+  "mode": "web-only",
+  "screenshots": [
+    {"file": "screenshots/02_web_homepage_clean.png", "view": "web-homepage", "caption": "官网首页首屏"},
+    {"file": "screenshots/04_web_homepage_scroll2.png", "view": "web-usecases", "caption": "首页使用场景"},
+    {"file": "screenshots/06_web_homepage_bottom.png", "view": "web-bottom-cta", "caption": "首页底部CTA"},
+    {"file": "screenshots/07_web_features.png", "view": "web-features", "caption": "功能优势页"},
+    {"file": "screenshots/09_web_docs.png", "view": "web-docs-overview", "caption": "产品文档-概述"},
+    {"file": "screenshots/11_web_docs_scroll2.png", "view": "web-docs-advantages", "caption": "产品文档-核心优势表"},
+    {"file": "screenshots/12_web_docs_scroll3.png", "view": "web-docs-scenarios", "caption": "产品文档-应用场景表"},
+    {"file": "screenshots/14_web_docs_comparison.png", "view": "web-docs-comparison", "caption": "产品文档-同类对比"},
+    {"file": "screenshots/17_web_quickstart.png", "view": "web-quickstart", "caption": "快速上手页"},
+    {"file": "screenshots/19_web_news.png", "view": "web-news", "caption": "新闻资讯页"},
+    {"file": "screenshots/20_web_download.png", "view": "web-download", "caption": "下载弹窗"}
+  ],
+  "warnings": [
+    "web-only: product only provides macOS (Apple/Intel) and Windows installers, no Linux package found at https://qclaw.qq.com",
+    "android: android.enabled=false, Android sandbox not created, mode=skipped",
+    "billing page not found at https://qclaw.qq.com/docs/billing.html (redirected to homepage)"
+  ]
+}

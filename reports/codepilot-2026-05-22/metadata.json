@@ -1,0 +1,52 @@
+{
+  "product_name": "Codepilot (归藏)",
+  "url": "https://github.com/op7418/CodePilot",
+  "download_url": "https://github.com/op7418/CodePilot/releases/download/v0.54.0/CodePilot-0.54.0-amd64.deb",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-codepilot-2026-05-22",
+    "api_url": "http://localhost:49285"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:15:37+08:00",
+  "finished_at": "2026-05-22T02:42:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "af67681b-d747-4c5d-87f5-d268754eb844",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "GitHub 仓库首页"},
+    {"file": "screenshots/02_web_readme.png", "view": "web-readme", "caption": "仓库文件列表"},
+    {"file": "screenshots/03_web_readme_content.png", "view": "web-readme-content", "caption": "README 标题与徽章区"},
+    {"file": "screenshots/04_web_readme_features.png", "view": "web-readme-features", "caption": "README 功能介绍与下载区"},
+    {"file": "screenshots/05_web_download_table.png", "view": "web-download-table", "caption": "下载表格（macOS/Windows/Linux）"},
+    {"file": "screenshots/06_web_releases.png", "view": "web-releases", "caption": "Releases 页面顶部"},
+    {"file": "screenshots/08_web_releases_list.png", "view": "web-releases-list", "caption": "Releases 列表（v0.54.0）"},
+    {"file": "screenshots/09_web_release_assets.png", "view": "web-release-assets", "caption": "Release Assets（安装包列表）"},
+    {"file": "screenshots/10_web_all_assets.png", "view": "web-all-assets", "caption": "完整 Assets 列表"},
+    {"file": "screenshots/11_app_welcome.png", "view": "app-welcome", "caption": "应用欢迎向导"},
+    {"file": "screenshots/12_app_welcome-scroll.png", "view": "app-welcome-scroll", "caption": "欢迎向导滚动后（三步配置）"},
+    {"file": "screenshots/13_app_settings-providers.png", "view": "app-settings-providers", "caption": "Settings > Providers 页面"},
+    {"file": "screenshots/14_app_skills.png", "view": "app-skills", "caption": "Skills 管理页面"},
+    {"file": "screenshots/15_app_mcp.png", "view": "app-mcp", "caption": "MCP Servers 管理页面"},
+    {"file": "screenshots/16_app_new-conversation.png", "view": "app-new-conversation", "caption": "New Conversation 文件选择对话框"},
+    {"file": "screenshots/17_app_gallery.png", "view": "app-gallery", "caption": "Gallery 媒体管理页面"},
+    {"file": "screenshots/18_app_cli-tools.png", "view": "app-cli-tools", "caption": "CLI Tools 管理页面"}
+  ],
+  "warnings": [
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "沙盒内 XFCE 桌面自动锁屏，需 kill xfce4-screensaver 进程才能恢复操作",
+    "应用内部分按钮（如 Skip and Enter）点击响应不灵敏",
+    "未登录态下无法体验实际的 AI 对话和模型切换功能",
+    "官网提到的 'control from your phone' 功能在桌面端未找到入口"
+  ]
+}

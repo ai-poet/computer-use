@@ -1,0 +1,48 @@
+{
+  "product_name": "AICodeMirror",
+  "url": "https://www.aicodemirror.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-aicodemirror-2026-05-22",
+    "api_url": "http://localhost:40311"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:42:51+08:00",
+  "finished_at": "2026-05-22T04:02:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "d32bd890-b618-4339-8bbb-33cfff364903",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页首屏"},
+    {"file": "screenshots/02_web_models.png", "view": "web-models", "caption": "Claude模型系列介绍"},
+    {"file": "screenshots/03_web_ide_pricing.png", "view": "web-ide-pricing", "caption": "IDE支持与定价入口"},
+    {"file": "screenshots/04_web_pricing_paygo.png", "view": "web-pricing-paygo", "caption": "PAYGO/PRO定价详情"},
+    {"file": "screenshots/05_web_pricing_max.png", "view": "web-pricing-max", "caption": "MAX/ULTRA定价详情"},
+    {"file": "screenshots/06_web_platforms.png", "view": "web-platforms", "caption": "平台支持与企业特性"},
+    {"file": "screenshots/07_web_footer.png", "view": "web-footer", "caption": "页脚导航与合作伙伴"},
+    {"file": "screenshots/08_web_status.png", "view": "web-status", "caption": "服务状态页总览"},
+    {"file": "screenshots/09_web_status_detail.png", "view": "web-status-detail", "caption": "服务状态详情"},
+    {"file": "screenshots/10_web_docs.png", "view": "web-docs", "caption": "使用教程页"},
+    {"file": "screenshots/11_web_docs_blog.png", "view": "web-docs-blog", "caption": "教程博客区"},
+    {"file": "screenshots/12_web_docs_videos.png", "view": "web-docs-videos", "caption": "教程视频区"}
+  ],
+  "warnings": [
+    "web-only: 产品为纯网页服务/API代理平台，官网未提供独立桌面应用安装包。用户通过配置API Key在VS Code/JetBrains中使用。",
+    "产品首页H1标注'GPT 5.5'，但模型介绍区和footer均使用Claude品牌(Opus/Sonnet/Haiku)，品牌标识不一致。",
+    "定价区部分位置显示'PICO'，部分位置显示'PAYGO'，同一档位名称不统一。",
+    "多个交互按钮（免费使用、平台切换器macOS/Windows/Linux、footer部分链接）点击后无响应。",
+    "/about 和 /download 页面返回404。",
+    "android: sandbox not started; android.enabled=false; web-only product path"
+  ]
+}

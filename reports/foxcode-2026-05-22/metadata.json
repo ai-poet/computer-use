@@ -1,0 +1,41 @@
+{
+  "product_name": "FoxCode",
+  "url": "https://foxcode.rjj.cc",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-foxcode-2026-05-22",
+    "api_url": "http://localhost:44099"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T04:09:09+08:00",
+  "finished_at": "2026-05-22T04:25:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "50dcc155-b048-4ac1-a4bb-0e33fe91e809",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页 Hero 区域"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "功能特性区（三大核心优势）"},
+    {"file": "screenshots/03_web_cta.png", "view": "web-cta", "caption": "CTA 区域与 Footer"},
+    {"file": "screenshots/04_web_register.png", "view": "web-register", "caption": "注册页面"},
+    {"file": "screenshots/05_web_login.png", "view": "web-login", "caption": "登录页面"},
+    {"file": "screenshots/06_web_forgot_password.png", "view": "web-forgot-password", "caption": "找回密码页面"}
+  ],
+  "warnings": [
+    "web-only: 产品为纯 Web 服务，官网未提供任何桌面端安装包（.dmg/.exe/.deb/.AppImage 等）",
+    "web-only: 官网未提供 Android APK 或 Google Play 链接",
+    "官网首页 CTA 按钮（开始使用/了解更多/免费开始）均为装饰性，点击后无响应",
+    "首页 branding 使用 'Claude' 标识，与产品名称 'FoxCode' 不一致",
+    "认证页（注册/登录）branding 使用 'AI' 图标，与首页 'Claude' branding 不一致"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "product_name": "OneCode",
+  "url": "https://github.com/AIDotNet/OneCode",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-onecode-2026-05-22",
+    "api_url": "http://localhost:55993"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:47:12+08:00",
+  "finished_at": "2026-05-22T03:05:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "dc8c5c71-84c8-434c-9d85-96dd4bfd42e7",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "GitHub 仓库首页"},
+    {"file": "screenshots/03_web_readme_content.png", "view": "web-readme-features", "caption": "README Features 列表"},
+    {"file": "screenshots/05_web_install_docs.png", "view": "web-install-docs", "caption": "Linux/macOS 安装说明"},
+    {"file": "screenshots/09_web_readme_top.png", "view": "web-readme-top", "caption": "README 顶部产品概览"},
+    {"file": "screenshots/10_web_features.png", "view": "web-features-desc", "caption": "Screenshots 功能描述"},
+    {"file": "screenshots/12_web_timeout.png", "view": "web-timeout", "caption": "GitHub 连接超时"}
+  ],
+  "warnings": [
+    "web-only: GitHub Releases download timed out (curl/28) — unable to fetch MoYuCode-0.0.3-linux-x64.tar.gz in sandbox",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "product renamed from OneCode to MoYuCode — GitHub redirect active",
+    "README Screenshots section contains only text descriptions, no actual images"
+  ]
+}

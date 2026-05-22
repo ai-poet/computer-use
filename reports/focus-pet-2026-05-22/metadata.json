@@ -17,12 +17,23 @@
     "apk_url": null,
     "apk_file": null,
     "package_name": null,
-    "mode": null
+    "mode": "skipped"
   },
   "started_at": "2026-05-22T00:58:02+08:00",
-  "finished_at": null,
-  "mode": null,
+  "finished_at": "2026-05-22T01:20:00+08:00",
+  "mode": "web-only",
   "last_session_id": "fe4f889f-8ce5-4bc7-8a40-9b75b6cda822",
-  "screenshots": [],
-  "warnings": []
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "App Store 产品页头部，展示应用名称、图标、评分和基本信息"},
+    {"file": "screenshots/02_web_screenshots.png", "view": "web-screenshots", "caption": "App Store 截图展示区，包含宠物角色、计时器界面、时长选择、今日进度"},
+    {"file": "screenshots/03_web_description.png", "view": "web-description", "caption": "应用描述、新功能更新和隐私政策声明"},
+    {"file": "screenshots/04_web_info.png", "view": "web-info", "caption": "应用详细信息（提供者、大小、兼容性、语言、内购等）"},
+    {"file": "screenshots/05_web_similar.png", "view": "web-similar", "caption": "App Store 底部同类应用推荐"}
+  ],
+  "warnings": [
+    "web-only: Focus Pet is an iOS-only app (requires iOS 17.6+), no macOS/Windows/Linux desktop version available",
+    "android: android.enabled=false, Android sandbox not created",
+    "pricing details not visible on App Store web page (in-app purchases confirmed but prices not displayed)",
+    "Google search failed to load in sandbox Firefox (network/connectivity issue), used Baidu as fallback but results were not product-relevant"
+  ]
 }
