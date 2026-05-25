@@ -8,13 +8,13 @@
 2. 使用 `sandbox_ctl bootstrap` 创建沙盒并打开官网:
 
 ```bash
-python scripts/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
+python backend/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
 ```
 
 3. 立即截图:
 
 ```bash
-python scripts/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01_web_homepage.png
+python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01_web_homepage.png
 ```
 
 4. 读取截图,确认 Firefox 真的打开了产品官网。若空白、崩溃或 cookie 弹窗遮挡,用 `click` / `key` / `scroll` 修复后再截图。

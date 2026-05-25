@@ -23,7 +23,7 @@ The CLI subcommands and MCP tools described in this skill are the
 same across both backends. Anything that says "macOS" below applies
 specifically to the Swift backend; Linux/Windows-only callouts are
 marked. To install the right backend for the current host run
-`scripts/install_cua_driver.py` from this project.
+`backend/install_cua_driver.py` from this project.
 
 ## The no-foreground contract — read this first
 
