@@ -1,0 +1,46 @@
+{
+  "product_name": "Doudou Game Companion (逗逗游戏伙伴)",
+  "url": "https://www.doudou.fun/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-doudou-game-companion-2026-05-21",
+    "api_url": "http://localhost:45705"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-21T23:53:03+08:00",
+  "finished_at": "2026-05-22T00:16:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "dc4cc132-c151-4808-87b4-4b0ea41605c1",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页Hero区，含slogan和下载CTA"},
+    {"file": "screenshots/02_web_game-cases.png", "view": "web-game-cases", "caption": "PC游戏陪伴案例展示，含多款游戏标签和场景卡片"},
+    {"file": "screenshots/03_web_game-demo.png", "view": "web-game-demo", "caption": "实时视觉识别演示，展示游戏画面中AI识别宝箱场景"},
+    {"file": "screenshots/04_web_character.png", "view": "web-character", "caption": "AI游戏伙伴角色展示区"},
+    {"file": "screenshots/05_web_character-detail.png", "view": "web-character-detail", "caption": "角色妮卡的详细人设介绍"},
+    {"file": "screenshots/06_web_footer.png", "view": "web-footer", "caption": "官网页脚导航"},
+    {"file": "screenshots/07_web_download.png", "view": "web-download", "caption": "下载页面，提供Windows/App Store/Android三个平台"},
+    {"file": "screenshots/08_web_download-footer.png", "view": "web-download-footer", "caption": "下载页面底部及footer"},
+    {"file": "screenshots/09_web_blog.png", "view": "web-blog", "caption": "博客首页，展示产品更新文章"},
+    {"file": "screenshots/10_web_features.png", "view": "web-features", "caption": "首页五大核心功能折叠面板列表"},
+    {"file": "screenshots/11_web_about.png", "view": "web-about", "caption": "关于我们页面，含公司简介和合作伙伴"}
+  ],
+  "warnings": [
+    "web-only: no linux package found at https://www.doudou.fun/download — product only provides Windows, App Store, and Android downloads",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "homepage feature accordion panels (scene recognition, strategy query, etc.) did not expand on click in Firefox",
+    "hamburger menu button on homepage did not respond to click",
+    "footer links /faq, /games, /companion returned 404 — only /blog, /about, /download are valid routes"
+  ]
+}

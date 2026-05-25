@@ -1,6 +1,6 @@
 ---
 name: product-analyzer
-description: 给定产品名和官网 URL,按 Linux-first workflow 在沙盒中访问官网、发现并体验客户端、逐步写阶段报告,最后产出中文产品分析报告。触发方式:scripts/analyze_product.py 调用,或对话中“分析/拆解/评测/调研 这个产品 https://...”类请求且包含 URL。
+description: 给定产品名和官网 URL,按 Linux-first workflow 在沙盒中访问官网、发现并体验客户端、逐步写阶段报告,最后产出中文产品分析报告。触发方式:backend/analyze_product.py 调用,或对话中“分析/拆解/评测/调研 这个产品 https://...”类请求且包含 URL。
 ---
 
 # product-analyzer

@@ -1,0 +1,40 @@
+{
+  "product_name": "Wallpaper Engine",
+  "url": "https://store.steampowered.com/app/431960/Wallpaper_Engine/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-wallpaper-engine-2026-05-22",
+    "api_url": null
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:44:01+08:00",
+  "finished_at": "2026-05-22T02:04:54+08:00",
+  "mode": "web-only",
+  "last_session_id": "5f98f510-5a85-43d4-88e5-78f04061cbb1",
+  "screenshots": [
+    {"file": "screenshots/01_web_steam_footer.png", "view": "steam-footer", "caption": "Steam商店页页脚（主体因网络限制未加载）"},
+    {"file": "screenshots/02_web_docs_home.png", "view": "docs-home", "caption": "Wallpaper Engine设计师文档首页"},
+    {"file": "screenshots/03_web_docs_types.png", "view": "docs-types", "caption": "文档站三种壁纸类型分类说明"},
+    {"file": "screenshots/04_web_editor_overview.png", "view": "editor-overview", "caption": "编辑器指南页面与左侧导航树"},
+    {"file": "screenshots/05_web_editor_video.png", "view": "editor-video", "caption": "编辑器Video Support功能说明"},
+    {"file": "screenshots/06_web_help_faq.png", "view": "help-faq", "caption": "帮助与FAQ首页"},
+    {"file": "screenshots/07_web_help_popular.png", "view": "help-popular", "caption": "帮助页面热门文章与Android FAQ"}
+  ],
+  "warnings": [
+    "web-only: 产品仅有Windows版安装包（Steam独占），Linux沙盒无法运行桌面应用",
+    "network: Steam商店页面store.steampowered.com在沙盒Firefox中连接超时，仅加载页脚区域",
+    "android: android.enabled=false，未尝试Android伴侣应用分析"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "product_name": "Habitica",
+  "url": "https://habitica.com/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-habitica-2026-05-22",
+    "api_url": "http://localhost:42243"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:10:05+08:00",
+  "finished_at": "2026-05-22T01:28:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "18f2be93-ef8a-4e11-9562-87517a8de39f",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景"},
+    {"file": "screenshots/02_web_mobile_apps.png", "view": "web-mobile-apps", "caption": "移动端应用展示"},
+    {"file": "screenshots/03_web_footer.png", "view": "web-footer", "caption": "官网 Footer 导航"},
+    {"file": "screenshots/04_web_group_plans.png", "view": "web-group-plans", "caption": "Group Plans 团队功能"},
+    {"file": "screenshots/05_web_group_plans2.png", "view": "web-group-plans-benefits", "caption": "Group Plans 专属福利"},
+    {"file": "screenshots/06_web_faq.png", "view": "web-faq", "caption": "FAQ 任务类型说明"},
+    {"file": "screenshots/07_web_features.png", "view": "web-features-main", "caption": "应用核心界面截图"},
+    {"file": "screenshots/08_web_features2.png", "view": "web-features-gear", "caption": "装备收集与奖励系统"},
+    {"file": "screenshots/09_web_features3.png", "view": "web-features-social", "caption": "Party 社交协作功能"},
+    {"file": "screenshots/10_web_features4.png", "view": "web-features-mobile", "caption": "移动端与开源社区"}
+  ],
+  "warnings": [
+    "web-only: Habitica only provides Web + iOS/Android apps, no desktop application package found",
+    "android: sandbox not started; android.enabled=false per configuration, web-only product path",
+    "cookie popup on homepage persisted across multiple interactions, possible UX issue"
+  ]
+}

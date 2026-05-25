@@ -1,0 +1,38 @@
+{
+  "product_name": "Cat On Chair: ADHD Focus",
+  "url": "https://catonchair.app/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-cat-on-chair-adhd-focus-2026-05-22",
+    "api_url": "http://localhost:53505"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T00:56:20+08:00",
+  "finished_at": "2026-05-22T01:07:00+08:00",
+  "mode": "web-only",
+  "last_session_id": null,
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页交互式展示（猫咪动画+iPhone模拟器）"},
+    {"file": "screenshots/02_web_faq.png", "view": "web-faq", "caption": "FAQ页面折叠问答列表"},
+    {"file": "screenshots/03_web_faq_footer.png", "view": "web-faq-footer", "caption": "FAQ页面底部页脚"},
+    {"file": "screenshots/04_web_focus_challenge.png", "view": "web-focus-challenge", "caption": "Focus Challenge活动页面"},
+    {"file": "screenshots/05_web_challenge_rewards.png", "view": "web-challenge-rewards", "caption": "Focus Challenge奖励规则"}
+  ],
+  "warnings": [
+    "android: disabled by prompt; web-only product path",
+    "web-only: product is iOS-only (App Store ID 6746562271); no desktop package for linux/x86_64",
+    "homepage WebGL/Canvas rendering incomplete in Firefox sandbox — only partial content visible in screenshots"
+  ]
+}

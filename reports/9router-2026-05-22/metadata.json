@@ -1,0 +1,52 @@
+{
+  "product_name": "9Router",
+  "url": "https://ai-bot.cn/9router",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-9router-2026-05-22",
+    "api_url": "http://localhost:46453"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:33:11+08:00",
+  "finished_at": "2026-05-22T03:59:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "aa99bd47-afe9-48af-a3ec-4fa3379fb486",
+  "screenshots": [
+    {"file": "screenshots/01_web_aibot_homepage.png", "view": "aibot-homepage", "caption": "ai-bot.cn 9Router 页面首页"},
+    {"file": "screenshots/02_web_aibot_overview.png", "view": "aibot-overview", "caption": "ai-bot.cn 清理弹窗后的产品概览"},
+    {"file": "screenshots/03_web_aibot_features.png", "view": "aibot-features", "caption": "ai-bot.cn 主要功能介绍"},
+    {"file": "screenshots/04_web_aibot_tech.png", "view": "aibot-tech", "caption": "ai-bot.cn 技术原理与使用方法"},
+    {"file": "screenshots/05_web_aibot_comparison.png", "view": "aibot-comparison", "caption": "ai-bot.cn 同类产品对比入口"},
+    {"file": "screenshots/06_web_github_repo.png", "view": "github-repo", "caption": "GitHub 仓库首页与文件结构"},
+    {"file": "screenshots/07_web_github_readme.png", "view": "github-readme", "caption": "GitHub README 标题与核心描述"},
+    {"file": "screenshots/08_web_github_solutions.png", "view": "github-solutions", "caption": "GitHub README 问题痛点与解决方案"},
+    {"file": "screenshots/09_web_github_quickstart.png", "view": "github-quickstart", "caption": "GitHub README Quick Start 安装指南"},
+    {"file": "screenshots/10_web_github_architecture.png", "view": "github-architecture", "caption": "GitHub README How It Works 架构图"},
+    {"file": "screenshots/11_web_github_clitools.png", "view": "github-clitools", "caption": "GitHub README 支持的 CLI 工具列表"},
+    {"file": "screenshots/12_web_github_providers.png", "view": "github-providers", "caption": "GitHub README 支持的提供商列表"},
+    {"file": "screenshots/13_web_github_keyfeatures.png", "view": "github-keyfeatures", "caption": "GitHub README Key Features 功能表格"},
+    {"file": "screenshots/14_web_npm_package.png", "view": "npm-package", "caption": "npm 包页面元信息与下载统计"},
+    {"file": "screenshots/15_web_npm_features.png", "view": "npm-features", "caption": "npm 页面 Why 9Router 功能亮点"},
+    {"file": "screenshots/16_web_aibot_detail.png", "view": "aibot-detail", "caption": "ai-bot.cn 主要功能详细说明"},
+    {"file": "screenshots/17_web_aibot_techdetail.png", "view": "aibot-techdetail", "caption": "ai-bot.cn 技术原理详细说明"},
+    {"file": "screenshots/18_web_aibot_advantages.png", "view": "aibot-advantages", "caption": "ai-bot.cn 核心优势"},
+    {"file": "screenshots/19_web_aibot_table.png", "view": "aibot-table", "caption": "ai-bot.cn 同类产品对比表格"}
+  ],
+  "warnings": [
+    "web-only: 9Router is an npm CLI tool (npm install -g 9router), no traditional desktop installer (.deb/.AppImage/.dmg). Sandbox lacks Node.js and cannot install it (no sudo).",
+    "android: sandbox not started; Android analysis skipped as per prompt (android.enabled=false).",
+    "Dashboard not analyzed: 9Router launches a local Web Dashboard at localhost:20128, but could not be started in sandbox due to missing Node.js runtime."
+  ]
+}

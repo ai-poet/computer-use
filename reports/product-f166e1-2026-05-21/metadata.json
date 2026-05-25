@@ -1,0 +1,40 @@
+{
+  "product_name": "互动桌面宠物",
+  "url": "https://apps.apple.com/app/id1488910190",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-product-f166e1-2026-05-21",
+    "api_url": "http://localhost:58439"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-21T23:53:03+08:00",
+  "finished_at": "2026-05-22T00:06:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "397d2386-8796-454f-8304-2374bfdd976e",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "App Store页面顶部，产品名、图标、评分、排名"},
+    {"file": "screenshots/02_web_screenshots.png", "view": "web-screenshots", "caption": "应用内截图预览：角色、列表、互动界面"},
+    {"file": "screenshots/03_web_description.png", "view": "web-description", "caption": "产品描述与用户评论、评分分布"},
+    {"file": "screenshots/04_web_privacy.png", "view": "web-privacy", "caption": "版本更新日志与App隐私声明"},
+    {"file": "screenshots/05_web_info.png", "view": "web-info", "caption": "应用详细信息：大小、兼容性、开发者"},
+    {"file": "screenshots/06_web_related.png", "view": "web-related", "caption": "同开发者其他App与同类竞品推荐"}
+  ],
+  "warnings": [
+    "web-only: product is iOS App Store exclusive (iPhone app), no Linux desktop package available",
+    "android: android.enabled=false; Android sandbox not created, web-only product path",
+    "app-last-updated: version 1.0.1 released 2022/06/24, nearly 3 years without updates",
+    "user-rating-low: 2.3/5 from 2231 ratings, with complaints about ads vs actual experience"
+  ]
+}

@@ -34,6 +34,7 @@ SANDBOX_JSON = "sandbox.json"
 LAST_SHELL_JSON = ".sandbox_ctl_last_shell.json"
 _MIN_SCREENSHOT_BYTES = 1000
 ANALYZER_SANDBOX_PREFIX = "analyzer-"
+_PAGE_LOAD_WAIT_S = 10.0
 
 _cleanup_lock = threading.Lock()
 _cleanup_done = False
@@ -102,19 +103,17 @@ def _connect_from_info(info: dict[str, Any]) -> Any:
     name = info["name"]
     local = bool(info.get("local", True))
     api_key = os.environ.get("CUA_API_KEY") if not local else None
-    if info.get("api_url") and not local:
-        return Sandbox.connect(
-            name,
-            local=False,
-            api_key=api_key,
-            http_url=info["api_url"],
-        )
-    return Sandbox.connect(name, local=local, api_key=api_key)
+    kwargs: dict[str, Any] = {"name": name, "local": local, "api_key": api_key}
+    api_url = (info.get("api_url") or "").strip()
+    if api_url:
+        # Prefer stored computer-server URL (Sandbox.connect http_url=… per SDK docs).
+        kwargs["http_url"] = api_url
+    return Sandbox.connect(**kwargs)
 
 
 # cua-xfce Linux image ships Firefox only (no Chromium). Probe DISPLAY from /tmp/.X11-unix
 # (often :1, not :0) before launching.
-_LINUX_FIREFOX_LAUNCH_SHELL = (
+_LINUX_DISPLAY_PROBE = (
     'D="${DISPLAY:-}"; '
     'if [ -z "$D" ] || [ ! -S "/tmp/.X11-unix/X${D#:}" ] 2>/dev/null; then '
     "for x in /tmp/.X11-unix/X*; do "
@@ -123,16 +122,59 @@ _LINUX_FIREFOX_LAUNCH_SHELL = (
     "done; "
     "fi; "
     'export DISPLAY="${D:-:1}"; '
-    "if pgrep -x firefox >/dev/null 2>&1; then exit 0; fi; "
-    "firefox --new-window about:blank >/dev/null 2>&1 & "
-    "sleep 3; "
-    "pgrep -x firefox >/dev/null"
+)
+
+_LINUX_FIREFOX_LAUNCH_SHELL = (
+    _LINUX_DISPLAY_PROBE
+    + "if pgrep -x firefox >/dev/null 2>&1; then exit 0; fi; "
+    + "firefox --new-window about:blank >/dev/null 2>&1 & "
+    + "sleep 3; "
+    + "pgrep -x firefox >/dev/null"
+)
+
+# Best-effort: keep XFCE desktop awake during long batch runs (xset + xfconf + systemd).
+_LINUX_XFCE_DISABLE_SLEEP_SHELL = (
+    _LINUX_DISPLAY_PROBE
+    + "if command -v xset >/dev/null 2>&1; then "
+    + "xset s off -dpms s noblank 2>/dev/null || true; "
+    + "fi; "
+    + "if command -v xfconf-query >/dev/null 2>&1; then "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/inactivity-sleep-mode-on-ac -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/inactivity-sleep-mode-on-battery -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/blank-on-ac -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/blank-on-battery -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/dpms-on-ac-sleep -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c xfce4-power-manager -p /xfce4-power-manager/dpms-on-ac-off -s 0 "
+    + "2>/dev/null || true; "
+    + "xfconf-query -c screensaver -p /saver/enabled -s false 2>/dev/null || true; "
+    + "xfconf-query -c screensaver -p /saver/idle-activation/enabled -s false 2>/dev/null || true; "
+    + "fi; "
+    + "if command -v systemctl >/dev/null 2>&1; then "
+    + "systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target "
+    + "2>/dev/null || true; "
+    + "fi; "
+    + "exit 0"
 )
 
 
 async def _launch_browser_once(out_dir: Path) -> int:
     """One-time shell helper to start Firefox; navigation after this is mouse/keyboard."""
     return await cmd_step_shell(out_dir, _LINUX_FIREFOX_LAUNCH_SHELL)
+
+
+async def _disable_linux_xfce_sleep(out_dir: Path) -> None:
+    """Best-effort disable screen blank/suspend on cua-xfce; never fails bootstrap."""
+    rc = await cmd_step_shell(out_dir, _LINUX_XFCE_DISABLE_SLEEP_SHELL)
+    if rc != 0:
+        print(
+            "warning: sandbox_ctl could not fully disable XFCE sleep (non-fatal)",
+            file=sys.stderr,
+        )
 
 
 async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> int:
@@ -148,8 +190,8 @@ async def cmd_step_open_url(out_dir: Path, url: str, *, launch: bool = True) -> 
     await cmd_step_type(out_dir, url)
     await asyncio.sleep(0.2)
     await cmd_step_key(out_dir, "enter")
-    await asyncio.sleep(2.0)
-    _emit({"ok": True, "action": "open-url", "url": url})
+    await asyncio.sleep(_PAGE_LOAD_WAIT_S)
+    _emit({"ok": True, "action": "open-url", "url": url, "load_wait_s": _PAGE_LOAD_WAIT_S})
     return 0
 
 
@@ -214,6 +256,9 @@ async def cmd_bootstrap(
     await sb.disconnect()
 
     _emit({"ok": True, "sandbox": info})
+
+    if local and image_key in ("auto", "linux"):
+        await _disable_linux_xfce_sleep(out_dir)
 
     if open_browser:
         target = (url or os.environ.get("ANALYZER_PRODUCT_URL") or "").strip()
@@ -377,18 +422,41 @@ async def cmd_step_type(out_dir: Path, text: str) -> int:
     return 0
 
 
-# computer-server / cua_auto hotkey() only accepts lowercase names (see cua_auto.keyboard._SPECIAL).
-# Do not emit pynput-style PascalCase (Return, Escape) — HTTP transport rejects them.
+# computer-server (pynput) Key names differ from SDK docs examples — normalize before hotkey.
+# Linux: Key.esc not escape; Key.cmd not meta; Key.page_up not pageup; etc.
 _KEY_ALIASES: dict[str, str] = {
-    "escape": "escape",
-    "esc": "escape",
+    "escape": "esc",
+    "esc": "esc",
     "enter": "enter",
     "return": "enter",
+    "ret": "enter",
+    "tab": "tab",
+    "space": "space",
+    " ": "space",
+    "backspace": "backspace",
+    "bs": "backspace",
+    "delete": "delete",
+    "del": "delete",
+    "insert": "insert",
+    "ins": "insert",
+    "home": "home",
+    "end": "end",
+    "pageup": "page_up",
+    "page_up": "page_up",
+    "pgup": "page_up",
+    "pagedown": "page_down",
+    "page_down": "page_down",
+    "pgdn": "page_down",
+    "up": "up",
+    "down": "down",
+    "left": "left",
+    "right": "right",
     "control": "ctrl",
-    "command": "meta",
-    "cmd": "meta",
-    "win": "meta",
-    "super": "meta",
+    "command": "cmd",
+    "cmd": "cmd",
+    "win": "cmd",
+    "super": "cmd",
+    "meta": "cmd",
     "option": "alt",
 }
 
@@ -409,7 +477,11 @@ async def cmd_step_key(out_dir: Path, keys: str) -> int:
     info = load_sandbox_info(out_dir)
     key_list = _normalize_keys(keys)
     async with _connect_from_info(info) as sb:
-        await sb.keyboard.keypress(key_list)
+        # SDK Keyboard.keypress → hotkey; single keys also work via press_key.
+        if len(key_list) == 1:
+            await sb._transport.send("press_key", key=key_list[0])
+        else:
+            await sb.keyboard.keypress(key_list)
     _emit({"ok": True, "keys": keys})
     return 0
 
@@ -420,7 +492,21 @@ async def cmd_step_scroll(
     apply_no_proxy_env()
     info = load_sandbox_info(out_dir)
     async with _connect_from_info(info) as sb:
-        await sb.mouse.scroll(x, y, scroll_x, scroll_y)
+        # cua_sandbox Mouse.scroll sends {x,y,scroll_x,scroll_y}, but computer-server
+        # LinuxAutomationHandler.scroll(x,y) treats x/y as wheel deltas and drops
+        # scroll_x/scroll_y (see trycua/cua computer_server/handlers/linux.py). LocalTransport
+        # does move+scroll correctly; HTTP transport to Docker does not. Work around by
+        # moving first, then scroll_down/up (vertical) or raw scroll deltas (horizontal).
+        await sb.mouse.move(x, y)
+        transport = sb._transport
+        if scroll_y < 0:
+            await transport.send("scroll_down", clicks=abs(scroll_y))
+        elif scroll_y > 0:
+            await transport.send("scroll_up", clicks=scroll_y)
+        if scroll_x < 0:
+            await transport.send("scroll", x=-abs(scroll_x), y=0)
+        elif scroll_x > 0:
+            await transport.send("scroll", x=abs(scroll_x), y=0)
     _emit({"ok": True, "x": x, "y": y, "scroll_x": scroll_x, "scroll_y": scroll_y})
     return 0
 

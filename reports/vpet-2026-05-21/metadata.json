@@ -1,0 +1,46 @@
+{
+  "product_name": "VPet (虚拟桌宠模拟器)",
+  "url": "https://store.steampowered.com/app/1920960/VPet/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-vpet-2026-05-21",
+    "api_url": "http://localhost:60063"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-21T23:53:03+08:00",
+  "finished_at": "2026-05-22T00:15:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "c4c25a76-272e-4473-9dda-cdbbd2755601",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "Steam商店访问失败(TLS错误)"},
+    {"file": "screenshots/02_web_github.png", "view": "web-github", "caption": "GitHub仓库首页"},
+    {"file": "screenshots/03_web_github_readme.png", "view": "web-github-readme", "caption": "GitHub README产品介绍"},
+    {"file": "screenshots/04_web_github_readme2.png", "view": "web-github-readme2", "caption": "GitHub README动画系统说明"},
+    {"file": "screenshots/05_web_github_features.png", "view": "web-github-features", "caption": "GitHub README功能说明"},
+    {"file": "screenshots/06_web_indienova.png", "view": "web-indienova", "caption": "indienova游戏页"},
+    {"file": "screenshots/07_web_indienova_detail.png", "view": "web-indienova-detail", "caption": "indienova详细介绍"},
+    {"file": "screenshots/08_web_indienova_more.png", "view": "web-indienova-more", "caption": "indienova功能详情"},
+    {"file": "screenshots/09_web_indienova_screenshots.png", "view": "web-indienova-screenshots", "caption": "indienova动画展示"},
+    {"file": "screenshots/10_web_indienova_features.png", "view": "web-indienova-features", "caption": "indienova爬墙展示"},
+    {"file": "screenshots/11_web_moegirl.png", "view": "web-moegirl", "caption": "萌娘百科条目"},
+    {"file": "screenshots/12_web_linux_port.png", "view": "web-linux-port", "caption": "Linux移植版404"}
+  ],
+  "warnings": [
+    "Steam商店在沙盒Firefox中访问失败(PR_END_OF_FILE_ERROR TLS握手错误)",
+    "VPet原版为Windows WPF应用,Linux沙盒无法运行桌面端",
+    "社区Linux移植版(shishuiqiaotou/VPet_For_Linux)返回404,不可用",
+    "web-only降级:产品为Windows独占,无可用Linux安装包"
+  ]
+}

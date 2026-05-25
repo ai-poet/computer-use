@@ -1,0 +1,46 @@
+{
+  "product_name": "CodePod",
+  "url": "https://github.com/chicogong/codepod",
+  "download_url": "https://github.com/chicogong/codepod/releases/download/v0.5.0/CodePod_0.1.0_amd64.deb",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-codepod-2026-05-22",
+    "api_url": "http://localhost:57141"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:26:25+08:00",
+  "finished_at": "2026-05-22T02:43:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "419fc3db-1979-4399-a159-b103ea140417",
+  "screenshots": [
+    {"file": "screenshots/01_web_github_loading.png", "view": "github-loading", "caption": "GitHub 仓库页加载中"},
+    {"file": "screenshots/02_web_github_blank.png", "view": "github-blank", "caption": "GitHub 仓库页空白"},
+    {"file": "screenshots/03_app_main.png", "view": "main", "caption": "CodePod 应用主界面"},
+    {"file": "screenshots/04_app_terminal.png", "view": "terminal", "caption": "Terminal 视图"},
+    {"file": "screenshots/05_app_settings_cli.png", "view": "settings-cli", "caption": "Settings - CLI 配置"},
+    {"file": "screenshots/06_app_settings_mcp.png", "view": "settings-mcp", "caption": "Settings - MCP 服务器"},
+    {"file": "screenshots/07_app_settings_cmds.png", "view": "settings-cmds", "caption": "Settings - Commands"},
+    {"file": "screenshots/08_app_settings_agents.png", "view": "settings-agents", "caption": "Settings - Agents"},
+    {"file": "screenshots/09_app_settings_skills.png", "view": "settings-skills", "caption": "Settings - Skills"},
+    {"file": "screenshots/10_app_main_post_settings.png", "view": "main-post-settings", "caption": "关闭 Settings 后的主界面"},
+    {"file": "screenshots/11_app_project_selector.png", "view": "project-selector", "caption": "项目选择器下拉菜单"}
+  ],
+  "warnings": [
+    "GitHub 页面在沙盒 Firefox 内无法加载（Waiting for github.com...），通过 host 侧 curl 获取仓库信息",
+    "应用启动后显示 Disconnected / Not Connected 状态，因沙盒内未安装 Claude CLI",
+    "暗色模式切换按钮点击后界面未发生可见变化",
+    "Release asset 文件名版本号与 release tag 不一致（CodePod_0.1.0_amd64.deb vs v0.5.0）",
+    "Android 未启用（android.enabled=false），未创建 Android 沙盒"
+  ]
+}

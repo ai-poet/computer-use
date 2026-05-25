@@ -1,0 +1,28 @@
+{
+  "product_name": "miHoYo 人工桌面 (Lumi 鹿鸣)",
+  "url": "https://lumi.mihoyo.com/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-mihoyo-lumi-2026-05-21",
+    "api_url": "http://localhost:58895"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-21T23:53:03+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "fd94d645-7116-4625-ad62-c2086f162a1d",
+  "screenshots": [],
+  "warnings": []
+}

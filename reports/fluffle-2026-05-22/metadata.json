@@ -1,0 +1,40 @@
+{
+  "product_name": "Fluffle",
+  "url": "https://fluffle.space",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-fluffle-2026-05-22",
+    "api_url": "http://localhost:48125"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:27:51+08:00",
+  "finished_at": "2026-05-22T01:42:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "e7e07863-1e48-49a1-9099-69022e06a47c",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景，像素风格场景"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "功能介绍区+下载按钮"},
+    {"file": "screenshots/03_web_characters.png", "view": "web-characters", "caption": "虚拟宠物角色卡片展示"},
+    {"file": "screenshots/04_web_bottom.png", "view": "web-bottom", "caption": "底部CTA区域"},
+    {"file": "screenshots/05_web_privacy.png", "view": "web-privacy", "caption": "隐私政策/服务条款页顶部"},
+    {"file": "screenshots/06_web_terms.png", "view": "web-terms", "caption": "服务详情（Spaces、隐私控制）"}
+  ],
+  "warnings": [
+    "web-only: product only offers Mac and Windows downloads, no Linux version available at https://fluffle.space",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "product is in Open Beta stage, features may be incomplete",
+    "observed one client-side JS exception during page load, resolved after refresh"
+  ]
+}

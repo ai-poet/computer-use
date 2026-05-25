@@ -1,0 +1,46 @@
+{
+  "product_name": "Paseo",
+  "url": "https://github.com/getpaseo/paseo",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-paseo-2026-05-22",
+    "api_url": "http://localhost:45711"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T03:04:03+08:00",
+  "finished_at": "2026-05-22T03:28:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "1f896f4a-db99-4976-a09a-ac820484febf",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "GitHub 仓库首页"},
+    {"file": "screenshots/03_web_readme_content.png", "view": "web-readme-content", "caption": "README 产品核心描述"},
+    {"file": "screenshots/04_web_readme_features.png", "view": "web-readme-features", "caption": "README 五大功能卖点"},
+    {"file": "screenshots/05_web_readme_getting_started.png", "view": "web-readme-getting-started", "caption": "README CLI 安装说明"},
+    {"file": "screenshots/06_web_readme_cli.png", "view": "web-readme-cli", "caption": "README monorepo 与 skills"},
+    {"file": "screenshots/13_web_releases_assets_all.png", "view": "web-releases-assets", "caption": "Releases 全平台安装包"},
+    {"file": "screenshots/14_app_main.png", "view": "app-main", "caption": "桌面应用主界面"},
+    {"file": "screenshots/18_app_setup_providers.png", "view": "app-settings-general", "caption": "Settings General 页"},
+    {"file": "screenshots/20_app_integrations.png", "view": "app-settings-integrations", "caption": "Settings Integrations 页"},
+    {"file": "screenshots/24_app_projects.png", "view": "app-settings-projects", "caption": "Settings Projects 页"},
+    {"file": "screenshots/25_app_about.png", "view": "app-settings-about", "caption": "Settings About 页"},
+    {"file": "screenshots/29_web_app_paseo.png", "view": "web-app", "caption": "Web 版应用界面"}
+  ],
+  "warnings": [
+    "android: disabled by configuration; mode set to skipped",
+    "Electron app requires --no-sandbox flag to launch inside Docker sandbox (namespace permission denied)",
+    "Voice control feature not visible in desktop UI; possibly mobile-only",
+    "Providers configuration UI not directly reachable from empty-state main screen"
+  ]
+}

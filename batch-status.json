@@ -1,98 +1,684 @@
 {
-  "queue": "queue.desktop-pets.json",
+  "queue": "queue.desktop-pets.json → queue.coding-platforms.json → queue.china-travel.json → queue.language-learning.json",
   "max_workers": 5,
   "counts": {
-    "total": 10,
+    "total": 83,
     "queued": 0,
+    "starting": 0,
     "running": 0,
+    "finishing": 0,
     "paused": 0,
-    "done": 8,
-    "failed": 2,
+    "done": 58,
+    "failed": 25,
     "cancelled": 0,
-    "finished": 10,
+    "finished": 83,
     "active_slots": 0,
     "max_workers": 5
   },
   "jobs": [
     {
       "job_id": 1,
-      "product_name": "Desktop Mate",
-      "state": "failed",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/desktop-mate-2026-05-20",
-      "rc": 130,
-      "error": "exit 130"
+      "product_name": "ProductiveKitty",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/productivekitty-2026-05-21",
+      "rc": 0,
+      "error": null
     },
     {
       "job_id": 2,
-      "product_name": "Weyrdlets",
+      "product_name": "VPet (虚拟桌宠模拟器)",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/weyrdlets-2026-05-20-2",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/vpet-2026-05-21",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 3,
-      "product_name": "Shimeji-ee",
+      "product_name": "Doudou Game Companion (逗逗游戏伙伴)",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/shimeji-ee-2026-05-20-2",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/doudou-game-companion-2026-05-21",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 4,
-      "product_name": "Dinoki",
-      "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/dinoki-2026-05-20-2",
-      "rc": 0,
-      "error": null
+      "product_name": "miHoYo 人工桌面 (Lumi 鹿鸣)",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/mihoyo-lumi-2026-05-21",
+      "rc": 1,
+      "error": "exit 1"
     },
     {
       "job_id": 5,
-      "product_name": "DPET — Desktop Pet Engine",
+      "product_name": "互动桌面宠物",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/dpet-desktop-pet-engine-2026-05-20",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/product-f166e1-2026-05-21",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 6,
-      "product_name": "Desktop Goose",
+      "product_name": "木鱼专注",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/desktop-goose-2026-05-20",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/product-b803ac-2026-05-22",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 7,
-      "product_name": "Rusty's Retirement",
+      "product_name": "桌面萌娘 2: 魔法引擎",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/rustys-retirement-2026-05-20",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/2-2026-05-22",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 8,
-      "product_name": "Bongo Cat",
+      "product_name": "Custom Desktop Pet (自定义桌面宠物)",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/bongo-cat-2026-05-20",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/custom-desktop-pet-2026-05-22",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 9,
-      "product_name": "Tiny Pasture",
+      "product_name": "守护与智友 (Ai Vpet)",
       "state": "done",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/tiny-pasture-2026-05-20",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/ai-vpet-2026-05-22",
       "rc": 0,
       "error": null
     },
     {
       "job_id": 10,
-      "product_name": "Wobbledogs",
+      "product_name": "My Wolf — Desktop Wild Pet (我的小狼)",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/my-wolf-desktop-wild-pet-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 11,
+      "product_name": "天选姬 (ASUS TUF)",
       "state": "failed",
-      "out_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/reports/wobbledogs-2026-05-20",
-      "rc": -2,
-      "error": "exit -2"
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/asus-tuf-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 12,
+      "product_name": "Bongo Cat / Bongo Cat Display",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/bongo-cat-bongo-cat-display-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 13,
+      "product_name": "Pets Therapy",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/pets-therapy-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 14,
+      "product_name": "Desktop Goose",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/desktop-goose-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 15,
+      "product_name": "Shimeji-ee",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/shimeji-ee-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 16,
+      "product_name": "Mac Pet",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/mac-pet-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 17,
+      "product_name": "Cat On Chair: ADHD Focus",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/cat-on-chair-adhd-focus-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 18,
+      "product_name": "Focus Pet",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/focus-pet-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 19,
+      "product_name": "Focus Dog",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/focus-dog-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 20,
+      "product_name": "Finch: Self-Care Pet",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/finch-self-care-pet-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 21,
+      "product_name": "Habitica",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/habitica-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 22,
+      "product_name": "Forest",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/forest-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 23,
+      "product_name": "Focus Bear",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/focus-bear-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 24,
+      "product_name": "Fluffle",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/fluffle-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 25,
+      "product_name": "eSheep / Neko",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/esheep-neko-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 26,
+      "product_name": "Desktop Pet (desktoppet.app)",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/desktop-pet-desktoppet.app-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 27,
+      "product_name": "FocusBud",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/focusbud-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 28,
+      "product_name": "Eggzy — Focus & Time Keeper",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/eggzy-focus--time-keeper-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 29,
+      "product_name": "Wallpaper Engine",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/wallpaper-engine-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 30,
+      "product_name": "Setapp",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/setapp-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 31,
+      "product_name": "Deepwrk",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/deepwrk-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 32,
+      "product_name": "CheapRouter",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/cheaprouter-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 33,
+      "product_name": "88code",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/88code-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 34,
+      "product_name": "88code Desktop",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/88code-desktop-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 35,
+      "product_name": "DuckCoding",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/duckcoding-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 36,
+      "product_name": "DuckCoding Desktop",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/duckcoding-desktop-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 37,
+      "product_name": "Codepilot (归藏)",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/codepilot-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 38,
+      "product_name": "AionUi",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/aionui-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 39,
+      "product_name": "Claude Code Haha (cc-haha)",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/claude-code-haha-cc-haha-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 40,
+      "product_name": "CodePod",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/codepod-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 41,
+      "product_name": "CC Switch",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/cc-switch-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 42,
+      "product_name": "OneCode",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/onecode-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 43,
+      "product_name": "Hapi",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/hapi-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 44,
+      "product_name": "ZCode",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/zcode-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 45,
+      "product_name": "Paseo",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/paseo-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 46,
+      "product_name": "Conductor.build",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/conductor.build-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 47,
+      "product_name": "Kilo Code (CN)",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/kilo-code-cn-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 48,
+      "product_name": "OpenClaw",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/openclaw-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 49,
+      "product_name": "Hermes Agent",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/hermes-agent-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 50,
+      "product_name": "Claude Code Router",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/claude-code-router-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 51,
+      "product_name": "9Router",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/9router-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 52,
+      "product_name": "PackyCode",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/packycode-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 53,
+      "product_name": "AICodeMirror",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/aicodemirror-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 54,
+      "product_name": "AnyRouter",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/anyrouter-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 55,
+      "product_name": "NekoCode",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/nekocode-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 56,
+      "product_name": "instcopilot-api",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/instcopilot-api-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 57,
+      "product_name": "4Router",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/4router-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 58,
+      "product_name": "CUBENCE",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/cubence-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 59,
+      "product_name": "YesCode",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/yescode-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 60,
+      "product_name": "FoxCode",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/foxcode-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 61,
+      "product_name": "QClaw (腾讯)",
+      "state": "done",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/qclaw-2026-05-22",
+      "rc": 0,
+      "error": null
+    },
+    {
+      "job_id": 62,
+      "product_name": "CoPaw (阿里通义)",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/copaw-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 63,
+      "product_name": "JVS Claw (阿里云)",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/jvs-claw-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 64,
+      "product_name": "WeChat",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/wechat-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 65,
+      "product_name": "Alipay",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/alipay-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 66,
+      "product_name": "Trip.com",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/trip.com-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 67,
+      "product_name": "DiDi",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/didi-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 68,
+      "product_name": "Amap (Gaode Maps)",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/amap-gaode-maps-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 69,
+      "product_name": "Pleco",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/pleco-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 70,
+      "product_name": "Waygo",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/waygo-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 71,
+      "product_name": "Baidu Maps",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/baidu-maps-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 72,
+      "product_name": "Meituan",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/meituan-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 73,
+      "product_name": "China Railway 12306",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/china-railway-12306-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 74,
+      "product_name": "Duolingo",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/duolingo-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 75,
+      "product_name": "Babbel",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/babbel-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 76,
+      "product_name": "Rosetta Stone",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/rosetta-stone-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 77,
+      "product_name": "Pimsleur",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/pimsleur-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 78,
+      "product_name": "Memrise",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/memrise-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 79,
+      "product_name": "Busuu",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/busuu-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 80,
+      "product_name": "italki",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/italki-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 81,
+      "product_name": "Drops",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/drops-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 82,
+      "product_name": "LingoDeer",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/lingodeer-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
+    },
+    {
+      "job_id": 83,
+      "product_name": "Mondly",
+      "state": "failed",
+      "out_dir": "/home/zhiwei/projects/computer-use/reports/mondly-2026-05-22",
+      "rc": 1,
+      "error": "exit 1"
     }
   ]
 }

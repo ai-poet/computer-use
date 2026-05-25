@@ -1,0 +1,39 @@
+{
+  "product_name": "CC Switch",
+  "url": "https://ccswitch.io",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-cc-switch-2026-05-22",
+    "api_url": "http://localhost:49889"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:47:02+08:00",
+  "finished_at": "2026-05-22T03:04:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "7be6abf3-9926-415b-920a-b770f2220c82",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景，展示产品定位与CTA"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "首页六大核心功能卡片"},
+    {"file": "screenshots/03_web_docs_intro.png", "view": "web-docs-intro", "caption": "文档-软件介绍页，产品定义与痛点"},
+    {"file": "screenshots/04_web_docs_features.png", "view": "web-docs-features", "caption": "文档-核心功能详细说明"},
+    {"file": "screenshots/05_web_footer.png", "view": "web-footer", "caption": "页脚导航与MIT开源声明"}
+  ],
+  "warnings": [
+    "web-only: 官网下载页面 /zh/download 返回 404，无法获取安装包",
+    "web-only: 页脚产品-下载链接点击无效",
+    "web-only: GitHub 因沙盒 IP 被限流（Too many requests），无法访问 release 页面获取 Linux 安装包",
+    "android: android.enabled=false; web-only product path"
+  ]
+}

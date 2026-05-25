@@ -1,52 +1,162 @@
 [
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Emergent",
-    "url": "https://emergent.sh"
+    "category": "AI Coding Workbench — Subject",
+    "product_name": "CheapRouter",
+    "url": "https://cheaprouter.org"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Softgen",
-    "url": "https://softgen.ai"
+    "category": "AI Coding Workbench — Bundled Workbench + Relay",
+    "product_name": "88code",
+    "url": "https://www.88code.org"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Bubble",
-    "url": "https://bubble.io"
+    "category": "AI Coding Workbench — Bundled Workbench + Relay",
+    "product_name": "88code Desktop",
+    "url": "https://github.com/byebye-code/88code-desktop"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "FlutterFlow",
-    "url": "https://flutterflow.io"
+    "category": "AI Coding Workbench — Bundled Workbench + Relay",
+    "product_name": "DuckCoding",
+    "url": "https://duckcoding.com"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Glide",
-    "url": "https://www.glideapps.com"
+    "category": "AI Coding Workbench — Bundled Workbench + Relay",
+    "product_name": "DuckCoding Desktop",
+    "url": "https://github.com/DuckCoding-dev/DuckCoding"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Adalo",
-    "url": "https://www.adalo.com"
+    "category": "AI Coding Workbench — Client Only (BYOK)",
+    "product_name": "Codepilot (归藏)",
+    "url": "https://github.com/op7418/CodePilot"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Softr",
-    "url": "https://www.softr.io"
+    "category": "AI Coding Workbench — Client Only (BYOK)",
+    "product_name": "AionUi",
+    "url": "https://aionui.com"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Manus",
-    "url": "https://manus.im"
+    "category": "AI Coding Workbench — Client Only (BYOK)",
+    "product_name": "Claude Code Haha (cc-haha)",
+    "url": "https://github.com/NanmiCoder/cc-haha"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Trae",
-    "url": "https://www.trae.ai"
+    "category": "AI Coding Workbench — Client Only (BYOK)",
+    "product_name": "CodePod",
+    "url": "https://github.com/chicogong/codepod"
   },
   {
-    "category": "Alternative Coding Platforms",
-    "product_name": "Tempo",
-    "url": "https://www.tempo.new"
+    "category": "AI Coding Workbench — Client Only (BYOK)",
+    "product_name": "CC Switch",
+    "url": "https://ccswitch.io"
+  },
+  {
+    "category": "AI Coding Workbench — Web / Remote Frontend",
+    "product_name": "OneCode",
+    "url": "https://github.com/AIDotNet/OneCode"
+  },
+  {
+    "category": "AI Coding Workbench — Web / Remote Frontend",
+    "product_name": "Hapi",
+    "url": "https://github.com/tiann/hapi"
+  },
+  {
+    "category": "AI Coding Workbench — Web / Remote Frontend",
+    "product_name": "ZCode",
+    "url": "https://zcode-ai.com"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "Paseo",
+    "url": "https://github.com/getpaseo/paseo"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "Conductor.build",
+    "url": "https://www.conductor.build"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "Kilo Code (CN)",
+    "url": "https://kilo.org.cn"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "OpenClaw",
+    "url": "https://openclaw.cn"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "Hermes Agent",
+    "url": "https://hermes-agent.nousresearch.com"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "Claude Code Router",
+    "url": "https://github.com/musistudio/claude-code-router"
+  },
+  {
+    "category": "AI Coding Workbench — Open-Source Framework",
+    "product_name": "9Router",
+    "url": "https://ai-bot.cn/9router"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "PackyCode",
+    "url": "https://www.packycode.com"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "AICodeMirror",
+    "url": "https://www.aicodemirror.com"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "AnyRouter",
+    "url": "https://anyrouter.top"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "NekoCode",
+    "url": "https://nekocode.ai"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "instcopilot-api",
+    "url": "https://instcopilot-api.com"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "4Router",
+    "url": "https://4router.net"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "CUBENCE",
+    "url": "https://cubence.com"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "YesCode",
+    "url": "https://co.yes.vg"
+  },
+  {
+    "category": "AI Coding Workbench — Pure Relay",
+    "product_name": "FoxCode",
+    "url": "https://foxcode.rjj.cc"
+  },
+  {
+    "category": "AI Coding Workbench — OpenClaw Wrapper",
+    "product_name": "QClaw (腾讯)",
+    "url": "https://qclaw.qq.com"
+  },
+  {
+    "category": "AI Coding Workbench — OpenClaw Wrapper",
+    "product_name": "CoPaw (阿里通义)",
+    "url": "https://copaw.bot"
+  },
+  {
+    "category": "AI Coding Workbench — OpenClaw Wrapper",
+    "product_name": "JVS Claw (阿里云)",
+    "url": "https://jvsclaw.aliyun.com"
   }
 ]

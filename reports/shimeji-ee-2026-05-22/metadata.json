@@ -1,0 +1,44 @@
+{
+  "product_name": "Shimeji-ee",
+  "url": "https://kilkakon.com/shimeji/",
+  "download_url": "https://kilkakon.com/shimeji/shimejiee.zip",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-shimeji-ee-2026-05-22",
+    "api_url": "http://localhost:32943"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T00:42:12+08:00",
+  "finished_at": "2026-05-22T00:54:38+08:00",
+  "mode": "web-only",
+  "last_session_id": "bd67973c-6095-4cd9-933e-1c61d4a1bd86",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景"},
+    {"file": "screenshots/02_web_homepage_after_close.png", "view": "web-homepage-license", "caption": "首页版权和许可证声明区"},
+    {"file": "screenshots/03_web_homepage_footer.png", "view": "web-homepage-footer", "caption": "首页底部免责声明和导航"},
+    {"file": "screenshots/04_web_downloads.png", "view": "web-downloads-404", "caption": "404错误页（/shimeji/downloads/不存在）"},
+    {"file": "screenshots/06_web_characters.png", "view": "web-characters", "caption": "角色获取推荐页面"},
+    {"file": "screenshots/07_web_characters_scroll.png", "view": "web-characters-search", "caption": "角色搜索建议"},
+    {"file": "screenshots/08_web_affordances.png", "view": "web-affordances", "caption": "高级交互动画制作教程"},
+    {"file": "screenshots/09_web_downloads_main.png", "view": "web-downloads-main", "caption": "Kilkakon主站下载页"},
+    {"file": "screenshots/10_web_software.png", "view": "web-software", "caption": "Software分类页"},
+    {"file": "screenshots/11_web_games.png", "view": "web-games", "caption": "Games分类页"}
+  ],
+  "warnings": [
+    "web-only: product explicitly states 'runs only on Windows' on homepage; no Linux/macOS package available",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "download button (shimejiee.zip) click produced no visible response in sandbox Firefox; verified link existence via HTML source grep",
+    "downloads subdirectory (/shimeji/downloads/) returns 404"
+  ]
+}

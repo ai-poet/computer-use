@@ -1,0 +1,28 @@
+{
+  "product_name": "Trip.com",
+  "url": "https://www.trip.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": null,
+    "api_url": null
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T04:28:31+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "9ae2b347-5aa4-4079-9d46-d9fc7aba3cef",
+  "screenshots": [],
+  "warnings": []
+}

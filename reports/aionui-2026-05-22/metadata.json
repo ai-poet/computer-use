@@ -1,0 +1,47 @@
+{
+  "product_name": "AionUi",
+  "url": "https://aionui.com",
+  "download_url": "https://aionui.com/download/",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-aionui-2026-05-22",
+    "api_url": "http://localhost:51269"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T02:19:24+08:00",
+  "finished_at": "2026-05-22T02:46:00+08:00",
+  "mode": "sandbox-full",
+  "last_session_id": "11328c7f-151a-4808-98fa-d9cffd0f91c1",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景"},
+    {"file": "screenshots/02_web_homepage_scroll1.png", "view": "web-homepage-stella", "caption": "首页 Stella 助手演示区"},
+    {"file": "screenshots/03_web_homepage_scroll2.png", "view": "web-homepage-cowork", "caption": "首页 Multi-Agent Cowork 任务板"},
+    {"file": "screenshots/06_web_cowork.png", "view": "web-cowork", "caption": "Cowork 功能页面"},
+    {"file": "screenshots/07_web_assistants.png", "view": "web-assistants", "caption": "Assistants 助手网格页面"},
+    {"file": "screenshots/08_web_remote.png", "view": "web-remote", "caption": "Remote 远程控制页面"},
+    {"file": "screenshots/09_web_automation.png", "view": "web-automation", "caption": "Automation 定时任务页面"},
+    {"file": "screenshots/12_web_download.png", "view": "web-download", "caption": "Download 页面版本信息"},
+    {"file": "screenshots/14_web_download_linux.png", "view": "web-download-linux", "caption": "Linux 下载选项区"},
+    {"file": "screenshots/17_app_main.png", "view": "app-main", "caption": "AionUi 桌面应用主界面"},
+    {"file": "screenshots/30_web_install_methods.png", "view": "web-install-methods", "caption": "安装方法（brew/winget/curl）"},
+    {"file": "screenshots/31_web_sysreq.png", "view": "web-system-requirements", "caption": "系统要求页面"},
+    {"file": "screenshots/32_web_footer.png", "view": "web-footer", "caption": "官网 Footer（版权/社区链接）"}
+  ],
+  "warnings": [
+    "android: android.enabled=false, Android sandbox not created; web-only product path for mobile",
+    "app: Electron app launched successfully with --no-sandbox flag due to Docker namespace restrictions; app interaction limited without login",
+    "app: Scheduled Tasks and Teams modules show empty state without onboarding guidance in unauthenticated mode",
+    "web: Docs link in footer appears to be external (GitHub README/wiki), did not navigate within aionui.com domain"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "product_name": "桌面萌娘 2: 魔法引擎",
+  "url": "https://store.steampowered.com/app/1096550/Desktop_Magic_Engine/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-2-2026-05-22",
+    "api_url": "http://localhost:45153"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T00:10:22+08:00",
+  "finished_at": "2026-05-22T00:32:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "83eaf463-a1af-4077-a79a-a77586b7dc19",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "Steam 商店首页宣传图区域"},
+    {"file": "screenshots/02_web_pricing.png", "view": "web-pricing", "caption": "定价、捆绑包和促销信息"},
+    {"file": "screenshots/03_web_details.png", "view": "web-details", "caption": "产品描述、评价和发布信息"},
+    {"file": "screenshots/04_web_features.png", "view": "web-features", "caption": "功能特性列表和故障排除"},
+    {"file": "screenshots/05_web_sysreq.png", "view": "web-sysreq", "caption": "系统需求配置要求"},
+    {"file": "screenshots/06_web_meta.png", "view": "web-meta", "caption": "类型标签、语言支持和开发商信息"}
+  ],
+  "warnings": [
+    "web-only: product is Windows-only (OS: Windows 7 64-bit required), no Linux package available",
+    "Steam Community/Workshop connection failed (PR_END_OF_FILE_ERROR), unable to browse community content",
+    "android: sandbox not started; android.enabled=false, mode set to skipped"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "product_name": "ProductiveKitty",
+  "url": "https://productivekitty.masterwordai.com",
+  "download_url": "Desktop Cat-Setup-1.0.5-x64.exe (88.3 MB)",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-productivekitty-2026-05-21",
+    "api_url": "http://localhost:46311"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-21T23:53:03+08:00",
+  "finished_at": "2026-05-22T00:05:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "e892f0fa-ec22-449b-9bb7-63e4635e6ee6",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页 Hero 区域"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "四大核心功能卡片"},
+    {"file": "screenshots/03_web_scenarios.png", "view": "web-scenarios", "caption": "使用场景截图展示"},
+    {"file": "screenshots/04_web_stats.png", "view": "web-stats", "caption": "数据统计面板"},
+    {"file": "screenshots/05_web_philosophy.png", "view": "web-philosophy", "caption": "产品理念区与价值观标签"},
+    {"file": "screenshots/06_web_how_it_works.png", "view": "web-how-it-works", "caption": "工作原理三步流程"},
+    {"file": "screenshots/07_web_steps.png", "view": "web-steps", "caption": "工作原理三步骤详细卡片"},
+    {"file": "screenshots/08_web_download.png", "view": "web-download", "caption": "下载区域（平台支持与按钮）"},
+    {"file": "screenshots/09_web_download_btn.png", "view": "web-download-btn", "caption": "下载按钮与页脚"},
+    {"file": "screenshots/10_web_downloading.png", "view": "web-downloading", "caption": "点击下载后显示的 .exe 文件信息"}
+  ],
+  "warnings": [
+    "web-only: product only supports Windows 10+ and macOS 13+; no Linux package available",
+    "Download captured: Desktop Cat-Setup-1.0.5-x64.exe (88.3 MB, v1.0.5)",
+    "EN language switch button did not work in Firefox sandbox",
+    "macOS download button not visible on Linux visitor; only Windows button shown"
+  ]
+}

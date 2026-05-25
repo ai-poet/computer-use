@@ -1,0 +1,37 @@
+{
+  "product_name": "Claude Code Router",
+  "url": "https://github.com/musistudio/claude-code-router",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-claude-code-router-2026-05-22",
+    "api_url": "http://localhost:38681"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:28:55+08:00",
+  "finished_at": "2026-05-22T06:20:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "a171cb6e-f767-43c6-b624-abb278755774",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "GitHub 仓库首页全景"},
+    {"file": "screenshots/02_web_features.png", "view": "web-features", "caption": "README Features 功能列表"},
+    {"file": "screenshots/03_web_installation.png", "view": "web-installation", "caption": "README Installation 和 Configuration 说明"},
+    {"file": "screenshots/04_web_docs_failed.png", "view": "web-docs-failed", "caption": "文档站点连接失败页面"}
+  ],
+  "warnings": [
+    "web-only: product is an npm CLI tool (@musistudio/claude-code-router), no desktop GUI application; sandbox lacks Node.js/npm to install and run CLI",
+    "docs-site-unavailable: musistudio.github.io/claude-code-router returned PR_CONNECT_RESET_ERROR; users must rely on README for documentation",
+    "android: sandbox not started; android.enabled=false; web-only product path"
+  ]
+}

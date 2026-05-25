@@ -1,0 +1,43 @@
+{
+  "product_name": "PackyCode",
+  "url": "https://www.packycode.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-packycode-2026-05-22",
+    "api_url": "http://localhost:33965"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:36:11+08:00",
+  "finished_at": "2026-05-22T03:53:17+08:00",
+  "mode": "web-only",
+  "last_session_id": "b4cd0f0a-d3b0-4d27-a5be-d0e4c4d7bacd",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "packycode.com 品牌首页，含 PackyAPI 与 Codex 产品卡片"},
+    {"file": "screenshots/10_web_packyapi_site.png", "view": "web-packyapi-home", "caption": "packyapi.com 首页，Enterprise AI Control Plane 定位"},
+    {"file": "screenshots/11_web_packyapi_scroll.png", "view": "web-packyapi-value", "caption": "PackyAPI VALUE 区：统一入口与全栈可观测"},
+    {"file": "screenshots/12_web_packyapi_bottom.png", "view": "web-packyapi-workflow", "caption": "PackyAPI WORKFLOW 区：三步构建 AI 控制平面"},
+    {"file": "screenshots/13_web_packyapi_footer.png", "view": "web-packyapi-ecosystem", "caption": "PackyAPI ECOSYSTEM 区：30+ 模型提供商集成"},
+    {"file": "screenshots/14_web_codex.png", "view": "web-codex-home", "caption": "codex.packycode.com 首页，AI 编程辅助定位"},
+    {"file": "screenshots/16_web_codex_features.png", "view": "web-codex-features", "caption": "Codex 核心功能：代码生成、智能调试、代码优化、Git 集成"},
+    {"file": "screenshots/17_web_codex_features2.png", "view": "web-codex-terminal", "caption": "Codex 终端集成与安全隐私特性"},
+    {"file": "screenshots/18_web_codex_pricing.png", "view": "web-codex-pricing", "caption": "Codex 定价页，含 Sales have been discontinued 停售提示"}
+  ],
+  "warnings": [
+    "web-only: packycode.com is a single-page landing site with no desktop app download links; product functionality is hosted on subdomains (packyapi.com, codex.packycode.com)",
+    "android: android.enabled=false; no Android sandbox created, no APK hunt performed",
+    "codex-discontinued: codex.packycode.com/pricing shows 'Sales have been discontinued' banner, redirecting users to packyapi.com for pay-as-you-go usage",
+    "placeholder-logos: codex.packycode.com shows placeholder client names (TechCorp, DevStudio, CodeLab, BuildCo) in the 'Trusted by' section"
+  ]
+}

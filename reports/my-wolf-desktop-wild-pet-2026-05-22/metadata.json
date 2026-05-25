@@ -1,0 +1,40 @@
+{
+  "product_name": "My Wolf — Desktop Wild Pet (我的小狼)",
+  "url": "https://store.steampowered.com/app/1110890/MY_WOLF__Desktop_Wild_Pet/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-my-wolf-desktop-wild-pet-2026-05-22",
+    "api_url": "http://localhost:44785"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:21:18+08:00",
+  "finished_at": "2026-05-22T00:35:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "9ba27566-54cb-4c81-ac42-54a6fd3de5e8",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "Steam 商店首页底部区域"},
+    {"file": "screenshots/02_web_header.jpg", "view": "web-header", "caption": "产品头图"},
+    {"file": "screenshots/03_web_capsule.jpg", "view": "web-capsule", "caption": "产品胶囊封面图"},
+    {"file": "screenshots/04_web_artwork.png", "view": "web-artwork", "caption": "游戏艺术场景（低多边形自然风景）"},
+    {"file": "screenshots/05_web_overview.png", "view": "web-overview", "caption": "商店核心信息区（标题、评价、开发商）"},
+    {"file": "screenshots/06_web_about.png", "view": "web-about", "caption": "About This Game 与价格区"},
+    {"file": "screenshots/07_web_features.png", "view": "web-features", "caption": "功能特性与系统需求"},
+    {"file": "screenshots/08_web_support.png", "view": "web-support", "caption": "多屏支持、自动暂停、Early Access 说明"}
+  ],
+  "warnings": [
+    "web-only: product only supports Windows 10/11, no Linux package available on Steam store",
+    "android: sandbox not started; android.enabled=false; web-only product path"
+  ]
+}

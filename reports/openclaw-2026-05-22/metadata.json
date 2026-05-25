@@ -1,0 +1,42 @@
+{
+  "product_name": "OpenClaw",
+  "url": "https://openclaw.cn",
+  "download_url": "https://openclaw.cn/download.html",
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-openclaw-2026-05-22",
+    "api_url": "http://localhost:42337"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:25:55+08:00",
+  "finished_at": "2026-05-22T03:55:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "1f3dfd97-dc23-4ba3-a9de-e333d85c132d",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页初始加载"},
+    {"file": "screenshots/03_web_after_esc.png", "view": "web-homepage-clean", "caption": "官网首页清理后完整首屏"},
+    {"file": "screenshots/04_web_homepage_scroll1.png", "view": "web-homepage-news", "caption": "首页资讯区"},
+    {"file": "screenshots/05_web_homepage_scroll2.png", "view": "web-homepage-skills", "caption": "首页Skills预览区"},
+    {"file": "screenshots/10_web_download_direct.png", "view": "web-download", "caption": "下载页面版本与安装方式"},
+    {"file": "screenshots/11_web_download_scroll.png", "view": "web-download-manual", "caption": "下载页面手动安装区"},
+    {"file": "screenshots/12_web_skills.png", "view": "web-skills", "caption": "Skills下载页面主界面"},
+    {"file": "screenshots/14_web_skills_more.png", "view": "web-skills-more", "caption": "Skills更多技能展示"},
+    {"file": "screenshots/15_web_tutorials.png", "view": "web-tutorials", "caption": "教程页面分类目录"},
+    {"file": "screenshots/17_web_community.png", "view": "web-community", "caption": "社群页面入群方式"}
+  ],
+  "warnings": [
+    "web-only: OpenClaw Linux端无传统桌面安装包（仅npm/Docker/源码编译方式），产品本质为Node.js CLI框架而非GUI桌面应用",
+    "android: android.enabled=false，未创建Android沙盒，未检测APK"
+  ]
+}

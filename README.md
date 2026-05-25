@@ -155,7 +155,18 @@ python -m pip install -r requirements.txt
 
 ```bash
 docker info
-docker pull --platform=linux/amd64 trycua/cua-xfce:latest
+docker pull --platform=linux/amd64 trycua/cua-xfce:latest   # arm64 Mac 必带 platform
+
+# 无需 Docker 的快速检查
+python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
+
+# 单沙盒逐步控制 smoke(会起停一台容器; bootstrap 打开 Firefox 并截图到 tmp/sandbox-ctl-smoke/)
+python -m tests.sandbox.sandbox_ctl_smoke
+python -m tests.sandbox.sandbox_ctl_smoke --url https://excalidraw.com
+
+# 可选:SDK 级 GUI smoke
+python -m tests.sandbox.linux_smoke --check-only
+python -m tests.sandbox.linux_smoke --timeout 180
 ```
 
 Apple Silicon 也建议带 `--platform=linux/amd64`。
@@ -187,6 +198,12 @@ sb = await Sandbox.create(image, name=android_name, local=True)
 ```
 
 操作 Android UI 时优先用 `sb.mobile.tap/swipe/type_text/back/home` 和 `sb.screenshot()`。Android 启动或安装失败只记录到 `metadata.android.mode` 和 `warnings[]`,整单继续走 web-only 或已有桌面证据。
+
+Android 路径由 workflow 通过 Cua Sandbox SDK 控制独立 Android sandbox。APK 落在各产品目录的 `downloads/` 下;如果 image builder 安装失败,才降级为连接后执行 `adb install`。
+
+若本机配置了 HTTP 代理,批量本地 sandbox 会自动为 worker 设置 `NO_PROXY=127.0.0.1,localhost`,避免 SDK 探测 `localhost:<docker_port>` 时被代理成 502。
+
+Linux 沙盒 smoke 测试在 `tests/sandbox/`: `sandbox_ctl_smoke` 会通过 `bootstrap --open-browser --url` 打开 Firefox 并做滚动/点击截图;`linux_smoke` 会检查 SDK、Docker、GUI 截图和基础鼠标键盘操作。
 
 ---
 

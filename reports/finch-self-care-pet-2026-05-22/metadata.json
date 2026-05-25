@@ -1,0 +1,41 @@
+{
+  "product_name": "Finch: Self-Care Pet",
+  "url": "https://finchcare.com/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-finch-self-care-pet-2026-05-22",
+    "api_url": "http://localhost:39673"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:06:50+08:00",
+  "finished_at": "2026-05-22T01:25:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "891fc707-d3f1-4e16-b21f-c6834408eba1",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页，展示品牌、slogan、下载按钮"},
+    {"file": "screenshots/02_web_homepage_ratings.png", "view": "web-homepage-ratings", "caption": "首页底部评分区和 footer"},
+    {"file": "screenshots/03_web_help_home.png", "view": "web-help-home", "caption": "Help 中心首页"},
+    {"file": "screenshots/04_web_help_categories.png", "view": "web-help-categories", "caption": "Help 中心分类展示"},
+    {"file": "screenshots/05_web_features.png", "view": "web-features", "caption": "Finch Features 功能列表上半"},
+    {"file": "screenshots/06_web_features_scroll.png", "view": "web-features-scroll", "caption": "Finch Features 功能列表下半"},
+    {"file": "screenshots/07_web_help_full.png", "view": "web-help-full", "caption": "Help 中心完整分类总览"},
+    {"file": "screenshots/08_web_guardians.png", "view": "web-guardians", "caption": "Guardians 社区机制页面"}
+  ],
+  "warnings": [
+    "web-only: no desktop package found at https://finchcare.com/; only iOS App Store and Google Play download buttons visible",
+    "android: disabled by configuration; Play Store link recorded but APK not downloaded",
+    "website: Shop and Guardian footer links return 404"
+  ]
+}

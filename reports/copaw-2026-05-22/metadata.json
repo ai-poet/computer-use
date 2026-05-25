@@ -1,0 +1,30 @@
+{
+  "product_name": "CoPaw (阿里通义)",
+  "url": "https://copaw.bot",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-copaw-2026-05-22",
+    "api_url": "http://localhost:55621"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T04:24:41+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": null,
+  "screenshots": [],
+  "warnings": [
+    "android: disabled by prompt; web-only product path in sandbox"
+  ]
+}

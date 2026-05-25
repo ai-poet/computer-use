@@ -1,0 +1,36 @@
+{
+  "product_name": "Desktop Goose",
+  "url": "https://samperson.itch.io/desktop-goose",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-desktop-goose-2026-05-22",
+    "api_url": "http://localhost:34771"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:39:59+08:00",
+  "finished_at": "2026-05-22T01:05:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "c3c56b85-cc56-4208-bb84-5171c4dfa66f",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage-failed", "caption": "官网首页访问失败 - Firefox PR_END_OF_FILE_ERROR"},
+    {"file": "screenshots/09_web_example_com.png", "view": "web-example-http", "caption": "HTTP example.com 测试成功"},
+    {"file": "screenshots/10_web_https_example.png", "view": "web-example-https", "caption": "HTTPS example.com 测试成功"}
+  ],
+  "warnings": [
+    "network-restricted: sandbox Firefox cannot access itch.io (PR_END_OF_FILE_ERROR on all modern HTTPS sites including itch.io, Google, DuckDuckGo, Wikipedia). Host curl also times out. Only example.com works.",
+    "web-only: cannot access product website to download installer or verify current features. Report based on publicly available information prior to 2026.",
+    "android: sandbox not started; android.enabled=false; web-only product path"
+  ]
+}

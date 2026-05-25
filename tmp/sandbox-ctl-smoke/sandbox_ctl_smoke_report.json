@@ -1,15 +1,171 @@
 {
   "passed": true,
-  "output_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/tmp/sandbox-ctl-smoke",
-  "screenshots_dir": "/Users/huzhiwei/Desktop/Projects/computer-use/tmp/sandbox-ctl-smoke/screenshots",
+  "output_dir": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke",
+  "url": "https://juejin.cn",
+  "screenshots_dir": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/screenshots",
   "screenshots": [
-    "screenshots/01_desktop_idle.png",
-    "screenshots/02_after_mouse_move.png",
-    "screenshots/03_after_right_click.png",
-    "screenshots/04_after_scroll.png",
-    "screenshots/05_terminal_open.png",
-    "screenshots/06_after_typing.png",
-    "screenshots/07_final.png"
+    "screenshots/01_web_homepage.png",
+    "screenshots/02_web_after_scroll.png",
+    "screenshots/03_web_after_click.png",
+    "screenshots/04_web_reopen_url.png",
+    "screenshots/05_desktop_after_move.png",
+    "screenshots/06_desktop_after_scroll.png",
+    "screenshots/07_desktop_after_right_click.png",
+    "screenshots/08_desktop_terminal.png",
+    "screenshots/09_desktop_after_typing.png",
+    "screenshots/10_desktop_final.png"
   ],
-  "error": null
+  "error": null,
+  "steps": [
+    {
+      "name": "bootstrap",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\", \"load_wait_s\": 10.0}"
+    },
+    {
+      "name": "screen-size",
+      "ok": true,
+      "detail": "{\"ok\": true, \"width\": 1024, \"height\": 768}"
+    },
+    {
+      "name": "screen_size",
+      "ok": true,
+      "detail": "1024x768"
+    },
+    {
+      "name": "screenshot 01_web_homepage.png",
+      "ok": true,
+      "detail": "bytes=199836"
+    },
+    {
+      "name": "dismiss overlay (escape)",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"escape\"}"
+    },
+    {
+      "name": "dismiss overlay (escape x2)",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"escape\"}"
+    },
+    {
+      "name": "scroll page",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 512, \"y\": 424, \"scroll_x\": 0, \"scroll_y\": -8}"
+    },
+    {
+      "name": "screenshot 02_web_after_scroll.png",
+      "ok": true,
+      "detail": "bytes=301104"
+    },
+    {
+      "name": "click page",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"left\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 03_web_after_click.png",
+      "ok": true,
+      "detail": "bytes=199496"
+    },
+    {
+      "name": "firefox running",
+      "ok": true,
+      "detail": "{\"ok\": true, \"returncode\": 0, \"stdout\": \"firefox_ok\\n\", \"stderr\": \"\", \"command\": \"pgrep -x firefox >/dev/null && echo firefox_ok\", \"artifact\": \"/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/.sandbox_ctl_last_shell.json\"}"
+    },
+    {
+      "name": "sleep disabled (xset)",
+      "ok": true,
+      "detail": "{\"ok\": true, \"returncode\": 0, \"stdout\": \"xset_skip\\n\", \"stderr\": \"\", \"command\": \"export DISPLAY=${DISPLAY:-:1}; command -v xset >/dev/null && xset q | grep -E 'Monitor is|Screen is' || echo xset_skip\", \"artifact\": \"/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/.sandbox_ctl_last_shell.json\"}"
+    },
+    {
+      "name": "open-url no-launch",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"open-url\", \"url\": \"https://juejin.cn\", \"load_wait_s\": 10.0}"
+    },
+    {
+      "name": "screenshot 04_web_reopen_url.png",
+      "ok": true,
+      "detail": "bytes=249750"
+    },
+    {
+      "name": "mouse move corner",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 80, \"y\": 80}"
+    },
+    {
+      "name": "mouse move center",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 05_desktop_after_move.png",
+      "ok": true,
+      "detail": "bytes=251628"
+    },
+    {
+      "name": "scroll desktop",
+      "ok": true,
+      "detail": "{\"ok\": true, \"x\": 512, \"y\": 424, \"scroll_x\": 0, \"scroll_y\": -5}"
+    },
+    {
+      "name": "screenshot 06_desktop_after_scroll.png",
+      "ok": true,
+      "detail": "bytes=341384"
+    },
+    {
+      "name": "right click",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"right\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 07_desktop_after_right_click.png",
+      "ok": true,
+      "detail": "bytes=345477"
+    },
+    {
+      "name": "dismiss context menu",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"escape\"}"
+    },
+    {
+      "name": "open terminal (ctrl+alt+t)",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"ctrl+alt+t\"}"
+    },
+    {
+      "name": "screenshot 08_desktop_terminal.png",
+      "ok": true,
+      "detail": "bytes=341306"
+    },
+    {
+      "name": "type in terminal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"chars\": 25}"
+    },
+    {
+      "name": "enter in terminal",
+      "ok": true,
+      "detail": "{\"ok\": true, \"keys\": \"enter\"}"
+    },
+    {
+      "name": "screenshot 09_desktop_after_typing.png",
+      "ok": true,
+      "detail": "bytes=306098"
+    },
+    {
+      "name": "double click",
+      "ok": true,
+      "detail": "{\"ok\": true, \"action\": \"double\", \"x\": 512, \"y\": 424}"
+    },
+    {
+      "name": "screenshot 10_desktop_final.png",
+      "ok": true,
+      "detail": "bytes=306224"
+    },
+    {
+      "name": "teardown",
+      "ok": true,
+      "detail": "{\"ok\": true, \"deleted\": \"analyzer-sandbox-ctl-smoke\"}"
+    }
+  ]
 }

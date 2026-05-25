@@ -1,0 +1,28 @@
+{
+  "product_name": "Memrise",
+  "url": "https://www.memrise.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": null,
+    "api_url": null
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T04:42:17+08:00",
+  "finished_at": null,
+  "mode": null,
+  "last_session_id": "e011c6d8-204b-445e-9223-7649aab30da0",
+  "screenshots": [],
+  "warnings": []
+}

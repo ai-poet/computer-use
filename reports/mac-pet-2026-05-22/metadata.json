@@ -1,0 +1,41 @@
+{
+  "product_name": "Mac Pet",
+  "url": "https://mac-pet.com",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-mac-pet-2026-05-22",
+    "api_url": "http://localhost:37359"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T00:55:40+08:00",
+  "finished_at": "2026-05-22T01:07:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "726b0e4a-6150-478e-83db-c6213d6074f0",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景"},
+    {"file": "screenshots/02_web_homepage_scroll.png", "view": "web-homepage-scroll", "caption": "首页滚动：宠物预览与番茄钟"},
+    {"file": "screenshots/03_web_app_preview.png", "view": "web-app-preview", "caption": "应用主界面截图（三种颜色主题）"},
+    {"file": "screenshots/04_web_features.png", "view": "web-features", "caption": "六大功能详细介绍"},
+    {"file": "screenshots/05_web_pricing.png", "view": "web-pricing", "caption": "定价CTA按钮 Buy Now $9.99"},
+    {"file": "screenshots/06_web_checkout.png", "view": "web-checkout", "caption": "LemonSqueezy结账页面"},
+    {"file": "screenshots/07_web_footer.png", "view": "web-footer", "caption": "官网底部信息"},
+    {"file": "screenshots/08_web_blog.png", "view": "web-blog", "caption": "博客页面"}
+  ],
+  "warnings": [
+    "web-only: product is macOS-only (Menu Bar & Notch app), no Linux/Windows package available",
+    "android: disabled by configuration; no Android APK path explored",
+    "no desktop app experience captured: application cannot run on Linux sandbox"
+  ]
+}

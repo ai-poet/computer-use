@@ -1,0 +1,40 @@
+{
+  "product_name": "Desktop Pet (desktoppet.app)",
+  "url": "https://desktoppet.app",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-desktop-pet-desktoppet.app-2026-05-22",
+    "api_url": "http://localhost:54643"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:30:48+08:00",
+  "finished_at": "2026-05-22T01:40:00+08:00",
+  "mode": "web-only",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页 Hero 区"},
+    {"file": "screenshots/02_web_homepage_scroll1.png", "view": "web-homepage-scroll1", "caption": "首页功能卡片区（上）"},
+    {"file": "screenshots/03_web_homepage_scroll2.png", "view": "web-homepage-scroll2", "caption": "首页功能卡片区（中）"},
+    {"file": "screenshots/04_web_homepage_scroll3.png", "view": "web-homepage-scroll3", "caption": "首页功能卡片区（下）+ 下载区"},
+    {"file": "screenshots/05_web_homepage_bottom.png", "view": "web-homepage-bottom", "caption": "首页下载平台选择区"},
+    {"file": "screenshots/06_web_instructions.png", "view": "web-instructions", "caption": "Instructions 页面顶部"},
+    {"file": "screenshots/07_web_instructions_scroll.png", "view": "web-instructions-scroll", "caption": "Instructions 使用说明与设置"},
+    {"file": "screenshots/08_web_instructions_more.png", "view": "web-instructions-more", "caption": "Instructions 隐私与故障排查"},
+    {"file": "screenshots/09_web_support.png", "view": "web-support", "caption": "Support 页面"}
+  ],
+  "warnings": [
+    "web-only: product only provides Windows and macOS installers; no Linux package available at https://desktoppet.app",
+    "android: android.enabled=false; skipped Android sandbox and APK analysis"
+  ]
+}

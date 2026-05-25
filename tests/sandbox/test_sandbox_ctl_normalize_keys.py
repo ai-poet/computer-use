@@ -31,8 +31,17 @@ class TestNormalizeKeys(unittest.TestCase):
         self.assertEqual(_normalize_keys("Return"), ["enter"])
 
     def test_escape_aliases(self) -> None:
-        self.assertEqual(_normalize_keys("Escape"), ["escape"])
-        self.assertEqual(_normalize_keys("esc"), ["escape"])
+        self.assertEqual(_normalize_keys("Escape"), ["esc"])
+        self.assertEqual(_normalize_keys("esc"), ["esc"])
+
+    def test_page_and_delete_aliases(self) -> None:
+        self.assertEqual(_normalize_keys("PageDown"), ["page_down"])
+        self.assertEqual(_normalize_keys("pgdn"), ["page_down"])
+        self.assertEqual(_normalize_keys("del"), ["delete"])
+
+    def test_super_maps_to_cmd(self) -> None:
+        self.assertEqual(_normalize_keys("meta"), ["cmd"])
+        self.assertEqual(_normalize_keys("super"), ["cmd"])
 
     def test_hotkey_lowercase(self) -> None:
         self.assertEqual(_normalize_keys("Ctrl+L"), ["ctrl", "l"])

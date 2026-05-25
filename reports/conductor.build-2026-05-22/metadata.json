@@ -1,0 +1,44 @@
+{
+  "product_name": "Conductor.build",
+  "url": "https://www.conductor.build",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-conductor.build-2026-05-22",
+    "api_url": "http://localhost:60419"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T03:05:58+08:00",
+  "finished_at": "2026-05-22T03:23:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "825955be-c994-49ed-9591-08ee6c4c9e29",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页全景，含 ASCII 标题和主 CTA"},
+    {"file": "screenshots/02_web_app_preview.png", "view": "web-app-preview", "caption": "应用界面预览（IDE 风格，深色主题）"},
+    {"file": "screenshots/03_web_testimonials.png", "view": "web-testimonials", "caption": "用户推荐区（9 条证言）"},
+    {"file": "screenshots/04_web_faq.png", "view": "web-faq", "caption": "首页底部 FAQ（worktree、agents、付费）"},
+    {"file": "screenshots/05_web_404.png", "view": "web-404", "caption": "404 错误页面（DOS 命令行风格）"},
+    {"file": "screenshots/06_web_docs.png", "view": "web-docs", "caption": "Docs / Introduction 页面"},
+    {"file": "screenshots/07_web_docs_started.png", "view": "web-docs-started", "caption": "Docs Get started 区域"},
+    {"file": "screenshots/08_web_changelog.png", "view": "web-changelog", "caption": "Changelog 0.55.0 首屏"},
+    {"file": "screenshots/09_web_changelog_features.png", "view": "web-changelog-features", "caption": "Changelog Automerge 和 Merge queue status"},
+    {"file": "screenshots/10_web_enterprise.png", "view": "web-enterprise", "caption": "Enterprise 页面（客户列表）"}
+  ],
+  "warnings": [
+    "web-only: Conductor is macOS-only application; no Linux package available at https://www.conductor.build",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "docs/install page returns 404 — documentation site incomplete",
+    "GitHub releases page (github.com/conductor-app/conductor/releases) could not be accessed for download link verification"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "product_name": "AnyRouter",
+  "url": "https://anyrouter.top",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-anyrouter-2026-05-22",
+    "api_url": "http://localhost:34817"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": null
+  },
+  "started_at": "2026-05-22T08:10:00+08:00",
+  "finished_at": "2026-05-22T08:22:00+08:00",
+  "mode": "web-only",
+  "last_session_id": null,
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页 SSL 连接失败"},
+    {"file": "screenshots/02_web_blog_detail.png", "view": "web-blog-detail", "caption": "第三方博客 AnyRouter 介绍页"}
+  ],
+  "warnings": [
+    "官网 anyrouter.top 不可访问: HTTPS 返回 SSL_ERROR_NO_CIPHER_OVERLAP, HTTP 返回 Cloudflare DNS 错误 1001",
+    "产品为纯 Web API 代理服务,无桌面客户端,无安装包",
+    "Android 分析已跳过: android.enabled=false",
+    "分析基于第三方博客文章与网络搜索,非官网直接信息"
+  ]
+}

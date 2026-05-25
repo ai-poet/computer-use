@@ -1,0 +1,48 @@
+{
+  "product_name": "Setapp",
+  "url": "https://setapp.com/",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-setapp-2026-05-22",
+    "api_url": "http://localhost:50419"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:44:02+08:00",
+  "finished_at": "2026-05-22T01:59:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "892273b0-d9ee-4c9a-901f-13570a858e4a",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页(含用户调研弹窗)"},
+    {"file": "screenshots/02_web_apps.png", "view": "web-apps", "caption": "应用列表页顶部"},
+    {"file": "screenshots/03_web_apps_scrolled.png", "view": "web-apps-scrolled", "caption": "应用列表页滚动后"},
+    {"file": "screenshots/04_web_pricing.png", "view": "web-pricing", "caption": "定价页顶部 Mac 计划"},
+    {"file": "screenshots/05_web_pricing_mac_ios.png", "view": "web-pricing-mac-ios", "caption": "定价页 Mac+iOS 计划"},
+    {"file": "screenshots/06_web_pricing_power.png", "view": "web-pricing-power", "caption": "定价页 Power User 计划"},
+    {"file": "screenshots/07_web_download.png", "view": "web-download", "caption": "下载页顶部"},
+    {"file": "screenshots/08_web_download_steps.png", "view": "web-download-steps", "caption": "下载页安装步骤说明"},
+    {"file": "screenshots/09_web_app_detail.png", "view": "web-app-detail", "caption": "CleanMyMac 应用详情页"},
+    {"file": "screenshots/10_web_how_it_works.png", "view": "web-how-it-works", "caption": "使用说明页客户端界面预览"},
+    {"file": "screenshots/11_web_how_it_works_member.png", "view": "web-how-it-works-member", "caption": "使用说明页会员注册步骤"},
+    {"file": "screenshots/12_web_homepage_categories.png", "view": "web-homepage-categories", "caption": "首页应用分类轮播区"},
+    {"file": "screenshots/13_web_footer_benefits.png", "view": "web-footer-benefits", "caption": "首页底部权益说明"},
+    {"file": "screenshots/14_web_footer_pricing.png", "view": "web-footer-pricing", "caption": "首页底部定价嵌入区"},
+    {"file": "screenshots/15_web_bottom_power.png", "view": "web-bottom-power", "caption": "首页底部 Power User 计划"}
+  ],
+  "warnings": [
+    "web-only: Setapp is macOS & iOS exclusive; no Linux/Windows package found at https://setapp.com/download (system requirement: macOS High Sierra 10.13 minimum)",
+    "android: sandbox not started; android.enabled=false; web-only product path",
+    "homepage survey popup persisted across multiple Esc/click attempts; closed by navigating to subpages"
+  ]
+}

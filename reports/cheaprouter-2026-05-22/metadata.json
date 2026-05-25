@@ -1,0 +1,40 @@
+{
+  "product_name": "CheapRouter",
+  "url": "https://cheaprouter.org",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-cheaprouter-2026-05-22",
+    "api_url": "http://localhost:36679"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T01:55:19+08:00",
+  "finished_at": "2026-05-22T02:12:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "f0082c1e-53a0-4877-b290-9f300aaab5a1",
+  "screenshots": [
+    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页主视觉"},
+    {"file": "screenshots/02_web_homepage_scroll1.png", "view": "web-app-preview", "caption": "应用界面预览"},
+    {"file": "screenshots/03_web_homepage_scroll2.png", "view": "web-platform-capabilities", "caption": "平台能力区"},
+    {"file": "screenshots/04_web_download_section.png", "view": "web-download", "caption": "下载区域 Windows/macOS"},
+    {"file": "screenshots/05_web_why_section.png", "view": "web-why-section", "caption": "WHY CHEAPROUTER 核心卖点"},
+    {"file": "screenshots/06_web_footer.png", "view": "web-models", "caption": "模型覆盖范围"},
+    {"file": "screenshots/08_web_pricing.png", "view": "web-login", "caption": "内页统一登录入口"}
+  ],
+  "warnings": [
+    "web-only: product has no Linux installer; only Windows (x64/ARM64) and macOS (Apple Silicon & Intel) packages available",
+    "login-required: Pricing, Models, Docs, Download, About pages require authentication; pricing details not accessible",
+    "android: sandbox not started; web-only product path"
+  ]
+}

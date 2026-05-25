@@ -1,0 +1,39 @@
+{
+  "product_name": "Bongo Cat / Bongo Cat Display",
+  "url": "https://bongo.cat",
+  "download_url": null,
+  "host_os": "linux",
+  "host_arch": "x86_64",
+  "runtime": "sandbox-local",
+  "sandbox": {
+    "image": "linux",
+    "local": true,
+    "mode": "local",
+    "name": "analyzer-bongo-cat-bongo-cat-display-2026-05-22",
+    "api_url": "http://localhost:34739"
+  },
+  "android": {
+    "enabled": false,
+    "apk_url": null,
+    "apk_file": null,
+    "package_name": null,
+    "mode": "skipped"
+  },
+  "started_at": "2026-05-22T00:36:47+08:00",
+  "finished_at": "2026-05-22T01:05:00+08:00",
+  "mode": "web-only",
+  "last_session_id": "89b561c8-85e2-46d1-a6f3-4dafa92ef4df",
+  "screenshots": [
+    {
+      "file": "screenshots/01_web_homepage.png",
+      "view": "web-homepage",
+      "caption": "官网首页全景：乐器标签、按键映射、卡通猫与邦戈鼓插画、cookie弹窗、底部版权信息"
+    }
+  ],
+  "warnings": [
+    "web-only: 产品为纯网页交互应用，官网无桌面端安装包；GitHub仓库Externalizable/bongo.cat未发布可下载的安装包",
+    "android: sandbox not started; web-only product path",
+    "cookie banner: Got it! button unresponsive to clicks in sandbox",
+    "En catala link: appears clickable but has no actual navigation target"
+  ]
+}

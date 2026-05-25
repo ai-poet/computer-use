@@ -120,14 +120,23 @@ def load_merged_queues(
 def resolve_batch_rows(
     *,
     queue_path: Path | None = None,
+    queue_paths: list[Path] | None = None,
     batch_all: bool = False,
     queue_root: Path | None = None,
 ) -> tuple[list[dict[str, str | None]], str, list[Path]]:
-    """Resolve queue rows from a single file or all ``queue*.json`` files."""
+    """Resolve queue rows from a single file, explicit path list, or all ``queue*.json``."""
     if batch_all:
         paths = discover_queues(queue_root)
         rows, name = load_merged_queues(paths)
         return rows, name, paths
+    if queue_paths is not None:
+        paths = [p.expanduser() for p in queue_paths]
+        if len(paths) == 1:
+            rows = load_queue(paths[0])
+            return rows, paths[0].name, paths
+        rows, _name = load_merged_queues(paths)
+        label = " → ".join(p.name for p in paths)
+        return rows, label, paths
     if queue_path is None:
         raise ValueError("queue_path is required when batch_all is False")
     path = queue_path.expanduser()
@@ -146,6 +155,7 @@ def run_batch(
     *,
     sandbox_ctx: SandboxContext,
     queue_path: Path | None = None,
+    queue_paths: list[Path] | None = None,
     batch_all: bool = False,
     queue_root: Path | None = None,
     sandbox_warnings: list[str] | None = None,
@@ -154,6 +164,7 @@ def run_batch(
     """Synchronous wrapper used by CLI."""
     rows, queue_name, _paths = resolve_batch_rows(
         queue_path=queue_path,
+        queue_paths=queue_paths,
         batch_all=batch_all,
         queue_root=queue_root,
     )

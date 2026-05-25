@@ -1,0 +1,1 @@
+{"ok": true, "returncode": 0, "stdout": "xset_skip\n", "stderr": "", "command": "export DISPLAY=${DISPLAY:-:1}; command -v xset >/dev/null && xset q | grep -E 'Monitor is|Screen is' || echo xset_skip", "artifact": "/home/zhiwei/projects/computer-use/tmp/sandbox-ctl-smoke/.sandbox_ctl_last_shell.json"}
