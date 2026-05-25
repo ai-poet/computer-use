@@ -57,11 +57,11 @@ sb = await Sandbox.create(image, name=android_name, local=True)
 ```python
 from cua import Image, Sandbox
 
-image = Image.from_registry("trycua/cua-qemu-android:latest").apk_install([apk_path])
+image = Image.from_registry("trycua/cua-qemu-android:latest").apk_install(str(apk_path))
 sb = await Sandbox.create(image, name=android_name, local=True)
 ```
 
-若 image builder 安装失败或不适配当前 SDK,再连接后降级为:
+官方 Images 文档里的 APK sideload 示例是 `Image.android().apk_install("/path/to/app.apk")`,即传入一个 APK 路径字符串。若 image builder 安装失败或不适配当前 SDK,再连接后降级为 `adb install`,但这个降级只适用于 APK 路径已经在 Android sandbox 内可见的情况:
 
 ```python
 await sb.shell.run(f"adb install -r {apk_path}", timeout=180)
@@ -97,7 +97,7 @@ Claude Code 操控 Android Docker/QEMU 沙盒时不要复用 `sandbox_ctl`;`sand
 # 找到官方 APK 后再启动;可在创建镜像时安装 APK
 python backend/android_ctl.py bootstrap "$OUTPUT_DIR" --apk "$OUTPUT_DIR/downloads/app.apk" --install-with-image
 
-# 如果 image builder 安装失败,改为先 bootstrap 再 adb install
+# 如果 image builder 安装失败,且 APK 路径在 Android sandbox 内可见,才降级 adb install
 python backend/android_ctl.py bootstrap "$OUTPUT_DIR"
 python backend/android_ctl.py install "$OUTPUT_DIR" "$OUTPUT_DIR/downloads/app.apk"
 

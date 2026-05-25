@@ -206,7 +206,7 @@ sb = await Sandbox.create(image, name=android_name, local=True)
 安装 APK 优先使用 image builder:
 
 ```python
-image = Image.from_registry("trycua/cua-qemu-android:latest").apk_install([apk_path])
+image = Image.from_registry("trycua/cua-qemu-android:latest").apk_install(str(apk_path))
 sb = await Sandbox.create(image, name=android_name, local=True)
 ```
 

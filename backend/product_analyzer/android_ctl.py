@@ -12,6 +12,7 @@ import asyncio
 import json
 import os
 import re
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -103,7 +104,7 @@ async def cmd_bootstrap(
     sandbox_name = name or _derive_android_name(out_dir)
     image = Image.from_registry(ANDROID_IMAGE)
     if apk_path is not None and install_with_image:
-        image = image.apk_install([str(apk_path)])
+        image = image.apk_install(str(apk_path))
 
     sb = await Sandbox.create(image, name=sandbox_name, local=True)
     api_url = _api_url_from_sb(sb)
@@ -130,8 +131,9 @@ async def cmd_bootstrap(
 
 async def cmd_install(out_dir: Path, apk_path: Path) -> int:
     info = load_android_info(out_dir)
+    quoted_apk = shlex.quote(str(apk_path))
     async with _connect_from_info(info) as sb:
-        result = await sb.shell.run(f"adb install -r {apk_path}", timeout=180)
+        result = await sb.shell.run(f"adb install -r {quoted_apk}", timeout=180)
     ok = bool(getattr(result, "success", False))
     _merge_metadata_android(
         out_dir,
@@ -256,10 +258,13 @@ def _build_parser() -> argparse.ArgumentParser:
     boot.add_argument(
         "--install-with-image",
         action="store_true",
-        help="Install APK through Image.from_registry(...).apk_install([apk]) during create",
+        help="Install APK through Image.from_registry(...).apk_install(apk_path) during create",
     )
 
-    install = sub.add_parser("install", help="Install APK with adb install fallback")
+    install = sub.add_parser(
+        "install",
+        help="Install APK with adb install fallback; APK path must be visible inside the sandbox",
+    )
     install.add_argument("out_dir", type=Path)
     install.add_argument("apk", type=Path)
 
