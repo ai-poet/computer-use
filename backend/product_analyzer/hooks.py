@@ -39,7 +39,9 @@ SHELL_SITE_SCRAPE_PATTERNS = [
 
 ALLOWED_SHELL_HINTS = [
     "backend/sandbox_ctl.py",
+    "backend/android_ctl.py",
     "sandbox_ctl.py",
+    "android_ctl.py",
     "wget -O",
     "dpkg -i",
     "chmod +x",

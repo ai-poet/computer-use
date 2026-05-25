@@ -4,6 +4,10 @@ export type Run = {
   url?: string;
   mode?: string | null;
   runtime?: string | null;
+  queue?: {
+    category?: string | null;
+    file?: string | null;
+  } | null;
   finished_at?: string | null;
   current_step?: string | null;
 };

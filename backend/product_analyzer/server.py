@@ -20,7 +20,7 @@ from .config import REPORTS_DIR
 from .credentials import store_credential
 from .preflight import check_local_sandbox_prereqs
 from .sandbox_runtime import build_sandbox_context
-from .tasks import read_metadata
+from .tasks import list_tasks, read_metadata
 from .workflow import load_workflow, workflow_path
 
 
@@ -53,19 +53,17 @@ _RUN_THREADS: dict[str, threading.Thread] = {}
 @app.get("/api/runs")
 def list_runs() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    if not REPORTS_DIR.exists():
-        return rows
-    for entry in sorted(REPORTS_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-        if not entry.is_dir():
-            continue
+    for task in list_tasks():
+        entry = task["dir"]
         meta = read_metadata(entry) or {}
         wf = _safe_load_workflow(entry)
         rows.append(
             {
-                "id": entry.name,
+                "id": _run_id(entry),
                 "out_dir": str(entry),
                 "product_name": meta.get("product_name") or wf.get("product_name") or entry.name,
                 "url": meta.get("url") or wf.get("url"),
+                "queue": meta.get("queue"),
                 "mode": meta.get("mode"),
                 "runtime": meta.get("runtime"),
                 "finished_at": meta.get("finished_at"),
@@ -110,7 +108,7 @@ def get_run(run_id: str) -> dict[str, Any]:
     out_dir = _resolve_run(run_id)
     meta = read_metadata(out_dir) or {}
     return {
-        "id": out_dir.name,
+        "id": _run_id(out_dir),
         "out_dir": str(out_dir),
         "metadata": meta,
         "workflow": _safe_load_workflow(out_dir),
@@ -201,10 +199,17 @@ def _safe_load_workflow(out_dir: Path) -> dict[str, Any]:
 
 
 def _resolve_run(run_id: str) -> Path:
-    candidate = (REPORTS_DIR / run_id).resolve()
+    candidate = (REPORTS_DIR / run_id.replace("~", "/")).resolve()
     if not _inside(candidate, REPORTS_DIR.resolve()) or not candidate.is_dir():
         raise HTTPException(status_code=404, detail="run not found")
     return candidate
+
+
+def _run_id(out_dir: Path) -> str:
+    try:
+        return out_dir.resolve().relative_to(REPORTS_DIR.resolve()).as_posix().replace("/", "~")
+    except ValueError:
+        return out_dir.name
 
 
 def _inside(path: Path, parent: Path) -> bool:

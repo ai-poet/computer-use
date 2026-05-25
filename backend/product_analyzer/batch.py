@@ -40,6 +40,26 @@ class BatchResult:
         return [row for row in self.results if row["rc"] != 0]
 
 
+def queue_category_from_path(path: Path) -> str:
+    """Derive a stable report category from a queue filename.
+
+    ``queue.language-learning.json`` -> ``language-learning``.
+    ``queue.json`` -> ``queue``.
+    """
+    stem = path.expanduser().name
+    for suffix in (".json", ".csv"):
+        if stem.lower().endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    if stem.startswith("queue."):
+        stem = stem[len("queue.") :]
+    elif stem == "queue":
+        stem = "queue"
+    elif stem.startswith("queue-"):
+        stem = stem[len("queue-") :]
+    return stem.strip() or "queue"
+
+
 def load_queue(path: Path) -> list[dict[str, str | None]]:
     """Load CSV or JSON queue rows with product_name/url/download_url fields."""
     if not path.exists():
@@ -70,8 +90,20 @@ def load_queue(path: Path) -> list[dict[str, str | None]]:
         download_url = (row.get("download_url") or "").strip() or None
         if not product_name or not url:
             raise ValueError(f"queue row {i} must include product_name and url")
+        category = (
+            row.get("category")
+            or row.get("queue_category")
+            or queue_category_from_path(path)
+            or ""
+        ).strip()
         normalized.append(
-            {"product_name": product_name, "url": url, "download_url": download_url}
+            {
+                "product_name": product_name,
+                "url": url,
+                "download_url": download_url,
+                "queue_category": category,
+                "queue_file": path.name,
+            }
         )
     return normalized
 
@@ -328,6 +360,8 @@ def _cancelled_result(
         "url": row.get("url") or "",
         "out_dir": None,
         "log_file": None,
+        "queue_category": row.get("queue_category"),
+        "queue_file": row.get("queue_file"),
         "sandbox_image": sandbox_ctx.image,
         "sandbox_mode": sandbox_ctx.mode,
         "rc": 130,
@@ -346,11 +380,13 @@ def _run_one(
     product_name = row["product_name"] or ""
     url = row["url"] or ""
     download_url = row.get("download_url")
+    queue_category = row.get("queue_category") or None
+    queue_file = row.get("queue_file") or None
 
     if store.should_skip_job(index):
         return _cancelled_result(row, sandbox_ctx, index)
 
-    out_dir = prepare_output_dir(product_name)
+    out_dir = prepare_output_dir(product_name, category=queue_category)
     log_file = out_dir / "run.log"
     store.mark_running(index, out_dir=str(out_dir), log_file=str(log_file))
 
@@ -367,6 +403,8 @@ def _run_one(
         sandbox_local=sandbox_ctx.local,
         sandbox_mode=sandbox_ctx.mode,
         android_enabled=sandbox_ctx.android_enabled,
+        queue_category=queue_category,
+        queue_file=queue_file,
     )
     seed_workflow(out_dir)
 
@@ -442,6 +480,8 @@ def _run_one(
         "url": url,
         "out_dir": str(out_dir),
         "log_file": str(log_file),
+        "queue_category": queue_category,
+        "queue_file": queue_file,
         "sandbox_image": sandbox_ctx.image,
         "sandbox_mode": sandbox_ctx.mode,
         "rc": rc,
@@ -460,6 +500,8 @@ def _exception_result(
         "url": row.get("url") or "",
         "out_dir": None,
         "log_file": None,
+        "queue_category": row.get("queue_category"),
+        "queue_file": row.get("queue_file"),
         "sandbox_image": sandbox_ctx.image,
         "sandbox_mode": sandbox_ctx.mode,
         "rc": 1,

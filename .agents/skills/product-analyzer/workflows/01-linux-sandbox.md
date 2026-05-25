@@ -31,3 +31,28 @@ python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01
 - 坐标操作必须来自上一张截图。
 - GUI 动作遵守 observe → act → observe:动作前后都要截图。
 - 若 Linux 沙盒无法启动,本次任务失败;不要自动改回 host GUI。
+
+## sandbox_ctl 用法
+
+`backend/sandbox_ctl.py` 是 Linux/Firefox 桌面沙盒的唯一推荐控制桥。它维护 `<output_dir>/sandbox.json`,每条命令只做一个动作,输出 JSON 结果,便于断点续跑。
+
+常用命令:
+
+```bash
+python backend/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
+python backend/sandbox_ctl.py status "$OUTPUT_DIR"
+python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01_web_homepage.png
+python backend/sandbox_ctl.py step screen-size "$OUTPUT_DIR"
+python backend/sandbox_ctl.py step click "$OUTPUT_DIR" 640 120
+python backend/sandbox_ctl.py step click "$OUTPUT_DIR" 640 120 --button right
+python backend/sandbox_ctl.py step scroll "$OUTPUT_DIR" 512 400 --scroll-y -6
+python backend/sandbox_ctl.py step type "$OUTPUT_DIR" "hello"
+python backend/sandbox_ctl.py step key "$OUTPUT_DIR" ctrl+l
+python backend/sandbox_ctl.py step open-url "$OUTPUT_DIR" "$URL"
+python backend/sandbox_ctl.py step shell "$OUTPUT_DIR" -c 'wget -O downloads/app.deb https://example.com/app.deb'
+python backend/sandbox_ctl.py teardown "$OUTPUT_DIR"
+```
+
+`step key` 键名用小写形式,如 `enter`、`esc`、`ctrl+l`、`page_down`。`step shell` 只能用于已有直链下载、安装命令、系统探测或排障,不能用来抓官网替代真实浏览。
+
+Android 不走 `sandbox_ctl`;找到官方 APK 后切到 [`05-android-client.md`](05-android-client.md) 的 `backend/android_ctl.py` 路径。

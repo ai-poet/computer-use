@@ -10,6 +10,7 @@
 - `runtime`
 - `sandbox.image`
 - `android.enabled`
+- 批量任务还会在 `metadata.queue.category` / `metadata.queue.file` 记录来源队列
 
 不要改写这些原始输入值。所有产物写入 `output_dir`。
 
@@ -35,6 +36,14 @@ output_dir/
 
 每个步骤结束后立刻写对应 `steps/*.md`;最终再汇总成 `report.md`。
 
+批量任务的 `output_dir` 会按队列文件分类,形如:
+
+```text
+reports/<queue-category>/<slug>-YYYY-MM-DD[-N]/
+```
+
+例如 `queue.language-learning.json` 默认写入 `reports/language-learning/...`。单任务继续写在 `reports/<slug>-YYYY-MM-DD[-N]/`。
+
 ## 状态更新
 
 优先用 Python helper 更新 workflow:
@@ -58,6 +67,7 @@ python -m product_analyzer.workflow_cli ...
 - 不从第三方 APK 镜像站下载 APK。
 - 不绕过登录、不创建账号、不保存明文 credential。
 - Android sandbox 必须是独立于 Linux Firefox sandbox 的第二个 sandbox;只有找到官方 APK 后才启动。
+- `sandbox_ctl` 只用于 Linux/Firefox 桌面沙盒;Android 移动端必须用 `backend/android_ctl.py` 或同等 Cua SDK `sb.mobile` 脚本。
 
 ## 模式
 

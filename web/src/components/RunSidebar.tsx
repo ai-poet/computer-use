@@ -66,7 +66,10 @@ export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate }: Pr
             onClick={() => onSelect(run.id)}
           >
             <strong>{run.product_name}</strong>
-            <small>{run.current_step || run.mode || 'starting'}</small>
+            <small>
+              {run.queue?.category ? `${run.queue.category} · ` : ''}
+              {run.current_step || run.mode || 'starting'}
+            </small>
           </button>
         ))}
       </div>

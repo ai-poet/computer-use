@@ -5,7 +5,8 @@ export function useRunStream(runId: string) {
 
   useEffect(() => {
     if (!runId) return;
-    const ws = new WebSocket(`ws://${window.location.host}/api/runs/${runId}/stream`);
+    const encoded = encodeURIComponent(runId);
+    const ws = new WebSocket(`ws://${window.location.host}/api/runs/${encoded}/stream`);
     ws.onmessage = (event) => {
       const payload = JSON.parse(event.data);
       setLog((prev) => `${prev}${payload.chunk}`.slice(-20000));

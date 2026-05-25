@@ -12,6 +12,7 @@
     workflow     workflow.json / steps / hook validation helpers
     sandbox_runtime  batch 本地 Cua sandbox 运行上下文
     sandbox_ctl  bootstrap/step/teardown 逐步控制桥
+    android_ctl  Android QEMU sandbox + sb.mobile 逐步控制桥
     prompts      build_prompt / build_resume_prompt
     claude_driver  ESC watcher + spawn + run_claude(对外唯一编排接口)
     batch        CSV/JSON 队列 + 并发 worker 调度

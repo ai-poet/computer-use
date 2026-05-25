@@ -40,11 +40,20 @@ def slugify(name: str) -> str:
     return folded
 
 
-def prepare_output_dir(product_name: str) -> Path:
-    """Create ``reports/<slug>-YYYY-MM-DD[-N]/screenshots/`` and return the
-    new dir's Path. ``-N`` suffix is appended for same-day reruns."""
+def prepare_output_dir(product_name: str, *, category: str | None = None) -> Path:
+    """Create an output directory and return its Path.
+
+    Single runs keep the historical layout:
+    ``reports/<slug>-YYYY-MM-DD[-N]/``.
+
+    Batch runs may pass ``category`` so queues land under:
+    ``reports/<category>/<slug>-YYYY-MM-DD[-N]/``.
+    """
     today = dt.date.today().isoformat()
-    base = REPORTS_DIR / f"{slugify(product_name)}-{today}"
+    root = REPORTS_DIR
+    if category:
+        root = REPORTS_DIR / slugify(category)
+    base = root / f"{slugify(product_name)}-{today}"
     n = 1
     while True:
         out = base if n == 1 else base.with_name(f"{base.name}-{n}")
@@ -70,6 +79,8 @@ def write_metadata_seed(
     sandbox_local: bool = True,
     sandbox_mode: str | None = None,
     android_enabled: bool = False,
+    queue_category: str | None = None,
+    queue_file: str | None = None,
 ) -> dict:
     host_os, host_arch = detect_host()
     meta = {
@@ -96,6 +107,10 @@ def write_metadata_seed(
         "workflow": {
             "file": "workflow.json",
             "version": 1,
+        },
+        "queue": {
+            "category": queue_category,
+            "file": queue_file,
         },
         "clients": {
             "linux": [],
@@ -163,8 +178,20 @@ def list_tasks() -> list[dict]:
     if not REPORTS_DIR.exists():
         return []
     rows: list[dict] = []
-    for entry in sorted(REPORTS_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-        if not entry.is_dir() or entry.name.startswith("."):
+    metadata_paths = sorted(
+        REPORTS_DIR.glob("**/metadata.json"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for meta_path in metadata_paths:
+        entry = meta_path.parent
+        try:
+            rel_parts = entry.relative_to(REPORTS_DIR).parts
+        except ValueError:
+            continue
+        if len(rel_parts) not in (1, 2):
+            continue
+        if any(part.startswith(".") for part in rel_parts):
             continue
         meta = read_metadata(entry)
         if meta is None:
