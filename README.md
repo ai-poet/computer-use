@@ -168,6 +168,26 @@ Apple Silicon 也建议带 `--platform=linux/amd64`。
 docker pull --platform=linux/amd64 trycua/cua-qemu-android:latest
 ```
 
+Apple Silicon / arm64 Mac 必须带 `--platform=linux/amd64`。Android 虚拟机通过 Cua Sandbox SDK 启动为独立 sandbox,不复用 Linux Firefox 沙盒。规则上要求找到官网直链或官方 release asset APK 后才启动 Android。
+
+SDK 写法参考:
+
+```python
+from cua import Image, Sandbox
+
+image = Image.from_registry("trycua/cua-qemu-android:latest")
+sb = await Sandbox.create(image, name=android_name, local=True)
+```
+
+安装 APK 优先使用 image builder:
+
+```python
+image = Image.from_registry("trycua/cua-qemu-android:latest").apk_install([apk_path])
+sb = await Sandbox.create(image, name=android_name, local=True)
+```
+
+操作 Android UI 时优先用 `sb.mobile.tap/swipe/type_text/back/home` 和 `sb.screenshot()`。Android 启动或安装失败只记录到 `metadata.android.mode` 和 `warnings[]`,整单继续走 web-only 或已有桌面证据。
+
 ---
 
 ## CLI 用法

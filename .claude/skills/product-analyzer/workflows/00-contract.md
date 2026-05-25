@@ -57,12 +57,14 @@ python -m product_analyzer.workflow_cli ...
 - `step shell` 只允许下载安装包直链、安装命令、读系统信息、排障。
 - 不从第三方 APK 镜像站下载 APK。
 - 不绕过登录、不创建账号、不保存明文 credential。
+- Android sandbox 必须是独立于 Linux Firefox sandbox 的第二个 sandbox;只有找到官方 APK 后才启动。
 
 ## 模式
 
 - 成功体验 Linux / Windows(Wine) / Android 任一客户端: `metadata.mode = "sandbox-full"`。
 - 没有可运行客户端或客户端失败后只完成网页体验: `metadata.mode = "web-only"`。
 - Android 结果写在 `metadata.android.mode`: `android` / `skipped` / `failed`。
+- Android 启动、安装或运行失败只影响 `metadata.android.mode` 和 `warnings[]`,不要让整单失败。
 
 ## Credential
 
