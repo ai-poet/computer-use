@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke test for scripts/product_analyzer/sandbox_ctl.py (local Docker).
+"""Smoke test for backend/product_analyzer/sandbox_ctl.py (local Docker).
 
 Artifacts (screenshots, sandbox.json, report) are written under --output-dir
 (default: tmp/sandbox-ctl-smoke/) so you can inspect PNGs after the run.
@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_CTL = _REPO_ROOT / "scripts" / "sandbox_ctl.py"
+_CTL = _REPO_ROOT / "backend" / "sandbox_ctl.py"
 _DEFAULT_OUT = _REPO_ROOT / "tmp" / "sandbox-ctl-smoke"
 _MIN_SCREENSHOT_BYTES = 1000
 _FALLBACK_CX, _FALLBACK_CY = 512, 384
@@ -25,7 +25,7 @@ _FALLBACK_CX, _FALLBACK_CY = 512, 384
 def _run_ctl(args: list[str], *, env: dict | None = None) -> subprocess.CompletedProcess[str]:
     import os
 
-    sys.path.insert(0, str(_REPO_ROOT / "scripts"))
+    sys.path.insert(0, str(_REPO_ROOT / "backend"))
     from product_analyzer.sandbox_runtime import (  # noqa: E402
         LINUX_CONTAINER_IMAGE,
         LINUX_DOCKER_PLATFORM,

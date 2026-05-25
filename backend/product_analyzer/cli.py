@@ -1,7 +1,7 @@
 """命令行入口:argparse、子命令调度、新任务/恢复任务两条路径。
 
 只有 ``main`` 是公共函数;其它都是私有 helper。``main`` 由
-``scripts/analyze_product.py`` 这层 5 行 shim 调用。
+``backend/analyze_product.py`` 这层 5 行 shim 调用。
 """
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ from .tasks import (
     write_metadata_seed,
 )
 from .ui import err, log, prompt_str
+from .workflow import seed_workflow
 
 
 def collect_inputs(args: argparse.Namespace) -> tuple[str, str, str | None]:
@@ -85,6 +86,25 @@ def resolve_android_enabled(args: argparse.Namespace) -> bool:
     if getattr(args, "no_android", False):
         return False
     return args.sandbox_image == "auto"
+
+
+def _sandbox_first_args(args: argparse.Namespace) -> argparse.Namespace:
+    return argparse.Namespace(
+        batch=None,
+        batch_all=False,
+        batch_dir=None,
+        max_workers=1,
+        batch_plain=True,
+        sandbox_image=getattr(args, "sandbox_image", "auto") or "auto",
+        sandbox=getattr(args, "sandbox", None) or "local",
+        cua_api_key=getattr(args, "cua_api_key", None),
+        android=getattr(args, "android", False),
+        no_android=getattr(args, "no_android", False),
+        product_name=getattr(args, "product_name", None),
+        url=getattr(args, "url", None),
+        download_url=getattr(args, "download_url", None),
+        resume=False,
+    )
 
 
 def prepare_batch_context(args: argparse.Namespace):
@@ -174,6 +194,14 @@ def collect_batch_args() -> argparse.Namespace:
 
 def cmd_new(args: argparse.Namespace) -> int:
     """Start a brand-new product analysis run."""
+    if not getattr(args, "host", False):
+        return cmd_new_sandbox(args)
+
+    return cmd_new_host(args)
+
+
+def cmd_new_host(args: argparse.Namespace) -> int:
+    """Legacy host + cua-driver path."""
     product_name, url, download_url = collect_inputs(args)
     log(f"输入已确认:product_name={product_name!r}  url={url!r}  download_url={download_url!r}")
 
@@ -190,6 +218,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         sandbox_mode="local",
         android_enabled=False,
     )
+    seed_workflow(out_dir)
 
     prompt = build_prompt(
         product_name, url, download_url, out_dir,
@@ -202,6 +231,32 @@ def cmd_new(args: argparse.Namespace) -> int:
     post_check(out_dir)
     if rc != 0:
         err("claude 子进程非零退出,请翻阅上方事件流定位问题")
+        return 2
+    return 0
+
+
+def cmd_new_sandbox(args: argparse.Namespace) -> int:
+    """Default single-product path: one Linux-first sandbox worker."""
+    product_name, url, download_url = collect_inputs(args)
+    log(f"输入已确认:product_name={product_name!r}  url={url!r}  download_url={download_url!r}")
+    sandbox_args = _sandbox_first_args(args)
+    sandbox_ctx, warnings = prepare_batch_context(sandbox_args)
+
+    from .batch import run_single
+
+    result = run_single(
+        {
+            "product_name": product_name,
+            "url": url,
+            "download_url": download_url,
+        },
+        sandbox_ctx=sandbox_ctx,
+        sandbox_warnings=warnings,
+        plain=True,
+    )
+    rc = result["rc"]
+    if rc != 0:
+        err(f"任务失败,详见 {result.get('log_file')}")
         return 2
     return 0
 
@@ -359,18 +414,18 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "示例:\n"
-            "  交互式:  python3 scripts/analyze_product.py            # 弹菜单选 新任务/恢复\n"
-            '  新任务:  python3 scripts/analyze_product.py "ProductiveKitty" '
+            "  交互式:  python3 backend/analyze_product.py            # 弹菜单选 新任务/恢复\n"
+            '  新任务:  python3 backend/analyze_product.py "ProductiveKitty" '
             '"https://productivekitty.masterwordai.com"\n'
-            "  全参:    python3 scripts/analyze_product.py NAME URL DOWNLOAD_URL\n"
+            "  全参:    python3 backend/analyze_product.py NAME URL DOWNLOAD_URL\n"
             "  恢复:    在零参数模式选 2,或直接 --resume\n"
-            "  批量(默认本地): python3 scripts/analyze_product.py --batch queue.json "
+            "  批量(默认本地): python3 backend/analyze_product.py --batch queue.json "
             "--max-workers 10 --sandbox-image linux\n"
-            "  批量全量:    python3 scripts/analyze_product.py --batch-all "
+            "  批量全量:    python3 backend/analyze_product.py --batch-all "
             "--max-workers 5 --sandbox-image linux\n"
-            "  批量纯文本: python3 scripts/analyze_product.py --batch queue.json "
+            "  批量纯文本: python3 backend/analyze_product.py --batch queue.json "
             "--batch-plain\n"
-            "  批量云端: python3 scripts/analyze_product.py --batch queue.json "
+            "  批量云端: python3 backend/analyze_product.py --batch queue.json "
             "--sandbox cloud --cua-api-key sk-...\n"
         ),
     )
@@ -417,6 +472,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--batch-plain",
         action="store_true",
         help="批量模式禁用 curses 控制台,使用前缀行日志(适合 CI/管道)。",
+    )
+    parser.add_argument(
+        "--host",
+        action="store_true",
+        help="使用旧版 host+cua-driver 单任务路径。默认单任务也走 Linux 本地 sandbox workflow。",
     )
     parser.add_argument(
         "--sandbox-image",
@@ -467,8 +527,16 @@ def main(argv: list[str] | None = None) -> int:
         ensure_cua_cli()
         return cmd_batch(args)
 
-    log("预检:cua-driver")
-    ensure_cua_driver()
+    if getattr(args, "host", False):
+        log("预检:cua-driver")
+        ensure_cua_driver()
+    elif args.batch is None and not args.batch_all:
+        # Default single runs also use the sandbox-first workflow. Keep this
+        # preflight here because the batch branch returns earlier.
+        log("预检:Cua Sandbox SDK")
+        ensure_cua_sdk()
+        log("预检:cua CLI")
+        ensure_cua_cli()
 
     if args.resume:
         return cmd_resume()

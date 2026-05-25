@@ -1,0 +1,228 @@
+"""Local FastAPI console for product-analyzer runs."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import sys
+import threading
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, PlainTextResponse
+from pydantic import BaseModel, Field
+
+from .batch import run_single
+from .config import REPORTS_DIR
+from .credentials import store_credential
+from .preflight import check_local_sandbox_prereqs
+from .sandbox_runtime import build_sandbox_context
+from .tasks import read_metadata
+from .workflow import load_workflow, workflow_path
+
+
+class CreateRunRequest(BaseModel):
+    product_name: str = Field(min_length=1, max_length=80)
+    url: str = Field(min_length=1)
+    download_url: str | None = None
+    sandbox_image: str = "linux"
+    android: bool = True
+
+
+class CredentialSubmitRequest(BaseModel):
+    request_id: str
+    label: str
+    fields: dict[str, str]
+
+
+app = FastAPI(title="Product Analyzer Console")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_RUN_THREADS: dict[str, threading.Thread] = {}
+
+
+@app.get("/api/runs")
+def list_runs() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if not REPORTS_DIR.exists():
+        return rows
+    for entry in sorted(REPORTS_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not entry.is_dir():
+            continue
+        meta = read_metadata(entry) or {}
+        wf = _safe_load_workflow(entry)
+        rows.append(
+            {
+                "id": entry.name,
+                "out_dir": str(entry),
+                "product_name": meta.get("product_name") or wf.get("product_name") or entry.name,
+                "url": meta.get("url") or wf.get("url"),
+                "mode": meta.get("mode"),
+                "runtime": meta.get("runtime"),
+                "finished_at": meta.get("finished_at"),
+                "current_step": wf.get("current_step"),
+            }
+        )
+    return rows
+
+
+@app.post("/api/runs")
+def create_run(req: CreateRunRequest) -> dict[str, Any]:
+    ctx = build_sandbox_context(
+        req.sandbox_image,
+        mode="local",
+        android_enabled=req.android,
+    )
+    warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
+    holder: dict[str, Any] = {}
+
+    def _worker() -> None:
+        result = run_single(
+            {
+                "product_name": req.product_name,
+                "url": req.url,
+                "download_url": req.download_url,
+            },
+            sandbox_ctx=ctx,
+            sandbox_warnings=warnings,
+            plain=True,
+        )
+        holder.update(result)
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    run_key = f"pending-{id(thread)}"
+    _RUN_THREADS[run_key] = thread
+    return {"id": run_key, "state": "starting", "warnings": warnings}
+
+
+@app.get("/api/runs/{run_id}")
+def get_run(run_id: str) -> dict[str, Any]:
+    out_dir = _resolve_run(run_id)
+    meta = read_metadata(out_dir) or {}
+    return {
+        "id": out_dir.name,
+        "out_dir": str(out_dir),
+        "metadata": meta,
+        "workflow": _safe_load_workflow(out_dir),
+    }
+
+
+@app.get("/api/runs/{run_id}/steps/{step_file}", response_class=PlainTextResponse)
+def get_step(run_id: str, step_file: str) -> str:
+    out_dir = _resolve_run(run_id)
+    path = out_dir / "steps" / step_file
+    if not _inside(path, out_dir / "steps") or not path.is_file():
+        raise HTTPException(status_code=404, detail="step not found")
+    return path.read_text(encoding="utf-8")
+
+
+@app.get("/api/runs/{run_id}/report", response_class=PlainTextResponse)
+def get_report(run_id: str) -> str:
+    out_dir = _resolve_run(run_id)
+    path = out_dir / "report.md"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="report not found")
+    return path.read_text(encoding="utf-8")
+
+
+@app.get("/api/runs/{run_id}/screenshots/{name}")
+def get_screenshot(run_id: str, name: str) -> FileResponse:
+    out_dir = _resolve_run(run_id)
+    path = out_dir / "screenshots" / name
+    if not _inside(path, out_dir / "screenshots") or not path.is_file():
+        raise HTTPException(status_code=404, detail="screenshot not found")
+    return FileResponse(path)
+
+
+@app.post("/api/runs/{run_id}/credentials")
+def submit_credential(run_id: str, req: CredentialSubmitRequest) -> dict[str, Any]:
+    out_dir = _resolve_run(run_id)
+    ref = store_credential(req.label, req.fields)
+    wf = _safe_load_workflow(out_dir)
+    requests = wf.setdefault("credential_requests", [])
+    for item in requests:
+        if isinstance(item, dict) and item.get("id") == req.request_id:
+            item["status"] = "submitted"
+            item["credential_id"] = ref.credential_id
+            break
+    workflow_path(out_dir).write_text(
+        json.dumps(wf, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return {"ok": True, "credential_id": ref.credential_id}
+
+
+@app.websocket("/api/runs/{run_id}/stream")
+async def stream_run(websocket: WebSocket, run_id: str) -> None:
+    await websocket.accept()
+    try:
+        out_dir = _resolve_run(run_id)
+    except HTTPException:
+        await websocket.close(code=1008)
+        return
+    log_path = out_dir / "run.log"
+    events_path = out_dir / "events.jsonl"
+    positions = {log_path: 0, events_path: 0}
+    try:
+        while True:
+            for path in (log_path, events_path):
+                if not path.exists():
+                    continue
+                size = path.stat().st_size
+                if size < positions[path]:
+                    positions[path] = 0
+                if size == positions[path]:
+                    continue
+                with path.open("r", encoding="utf-8", errors="replace") as fh:
+                    fh.seek(positions[path])
+                    chunk = fh.read()
+                    positions[path] = fh.tell()
+                await websocket.send_json({"file": path.name, "chunk": chunk})
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        return
+
+
+def _safe_load_workflow(out_dir: Path) -> dict[str, Any]:
+    try:
+        return load_workflow(out_dir, create=False)
+    except Exception:
+        return {}
+
+
+def _resolve_run(run_id: str) -> Path:
+    candidate = (REPORTS_DIR / run_id).resolve()
+    if not _inside(candidate, REPORTS_DIR.resolve()) or not candidate.is_dir():
+        raise HTTPException(status_code=404, detail="run not found")
+    return candidate
+
+
+def _inside(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def main() -> int:
+    import uvicorn
+
+    host = os.environ.get("ANALYZER_SERVER_HOST", "127.0.0.1")
+    port = int(os.environ.get("ANALYZER_SERVER_PORT", "8765"))
+    uvicorn.run("product_analyzer.server:app", host=host, port=port, reload=False)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

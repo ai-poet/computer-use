@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """analyze_product.py — 入口 shim。
 
-实际实现在 ``scripts/product_analyzer/`` 包里,模块依赖图见
+实际实现在 ``backend/product_analyzer/`` 包里,模块依赖图见
 ``product_analyzer/__init__.py`` 的 docstring。
-这层只负责把 ``scripts/`` 加入 ``sys.path`` 后调 ``main``。
+这层只负责把 ``backend/`` 加入 ``sys.path`` 后调 ``main``。
 """
 
 from __future__ import annotations

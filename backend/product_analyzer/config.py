@@ -9,9 +9,9 @@ from pathlib import Path
 # ---------- paths ----------
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-SCRIPTS_DIR = REPO_ROOT / "scripts"
+BACKEND_DIR = REPO_ROOT / "backend"
 REPORTS_DIR = REPO_ROOT / "reports"
-INSTALL_SCRIPT = SCRIPTS_DIR / "install_cua_driver.py"
+INSTALL_SCRIPT = BACKEND_DIR / "install_cua_driver.py"
 
 SWIFT_APP_BUNDLE = Path("/Applications/CuaDriver.app")
 RS_APP_BUNDLE = Path("/Applications/CuaDriverRs.app")

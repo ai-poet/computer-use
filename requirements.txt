@@ -1,1 +1,4 @@
 cua
+fastapi
+keyring
+uvicorn

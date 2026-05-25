@@ -1,76 +1,141 @@
 # computer-use
 
-一个**自动化竞品分析的 agent computer-use Python 脚本**:给它一个产品名和官网 URL,它就驱动 Claude Code 当 agent,自己打开浏览器爬官网、定位安装包、装上桌面端、用 cua-driver 操作真实 GUI 把主要界面挨个走一遍、批量截图,最后落一份结构稳定的简体中文竞品分析报告。
+`computer-use` 是一条“分析一款新产品”的可重复流水线:输入产品名和官网 URL,系统启动 Claude Code agent,在 Linux 本地 Docker 沙盒里访问官网、判断客户端形态、尝试运行可用客户端,逐步截图和写阶段报告,最后汇总成一份中文产品分析报告。
 
-整条流水线是无人值守的:Python 把任务喂进 `claude --print --output-format stream-json --verbose` 子进程,Claude 通过 [`product-analyzer`](.claude/skills/product-analyzer/SKILL.md) skill 走 7 步固定 canonical loop,通过 [`cua-driver`](.claude/skills/cua-driver/SKILL.md) skill 严守 no-foreground 契约驱动桌面端 — 用户的前台应用全程不被抢走,可以一边干别的一边看 agent 在终端里把一款新产品拆开。
+默认路径已经是 **Linux-first sandbox workflow**:
 
-输入:产品名 + 官网 URL(可选第三个参数:直达安装包 URL)
-输出:
-- 一份结构稳定的简体中文 Markdown 竞品分析报告(6 个强制章节按固定顺序:总定位 / 界面清单 / 各界面功能与评价 / UI-UX / 官网描述 / 截图索引)
-- 一个按命名规则编排的截图文件夹(`NN_<web|app>_<view>.png`)
-- 一份 `metadata.json` 元数据(产物校验 + 断点续跑用)
-
-执行过程对用户可见:stream-json 事件流被实时翻译成 Claude Code 风格的彩色终端输出 — thinking、工具调用、工具返回、TodoWrite 列表都以 ☐/◐/☑ 形式打到终端。中途发现 agent 走偏可以**按 ESC 暂停**,补一句话再 `--resume` 续跑。
+1. 进入 Linux 本地 Docker 沙盒。
+2. 在沙盒 Firefox 访问产品官网。
+3. 判断是否有 Linux / Windows / Android / macOS / iOS 客户端。
+4. 优先跑 Linux 客户端;没有 Linux 时尝试 Windows 客户端 + Wine。
+5. 只有拿到官方 APK 时才启动 Android 沙盒。
+6. 只有 iOS/macOS、安装失败、拿不到 APK 或无 credential 时,降级 web-only。
+7. 每一步写 `steps/*.md`,最后写 `report.md` 汇总。
 
 ---
 
-## 仓库结构
+## 分层架构
 
+系统刻意分成四层,避免把所有提示词、控制逻辑和展示逻辑揉在一起。
+
+| 层 | 目录/文件 | 职责 |
+|---|---|---|
+| CLI 编排层 | `backend/analyze_product.py`, `backend/product_analyzer/cli.py` | 参数解析、预检、建输出目录、启动 Claude 子进程。 |
+| 执行控制层 | `claude_driver.py`, `batch.py`, `sandbox_ctl.py` | 流式运行 Claude、批量并发、控制 Cua sandbox 的 bootstrap/step/teardown。 |
+| Workflow 规则层 | `.claude/skills/product-analyzer/` | 决定分析什么、怎么降级、每步产出什么。规则改这里,不改 Python 主流程。 |
+| 可视化层 | `backend/product_analyzer/server.py`, `web/` | 本地 FastAPI + React/Vite 控制台,展示任务、日志、步骤、credential 请求。 |
+
+模块依赖方向仍保持单向:
+
+```text
+config → ui → batch_store → batch_dashboard → renderer → preflight → tasks
+       → workflow → sandbox_runtime → sandbox_ctl → prompts → claude_driver
+       → batch → cli
 ```
+
+`sandbox_ctl` 是本地 sandbox 的唯一薄控制桥,不 import `claude_driver` 或 `batch`。
+
+---
+
+## 核心目录
+
+```text
 computer-use/
-├── README.md
-├── .gitignore
-├── reports/                                     # 每次跑的产出(可 git 提交,见下方说明)
-│   └── <slug>-YYYY-MM-DD[-N]/                   # 例: reports/babbel-2026-05-19/
-├── scripts/
-│   ├── analyze_product.py                       # 入口 shim(只调 product_analyzer.main)
-│   ├── sandbox_ctl.py                           # 沙盒逐步控制 CLI shim → product_analyzer.sandbox_ctl
-│   ├── install_cua_driver.py                    # 桌面驱动器安装(macOS=Swift,Linux/Win=Rust)
-│   └── product_analyzer/                        # 实现包
-│       ├── __init__.py                          # 曝露 main + 模块依赖图
-│       ├── config.py                            # 路径常量 + ANSI 配色
-│       ├── ui.py                                # log/err/prompt_str/Spinner
-│       ├── renderer.py                          # stream-json → 终端美化
-│       ├── preflight.py                         # detect_host/ensure_*
-│       ├── tasks.py                             # slug/metadata/list_tasks/post_check
-│       ├── sandbox_runtime.py                   # 本地 Cua sandbox runtime 合约
-│       ├── sandbox_ctl.py                       # bootstrap / step / teardown / status
-│       ├── prompts.py                           # build_prompt + build_resume_prompt
-│       ├── claude_driver.py                     # ESC + spawn + run_claude
-│       ├── batch_store.py                       # 批量任务状态(排队/运行/完成)
-│       ├── batch_dashboard.py                   # curses 批量控制台(列表/详情)
-│       ├── batch.py                             # CSV/JSON 队列 + 并发 worker
-│       └── cli.py                               # argparse + cmd_new/cmd_resume/cmd_batch
-├── queue*.json                                  # 批量队列(按品类拆分,见下方)
-│   ├── queue.china-travel.json                  # 来华旅行助手(10)
-│   ├── queue.coding-platforms.json              # 替代编程平台(10)
-│   ├── queue.desktop-pets.json                  # 桌面宠物(10)
-│   └── queue.language-learning.json             # 语言学习(10)
-├── tests/sandbox/                               # linux_smoke、sandbox_ctl_smoke、键名归一化单测
-└── .claude/skills/
-    ├── cua-driver/                              # 桌面自动化 skill(snapshot→act→verify)
-    └── product-analyzer/                        # 本项目核心 skill
-        ├── SKILL.md                             # 工作流规则
-        └── REPORT_TEMPLATE.md                   # 中文报告骨架
+├── backend/
+│   ├── analyze_product.py                 # CLI shim
+│   ├── analyzer_server.py                 # Web 控制台后端入口
+│   ├── sandbox_ctl.py                     # sandbox_ctl shim
+│   └── product_analyzer/
+│       ├── cli.py                         # 命令入口
+│       ├── batch.py                       # 单任务/批量 worker
+│       ├── claude_driver.py               # claude --print stream-json 编排
+│       ├── sandbox_ctl.py                 # Cua sandbox 单步控制
+│       ├── workflow.py                    # workflow.json / steps 校验
+│       ├── hooks.py                       # Claude hooks 护栏
+│       ├── server.py                      # FastAPI 本地控制台
+│       └── credentials.py                 # 本地 keyring credential 存储
+├── .claude/
+│   ├── settings.json                      # 项目级 hooks 注册
+│   └── skills/product-analyzer/
+│       ├── SKILL.md                       # 轻量入口
+│       ├── REPORT_TEMPLATE.md             # 最终报告模板
+│       └── workflows/                     # 分步骤 workflow 文档
+├── .agents/skills/product-analyzer/       # Codex 侧同步副本
+├── web/
+│   ├── src/pages/                         # 页面组装
+│   ├── src/components/                    # UI 组件
+│   ├── src/hooks/                         # React 数据流 hooks
+│   ├── src/api.ts                         # API 调用
+│   └── src/types.ts                       # 前端类型
+├── reports/                               # 每次分析的产物
+└── queue*.json                            # 批量队列
 ```
-
-模块依赖单向无环:`config → ui → batch_store → batch_dashboard → renderer → preflight → tasks → sandbox_runtime → sandbox_ctl → prompts → claude_driver → batch → cli`。
-
-**`reports/` 与 git**:默认会提交 `report.md`、`metadata.json`、`sandbox.json`、`run.log`、`screenshots/` 等分析产物,便于对照 batch 进度与回归截图。仍忽略 `reports/**/downloads/`(安装包缓存)和 `reports/**/.sandbox_ctl_last_shell.json`(`step shell` 的临时 JSON,供 Bash 吞 stdout 时读取)。
-
-`scripts/analyze_product.py` 不做产品分析的判断,只负责前置工作(校验输入、建目录、调 claude)。所有产品分析的判断逻辑在 `.claude/skills/product-analyzer/SKILL.md` 里 — **改规则不需要改代码**。
 
 ---
 
-## 准备
+## Workflow 文档拆分
 
-### 1. 装 Claude Code CLI
+`product-analyzer` skill 不再承载一整坨长提示词。入口只说明“读哪些 workflow 文档”,详细规则拆到:
 
-按官方文档装好 `claude` 命令:<https://docs.claude.com/en/docs/claude-code>
+| 文件 | 作用 |
+|---|---|
+| `00-contract.md` | 输入输出、状态文件、禁止事项、credential 契约。 |
+| `01-linux-sandbox.md` | 创建 Linux Docker 沙盒并打开官网。 |
+| `02-website-discovery.md` | 官网真实浏览、截图、下载入口发现。 |
+| `03-client-routing.md` | Linux / Windows / Android / macOS / iOS 决策树。 |
+| `04-desktop-client.md` | Linux 客户端与 Windows + Wine 路径。 |
+| `05-android-client.md` | 官方 APK 与 Android 沙盒路径。 |
+| `06-web-only.md` | 降级后的网页体验力度。 |
+| `07-reporting.md` | 阶段报告与最终报告规则。 |
 
-### 2. 装 Python 依赖
+改报告章节、截图规则、降级条件、客户端优先级,优先改这些 `.md`,不要把业务判断塞回 Python。
 
-批量本地 sandbox 模式依赖 Cua Sandbox SDK。它要求 Python 3.12 或 3.13;macOS Xcode 自带的 Python 3.9 不能安装 `cua` 包。
+---
+
+## 输出产物
+
+每个任务独立写入 `reports/<slug>-YYYY-MM-DD[-N]/`:
+
+```text
+reports/<slug>-YYYY-MM-DD[-N]/
+├── workflow.json              # workflow 状态、客户端路由、credential 请求
+├── events.jsonl               # hooks/agent 事件,已脱敏
+├── steps/
+│   ├── 01_linux_sandbox.md
+│   ├── 02_website.md
+│   ├── 03_client_discovery.md
+│   ├── 04_desktop_client.md
+│   ├── 05_android_client.md
+│   ├── 06_web_experience.md
+│   └── 07_final_report.md
+├── report.md                  # 最终中文汇总报告
+├── metadata.json              # 机器可读元数据
+├── sandbox.json               # sandbox 连接信息
+├── run.log                    # Claude stream-json 日志
+├── downloads/                 # 安装包/APK 缓存,不提交
+└── screenshots/
+    ├── 01_web_homepage.png
+    ├── 05_app_main.png
+    └── 09_android_main.png
+```
+
+截图命名: `NN_<source>_<view>.png`,`source ∈ {web, app, android}`。所有保留截图必须在阶段报告或最终报告中引用。
+
+---
+
+## 环境准备
+
+### Claude Code
+
+安装并登录 `claude` CLI:
+
+```bash
+claude --version
+```
+
+### Python
+
+Cua Sandbox SDK 要求 Python 3.12 或 3.13:
 
 ```bash
 conda create -y -n computer-use-py312 python=3.12
@@ -78,542 +143,239 @@ conda activate computer-use-py312
 python -m pip install -r requirements.txt
 ```
 
-如果不用 conda,也可以用 Homebrew / pyenv / venv 创建 Python 3.12 或 3.13 环境。关键是运行 `analyze_product.py` 的 `python` 必须是 3.12/3.13。
+关键依赖:
 
-### 3. 装桌面驱动器
+- `cua`: Cua Sandbox SDK/CLI
+- `fastapi` / `uvicorn`: 本地控制台后端
+- `keyring`: credential 加密保存
 
-```bash
-python3 scripts/install_cua_driver.py
-```
+### Docker 与镜像
 
-脚本会自动按平台选后端:
-
-| 主机 | 后端 | 备注 |
-|---|---|---|
-| macOS arm64 / x86_64 | Swift `cua-driver` | 官方版,放 `/Applications/CuaDriver.app` |
-| Linux x86_64 | `cua-driver-rs` | Rust 端口 |
-| Windows x86_64 | `cua-driver-rs` | 走 `install.ps1`,无需管理员 |
-| Linux aarch64 | 不支持(无预编译) | 需要时自行源码编译 |
-
-如果首次运行 `analyze_product.py` 时没装,它会自动调起这个脚本。
-
-> **批量 `--batch` 不需要 cua-driver** — 各产品在 Docker/云端沙盒里用 Firefox + `sandbox_ctl` 完成;只有单任务 `runtime=host` 才依赖本机 cua-driver。批量跑前清单见 [批量并发跑前准备](#批量并发跑前准备清单)。
-
-### 4. 网络代理(可选)
-
-`install_cua_driver.py` 会从 GitHub 下安装包,如果你需要走代理,先在父 shell 设好:
+默认 Linux 沙盒使用 `trycua/cua-xfce:latest`:
 
 ```bash
-export https_proxy=http://127.0.0.1:7897
-export http_proxy=http://127.0.0.1:7897
-export all_proxy=socks5://127.0.0.1:7897
-```
-
----
-
-## 用法
-
-### 交互式(零参数)
-
-```bash
-python3 scripts/analyze_product.py
-```
-
-菜单:
-
-| 选项 | 说明 |
-|------|------|
-| `1` | 新任务 — host 模式 + cua-driver(默认) |
-| `2` | 恢复历史任务 — 从 `reports/` 续跑 |
-| `3` | 批量分析 — 默认**本地** Cua sandbox(Docker),可选云端 |
-| `q` | 退出 |
-
-单任务(选项 1)会依次问:
-
-```
-产品名: ProductiveKitty
-官网 URL: https://productivekitty.masterwordai.com
-下载链接(可选,直接回车跳过):
-```
-
-### 参数式(适合上层脚本/CI 集成)
-
-```bash
-# 两个必填位置参数
-python3 scripts/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
-
-# 第三个位置参数(下载链接)可选,有就跳过"在官网找下载链接"那一步
-python3 scripts/analyze_product.py "ProductiveKitty" \
-  "https://productivekitty.masterwordai.com" \
-  "https://file.masterwordai.com/zeabur/Desktop%20Cat-1.0.5-arm64.dmg"
-```
-
-任何缺失的位置参数会回退到 `input()` 询问。空字符串视为"未给"。
-
-### 批量并发(默认本地 sandbox)
-
-批量模式在本机用 `--max-workers` **并发**启动多个独立的 `claude --print` worker,每个 worker 分析队列里的一个产品。**并发跑时,每个产品都会先在自己的隔离环境里创建一台沙盒**(本地 Docker/Lume/QEMU,或 Cua Cloud VM),分析结束后再销毁;worker 之间不共享沙盒、也不碰你 Mac 上的前台应用。
-
-#### 批量并发跑前准备(清单)
-
-跑 `--batch` 前建议逐项确认。编排器启动时会做 **claude / cua SDK / cua CLI** 预检;**不会**安装 cua-driver(批量走沙盒,不走 host 桌面)。
-
-| 类别 | 要求 | 说明 |
-|------|------|------|
-| **Claude Code** | `claude` 已安装且已登录 | `claude --version`;需能非交互跑 `claude --print`(批量禁用 ESC 续跑 UI) |
-| **Python** | 3.12 或 3.13 | macOS 自带 3.9 不能装 `cua`;建议 conda 环境 `computer-use-py312` |
-| **依赖** | `pip install -r requirements.txt` | 提供 `cua` Sandbox SDK;与跑 `analyze_product.py` 的同一解释器 |
-| **Cua CLI** | `cua --version` | 云端 MCP、`serve-mcp` 等;与 SDK 同环境安装 |
-| **Docker(本地 linux)** | `docker info` 正常 | 默认 `--sandbox-image linux` 时每 worker 一台 **独立** `trycua/cua-xfce` 容器 |
-| **镜像** | 预拉 `cua-xfce` | Apple Silicon:`docker pull --platform=linux/amd64 trycua/cua-xfce:latest`;避免首 worker 卡在 pull |
-| **队列** | `.json` / `.csv` | 每行 `product_name` + `url`,可选 `download_url`;见下方 [队列文件](#队列文件) |
-| **并发度** | `--max-workers N` | 每 worker ≈ 1 个 Claude 子进程 + 1 个沙盒容器;建议从 `2` 起,按 CPU/内存/Docker 上限调高 |
-| **磁盘** | `reports/` 可写 | 每产品独立目录 `reports/<slug>-日期[-N]/`,含 `run.log`、多张 PNG;同日重跑自动 `-2` 后缀 |
-| **代理** | 可选 | 访问官网若需代理在**宿主机** shell 配置;编排器会为 worker 设 `NO_PROXY=127.0.0.1,localhost`,避免 Docker 端口被代理成 502 |
-| **Android(可选)** | 默认关 | `--sandbox-image linux` 时 **只操作 Firefox 网页**;要 APK 路径需 `--android` 并预拉 `cua-qemu-android` |
-
-**推荐一次性自检**(本地 Linux sandbox,与下方正式 batch 同环境):
-
-```bash
-cd /path/to/computer-use
-conda activate computer-use-py312   # 或你的 3.12/3.13 venv
-
-python --version                    # 3.12.x / 3.13.x
-python -m pip install -r requirements.txt
-claude --version
-cua --version
 docker info
-docker pull --platform=linux/amd64 trycua/cua-xfce:latest   # arm64 Mac 必带 platform
-
-# 无需 Docker 的快速检查
-python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
-
-# 单沙盒逐步控制 smoke(会起停一台容器,截图在 tmp/sandbox-ctl-smoke/)
-python -m tests.sandbox.sandbox_ctl_smoke
-
-# 可选:SDK 级 GUI smoke
-python -m tests.sandbox.linux_smoke --check-only
-python -m tests.sandbox.linux_smoke --timeout 180
+docker pull --platform=linux/amd64 trycua/cua-xfce:latest
 ```
 
-**Claude worker 里调 `sandbox_ctl`**:编排器会把 `ANALYZER_PYTHON` 设为当前解释器路径;若 worker 用 Bash 起子进程,优先:
+Apple Silicon 也建议带 `--platform=linux/amd64`。
 
-```bash
-conda run -n computer-use-py312 python scripts/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
-```
+### Android 可选镜像
 
-或先 `conda activate computer-use-py312`,再 `python scripts/sandbox_ctl.py …`(勿用系统 `python3` 3.9)。
-
-**跑之前 / 退出后清理**:每个 worker 结束会在 `finally` 里对该任务 `teardown`;**整次 batch 退出**(正常结束、控制台 `q`、**Ctrl+C 强退**)后,编排器会自动 `cleanup-all`,删除本机所有 `analyzer-*` 沙盒及带 `cua.sandbox=true` 标签的 Docker 容器。Ctrl+C 时:**第一次**中断会先同步 `docker rm -f` 停容器,再经 `finally` 做完整 SDK 清理;另注册 `atexit` 兜底。跳过自动清理:`export ANALYZER_BATCH_NO_CLEANUP=1`。手动清理:`python scripts/sandbox_ctl.py cleanup-all`。
-
-**云端 batch**(`--sandbox cloud`):不需本机 Docker;需 [cua.ai](https://cua.ai/signin) 的 `CUA_API_KEY`(或 `--cua-api-key`),并确认账户配额够支撑 `max-workers` 并行 VM。
-
-**本机 Claude 不直接连沙盒 GUI**,而是通过 **脚本** 间接操控:
-
-1. **Python 编排器**(`scripts/analyze_product.py` + `scripts/product_analyzer/batch.py`)只负责起子进程、注入 env、写 `reports/<slug>/`、云端时挂 `--mcp-config`;**不**替 Claude 点鼠标。
-2. **每个 Claude worker** 读 product-analyzer skill,用 **Bash 反复调用** [`scripts/sandbox_ctl.py`](scripts/sandbox_ctl.py)(本地)或 **Cua MCP**(云端)完成「建沙盒 → **以鼠标为主**逐步截图/点击/滚动 → 拆沙盒」。官网用 `bootstrap --open-browser --url …` 打开,**不要**用 `wget` 抓 HTML;`step shell` 仅用于下载已有直链的安装包。若 Bash 吞 stdout,读 `reports/.../.sandbox_ctl_last_shell.json`(该文件不提交 git)。
-3. **`sandbox_ctl`** 内部用 Cua Sandbox SDK 对 **named** 容器发单步命令(`screenshot` / `click` / `type` / `key` / `scroll` / `shell` …),连接信息写在 `reports/.../sandbox.json`;Claude 每步一条命令、先看 PNG 再决策,与单任务里 cua-driver 的 observe–act 节奏一致。
-
-**`sandbox_ctl` 常用命令**(本地 batch;建议 `conda activate computer-use-py312` 后用同一 Python):
-
-```bash
-# 建沙盒 + 写 sandbox.json + 可选用键盘打开官网(非 wget)
-python scripts/sandbox_ctl.py bootstrap reports/<slug>-<date> --open-browser --url 'https://example.com'
-
-# observe–act 单步(每步一条 Bash,禁止整段 asyncio 脚本)
-python scripts/sandbox_ctl.py step screenshot reports/<slug>-<date> --out screenshots/01_web_homepage.png
-python scripts/sandbox_ctl.py step click   reports/<slug>-<date> 640 120
-python scripts/sandbox_ctl.py step key     reports/<slug>-<date> 'ctrl+l'   # 小写键名
-python scripts/sandbox_ctl.py step key     reports/<slug>-<date> enter      # 勿用 Return/Escape
-python scripts/sandbox_ctl.py step shell   reports/<slug>-<date> -c 'wget -O downloads/app.deb …'
-
-python scripts/sandbox_ctl.py teardown reports/<slug>-<date>
-python scripts/sandbox_ctl.py status   reports/<slug>-<date>
-```
-
-沙盒内 `step key` 的键名必须是 **computer-server 接受的小写名**(`enter`、`escape`、`ctrl+l` 等)。`Return` / `Escape` 等 pynput 风格会触发 `Unknown key in hotkey`。
-
-```
-queue.json
-    │
-    ├─ worker 1 (claude --print) ──Bash──► sandbox_ctl bootstrap / step … / teardown
-    │                                              │
-    │                                              ▼
-    │                                    Docker 沙盒 A (cua-xfce)
-    │
-    └─ worker 2 (claude --print) ──Bash──► sandbox_ctl …
-                                              │
-                                              ▼
-                                    Docker 沙盒 B (独立)
-```
-
-worker 结束后,编排器还会在 `finally` 里 **兜底 teardown**,避免容器泄漏。
-
-每个 worker 的 prompt **只传入参数**(runtime、sandbox 镜像、是否批量并行等)并指向 `.claude/skills/product-analyzer/SKILL.md` 的 **「Sandbox 运行合约」** 与 **「沙盒控制三阶段」**;细则在 skill 里维护(符合「改规则不改代码」)。环境变量 `ANALYZER_BATCH_PARALLEL=1`、`ANALYZER_CONDA_ENV` 等供 Claude 对照。
-
-**Host vs 沙盒控制面对照**
-
-| 模式 | 谁创建环境 | 本机 Claude 如何操控 |
-|------|------------|----------------------|
-| 单任务 `runtime=host` | 无沙盒,直接用本机桌面 | **cua-driver** MCP/CLI(`get_window_state` → `element_index`) |
-| 批量 `sandbox-local` | `sandbox_ctl bootstrap` 起 Docker 等 | **鼠标优先** Bash 调 `screenshot`/`click`/`scroll`/`type`(shell 仅下载安装包) |
-| 批量 `sandbox-cloud` | MCP / `sandbox_ctl` 起 Cloud VM | **Cua MCP**(`computer_screenshot` / `computer_click` / …),编排器注入 `--mcp-config` |
-
-**不要**让 Claude 写一整段 `asyncio.run()` 把分析包进一个 Python 文件 — 应 **一条 Bash 一步**,截图落到 `reports/.../screenshots/` 后再继续。
-
-**默认行为:本地 sandbox。** 未传 `--sandbox` 时一律走本机 Docker/Lume,即使环境里已有 `CUA_API_KEY` 也不会自动切到云端。
-
-若要使用 **Cua Cloud 云端 sandbox**,必须显式指定:
-
-```bash
-python scripts/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
-# 或
-export CUA_API_KEY=sk-...
-python scripts/analyze_product.py --batch queue.json --sandbox cloud
-```
-
-环境说明见 [Cua Set Up a Sandbox](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox):
-
-- **本地(默认)**:Linux 桌面用 Docker 镜像 **`trycua/cua-xfce:latest`**(轻量 XFCE + **Firefox**;无 Chromium);`bootstrap --open-browser` 由 `sandbox_ctl` 探测 `DISPLAY` 并启 Firefox。Apple Silicon 需 `linux/amd64` 平台(见下方 `docker pull`)。macOS/Windows 桌面包仍走 Lume/QEMU。
-- **云端(仅 `--sandbox cloud`)**:由 Cua Cloud 托管,需 API Key,无需本机 Docker
-
-零参数运行后选菜单 `3` 可进入批量分析向导;向导里默认也是本地,选 `2` 才走云端。队列输入直接回车或输入 `all` 会合并全部 `queue*.json`。完整跑前清单见上文 **[批量并发跑前准备](#批量并发跑前准备清单)**。
-
-#### 队列文件
-
-仓库根目录按品类拆成多个 `queue*.json`,无需手动合并。`--batch-all` 会按文件名排序加载并去重(相同 `product_name` + `url` 只保留一条)。
-
-| 文件 | 品类 | 条数 |
-|------|------|------|
-| [`queue.china-travel.json`](queue.china-travel.json) | Foreigner Travel to China Helper | 10 |
-| [`queue.coding-platforms.json`](queue.coding-platforms.json) | Alternative Coding Platforms | 10 |
-| [`queue.desktop-pets.json`](queue.desktop-pets.json) | Desktop Pet Company / Apps | 10 |
-| [`queue.language-learning.json`](queue.language-learning.json) | Language Learning | 10 |
-
-单条记录格式:
-
-```json
-{
-  "category": "Language Learning",
-  "product_name": "Duolingo",
-  "url": "https://www.duolingo.com"
-}
-```
-
-`category` 仅作标注,编排器只读 `product_name` / `url` / 可选 `download_url`。
-
-#### 批量控制台(TTY)
-
-在交互式终端跑批量时,默认进入 **curses 双层控制台**(无需额外依赖):
-
-- **列表层**:实时显示 `运行 / 启动 / 收尾 / 排队 / 完成 / 失败` 数量、进度条、每条任务的最近动作
-- **启动**:已占用并发槽、尚未进入 claude(建目录/写 metadata);**排队**任务最近动作恒为 `—`,不会显示其它任务的活动
-- **详情层**:`Enter` 进入单任务事件流;`Esc` 暂停该任务 → 可另开终端人工改 `out_dir`/调 `sandbox_ctl` → 回控制台输入补充指令 `Enter` 续跑(其它 worker 不受影响);`b` 返回列表
-- **收尾**:Claude 输出 `result: success` 后状态变为「收尾」(销毁 sandbox),完成后变为「完成」— 不再与「运行」混淆
-- **排队**:`--max-workers N` 限制同时运行的 Claude 数,超出部分在队列里等待(不会多开沙盒)
-- **退出**:`q` 确认退出;排队中的任务标记为已取消,运行中的等当前结束
-
-纯文本 / CI / 管道模式(无前缀行交织、无控制台):
-
-```bash
-python3 scripts/analyze_product.py --batch-all --max-workers 5 --batch-plain
-# 或
-ANALYZE_BATCH_PLAIN=1 python3 scripts/analyze_product.py --batch-all --max-workers 5
-```
-
-批量结束后会在当前目录写 [`batch-status.json`](batch-status.json)(任务状态快照,便于外部监控)。
-
-### Android APK 沙盒(可选)
-
-若产品官网提供 **APK**,且批量时显式加了 `--android` 并成功拉起 **Android 模拟器沙盒**,可在其中下载、安装、启动并截图(对应 skill 里的 `android` 路径、`screenshots/NN_android_*.png`)。镜像为 QEMU Android 容器,**APK 的安装与 UI 测试都在该沙盒内完成**,不占用 host 真机。
-
-**默认 `--sandbox-image linux` 不带 Android**(`android.enabled=false`)。此时 Claude worker 会收到明确指令:**不要**起 Android 沙盒、不要 `adb install`;**只在 Linux 桌面沙盒的 Firefox 里**浏览官网,从网页获取产品信息并截 `NN_web_*.png`。若加了 `--android` 但 Android 沙盒起不来(镜像未拉、超时、adb 失败),同样**退回仅网页路径**,在 `metadata.android.mode=skipped` 与 `warnings[]` 记录原因,**不会**因此把整单判成全局 `web-only`(除非桌面安装包 hunt 也失败,见 skill「跨平台与降级」)。
-
-预拉镜像(Apple Silicon / arm64 Mac **必须**带 `--platform=linux/amd64`,否则会出现 `no matching manifest for linux/arm64`):
+只有找到官方 APK 时才会尝试 Android:
 
 ```bash
 docker pull --platform=linux/amd64 trycua/cua-qemu-android:latest
 ```
 
-Intel Mac / Linux x86_64 可直接:
-
-```bash
-docker pull trycua/cua-qemu-android:latest
-```
-
-批量分析时启用 Android 路径(默认 `--sandbox-image linux` **不会**走 APK;需显式打开):
-
-```bash
-python scripts/analyze_product.py \
-  --batch queue.language-learning.json \
-  --max-workers 2 \
-  --sandbox-image auto \
-  --android
-```
-
-Android 路径同样由 Claude 通过 **`sandbox_ctl`**(或云端 MCP)逐步操作独立 Android 沙盒(`adb install`、截图等),APK 落在各产品目录的 `downloads/` 下。详见 [Cua Set Up a Sandbox — Android](https://cua.ai/docs/cua/guide/get-started/set-up-sandbox) 与 skill 中的 Android 增强路径。
-
-若本机配置了 HTTP 代理,批量本地 sandbox 会自动为 worker 设置 `NO_PROXY=127.0.0.1,localhost`,避免 SDK 探测 `localhost:<docker_port>` 时被代理成 502。
-
-**网页点击能不能用?** 可以。`cua-xfce` 镜像是带 XFCE 桌面的 Linux 容器,内置 `computer-server` 与 **Firefox**;用 `sandbox_ctl bootstrap --open-browser --url …` 或 `step open-url` 打开官网,再用 `step click/type/screenshot` 做**坐标级**自动化(勿假设有 Chromium)。这与 host 上 cua-driver 的 `element_index` 不是同一条路,但对常规官网导航、表单、滚动足够。参考截图见 [`tmp/sandbox-ctl-smoke/screenshots/`](tmp/sandbox-ctl-smoke/screenshots/)(`python -m tests.sandbox.sandbox_ctl_smoke` 生成)。
-
-建议先跑 Linux sandbox smoke test,确认 Cua SDK + Docker + GUI/UI 截图链路可用。测试在 `tests/sandbox/`:
-
-```bash
-# 只检查 Python / cua / Docker,不拉起 sandbox
-python -m tests.sandbox.linux_smoke --check-only
-
-# 完整 smoke(每步默认 180s 超时)
-python -m tests.sandbox.linux_smoke --timeout 180
-```
-
-这个测试会覆盖:
-
-- Python / `cua` 包版本检查
-- Docker daemon 和正在运行的 Cua 容器摘要
-- `Sandbox.ephemeral(trycua/cua-xfce:latest, local=True, platform=linux/amd64)` 创建
-- `sb.shell.run(...)`、`sb.screen.size()`
-- 常见 UI 操作:`mouse.move` / `click` / `right_click` / `double_click` / `scroll`,`keyboard.type` / `keypress`
-- 多步截图(桌面、右键菜单、滚动后、尝试打开终端、输入文字等)保存到 `tmp/sandbox-smoke/screenshots/01_*.png` … `07_*.png`
-- 结构化结果 `tmp/sandbox-smoke/linux_smoke_report.json`
-
-如果卡住或失败,脚本会自动打印相关 Cua 容器的 `docker port` 和 `docker logs --tail ...`,方便定位是 Docker、容器服务还是 SDK 连接问题。
-
-准备一个队列文件,例如 `queue.test.json`:
-
-```json
-[
-  {
-    "product_name": "Excalidraw",
-    "url": "https://excalidraw.com"
-  },
-  {
-    "product_name": "Tldraw",
-    "url": "https://www.tldraw.com"
-  }
-]
-```
-
-跑两个并发 worker(默认本地 Linux sandbox,可省略 `--sandbox local`):
-
-```bash
-# 单个队列文件
-python3 scripts/analyze_product.py \
-  --batch queue.language-learning.json \
-  --max-workers 2 \
-  --sandbox-image linux
-
-# 全量:自动合并全部 queue*.json(当前 4 文件、40 条),并发 5,其余排队
-python3 scripts/analyze_product.py \
-  --batch-all \
-  --max-workers 5 \
-  --sandbox-image linux
-
-# 从指定目录扫描 queue*.json(默认仓库根目录)
-python3 scripts/analyze_product.py \
-  --batch-all \
-  --batch-dir /path/to/queues \
-  --max-workers 5
-```
-
-`--batch` 与 `--batch-all` 二选一,不能同时使用。
-
-`--sandbox-image linux` 时**不会**预检 Android,也不会走 APK 路径 — worker **只操作网页**。需要 APK 时请预拉上方 `cua-qemu-android` 镜像并加 `--android`(或 `--sandbox-image auto`);Android 沙盒若仍启动失败,按 skill 退回网页分析,不阻塞报告产出。
-
-云端 sandbox(必须加 `--sandbox cloud`;Key 在 [cua.ai](https://cua.ai/signin) 创建):
-
-```bash
-python scripts/analyze_product.py \
-  --batch queue.test.json \
-  --max-workers 2 \
-  --sandbox cloud \
-  --cua-api-key sk-...
-```
-
-运行后每个产品都会写入独立目录:
-
-```text
-reports/<product-slug>-YYYY-MM-DD[-N]/
-├── report.md              # 完成后由 Claude 写入
-├── metadata.json          # Python 写雏形,结束前由 Claude 补齐
-├── sandbox.json           # sandbox_ctl bootstrap 写入(api_url、容器名)
-├── run.log                # 该 worker 的 stream-json 事件流(批量模式)
-├── downloads/             # 安装包缓存(.gitignore,不提交)
-└── screenshots/
-    ├── 01_web_homepage.png
-    └── ...
-```
-
-仓库里可带有进行中的 batch 样例(如 [`reports/babbel-2026-05-19/`](reports/babbel-2026-05-19/))供对照截图与 `run.log`。
-
-`run.log` 是该产品对应 Claude worker 的完整事件流。若本机缺少 `cua`、Docker、Lume、QEMU 或 Android SDK,CLI 会在启动前提示缺失项。第一轮批量测试建议 `--sandbox-image linux` + 已预拉 `cua-xfce` 镜像;`metadata.json` 里 `runtime` 为 `sandbox-local` 或 `sandbox-cloud`,`sandbox` 块记录 `name` / `api_url` / `local`。
-
-### 执行过程
-
-启动后:
-
-1. **预检**:`claude` CLI、cua-driver。后者没装就自动调起 `install_cua_driver.py`
-2. **建目录**:`reports/<slug>-YYYY-MM-DD[-N]/screenshots/`
-3. **写 metadata.json 雏形**(主机信息、起始时间)
-4. **调 claude 子进程**,把任务 prompt 喂进去
-5. **stream-json 事件流以 Claude Code 风格渲染** — 思考、工具调用、工具返回、文本、TodoWrite 列表都直接以彩色 + ☐/◐/☑ 的形式打到终端
-6. 进程结束后做产物校验(报告和 metadata 是否就位),提示缺漏
-
-权限模式默认 `bypassPermissions`,Claude Code 不会因每次工具调用打断流程问"允许吗?"。如果你想要交互式确认,改 `analyze_product.py` 里那行 `--permission-mode` 即可。
-
-### ESC 中断 + 续跑
-
-执行过程中如果发现 Claude 走偏了,**按 ESC** 暂停当前回合:
-
-```
-── 已暂停。
-    输入补充指令后回车继续(空行则放弃,直接退出)。多行用反斜杠续行。
-补充> 你刚才漏看了官网底部的 CDN 链接,重新扫一遍 https?://...\.dmg 再决定降级
-```
-
-回车后脚本用 `claude --resume <session_id>` 续跑,并把你的补充指令作为新一轮提示喂进去。Claude Code 会带着完整历史继续工作,不丢前面已经做的事。
-
-空行则放弃续跑、清理退出。仅在 stdin 是真 tty(交互式终端)时启用,管道/CI 模式下自动禁用。
-
-### 调试模式
-
-把全量 stream-json 同时写到磁盘,用于事后排查:
-
-```bash
-ANALYZE_RAW_LOG=/tmp/raw.jsonl python3 scripts/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
-```
-
-终端照常显示美化输出,`/tmp/raw.jsonl` 里是逐行 JSON,可以再丢给任何 stream-json 解析器复盘。
-
 ---
 
-## 输出布局
+## CLI 用法
 
-```
-reports/<slug>-2026-05-18/
-├── report.md                       # 简体中文,6 个强制章节按固定顺序
-├── metadata.json                   # 机器可读元数据
-├── sandbox.json                    # 批量 sandbox 时由 sandbox_ctl 写入
-├── run.log                         # 批量时 Claude worker 事件流(可选)
-├── downloads/                      # 安装包 / APK 下载缓存(.gitignore)
-└── screenshots/
-    ├── 01_web_homepage.png         # NN_<source>_<view>.png
-    ├── 02_web_pricing.png
-    ├── 05_app_main.png
-    ├── 09_android_main.png
-    └── ...
+### 单任务,默认 Linux sandbox
+
+```bash
+python3 backend/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
 ```
 
-**slug 规则**:`kebab-case(ascii-fold(产品名))`,40 字符内。中文名走 fallback `product-<md5前6位>`。
+给定下载链接:
 
-**截图编号**:`NN_<source>_<view>.png`,`source ∈ {web, app, android}`,`NN` 单调递增允许跳号。每张图都在 `report.md` 里以相对路径出现,且在附录 A 截图索引里有一行说明。
-
-**metadata.json**(由 Python 写雏形,Claude 在结束前补齐):
-```json
-{
-  "product_name": "ProductiveKitty",
-  "url": "https://productivekitty.masterwordai.com",
-  "download_url": null,
-  "host_os": "darwin",
-  "host_arch": "arm64",
-  "runtime": "host",
-  "sandbox": {"image": null, "local": true, "name": null},
-  "android": {
-    "enabled": false,
-    "apk_url": null,
-    "apk_file": null,
-    "package_name": null,
-    "mode": null
-  },
-  "started_at": "2026-05-18T03:30:00+08:00",
-  "finished_at": "2026-05-18T03:55:00+08:00",
-  "mode": "full",
-  "screenshots": [
-    {"file": "screenshots/01_web_homepage.png", "view": "web-homepage", "caption": "官网首页"}
-  ],
-  "warnings": []
-}
+```bash
+python3 backend/analyze_product.py NAME URL DOWNLOAD_URL
 ```
 
-`mode = "full"` 表示 host 上同时分析了官网与桌面端;`mode = "sandbox-full"` 表示本地 Cua sandbox 内完成官网/桌面端分析;`mode = "web-only"` 表示只看了官网(降级条件见下一节)。若额外分析了 APK,`android.mode` 会记录 Android 路径结果。
+### 旧 host/cua-driver 路径
 
-**同日重跑**不会覆盖 — 自动追加 `-2`、`-3` 后缀。
+只在需要兼容旧流程时使用:
 
----
+```bash
+python3 backend/analyze_product.py --host "ProductiveKitty" "https://productivekitty.masterwordai.com"
+```
 
-## 报告模板
+`--host` 会使用本机 cua-driver,不走 Linux-first workflow。
 
-强制章节(顺序固定):
+### 交互式菜单
 
-1. **总定位** — 这是什么、解决什么、面向谁
-2. **界面清单** — 实际看到的所有主要界面,挂截图
-3. **各界面功能与评价** — 具体到字段/按钮,可证伪
-4. **UI/UX 风格和质量描述** — 视觉风格、信息密度、交互流畅度、文案、可访问性观察
-5. **官网描述** — 官网原文摘录、关键卖点、与实际体验的差距
-6. **附录 A 截图索引** — 表格列每张图
+```bash
+python3 backend/analyze_product.py
+```
 
-可选章节(定价 / 目标用户 / 同类对比 / 优劣势)**只有有证据时出现**,无则整段省略,不留"信息不足"占位。
+菜单:
 
-完整骨架见 `.claude/skills/product-analyzer/REPORT_TEMPLATE.md`。
-
----
-
-## 跨平台与降级
-
-默认 **full 模式**:用 cua-driver(macOS) / cua-driver-rs(Linux/Windows)驱动桌面端。
-
-仅在以下三种情况降级到 **web-only**:
-1. 产品官网没出当前主机 OS 的安装包
-2. 当前平台没有 cua-driver 预编译(Linux aarch64)
-3. 应用安装/启动反复失败
-
-降级时:
-- `metadata.json.mode = "web-only"`,`warnings[]` 记录原因
-- 报告头注明"本次为网页版分析,未驱动桌面端,因为 ..."
-- 报告其他部分照常写,只是 §1 仅基于官网与浏览器截图
-
----
-
-## 退出码
-
-| 退出码 | 含义 |
+| 选项 | 说明 |
 |---|---|
-| 0 | 成功 |
-| 1 | 预检失败(claude / cua-driver 缺失,且自动安装失败)、用户中断 |
-| 2 | claude 子进程异常退出 |
-| 130 | Ctrl+C 中断 |
+| `1` | 新任务,默认 Linux sandbox workflow。 |
+| `2` | 从 `reports/` 恢复历史任务。 |
+| `3` | 批量分析。 |
+| `q` | 退出。 |
+
+### 批量
+
+```bash
+python3 backend/analyze_product.py --batch queue.language-learning.json --max-workers 2 --sandbox-image linux
+python3 backend/analyze_product.py --batch-all --max-workers 5 --sandbox-image linux
+```
+
+云端 sandbox 需要显式指定:
+
+```bash
+python3 backend/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
+```
+
+纯文本模式:
+
+```bash
+python3 backend/analyze_product.py --batch-all --max-workers 5 --batch-plain
+```
 
 ---
 
-## 改规则不改代码
+## 本地 Web 控制台
 
-要调整分析逻辑、报告章节、截图命名规则、降级条件,改 `.claude/skills/product-analyzer/SKILL.md`(和它引用的 `REPORT_TEMPLATE.md`)即可,Python 脚本不用动。
+后端:
 
-要换桌面驱动器后端逻辑,改 `scripts/install_cua_driver.py`。
+```bash
+python3 backend/analyzer_server.py
+```
 
-要改桌面自动化的具体打法(snapshot 不变量、no-foreground 契约、坐标系),改 `.claude/skills/cua-driver/SKILL.md`。
+前端:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+默认前端代理到 `http://127.0.0.1:8765`。
+
+第一版控制台能力:
+
+- 新建分析任务。
+- 查看任务列表和当前 workflow 步骤。
+- 通过 WebSocket 看 `run.log` / `events.jsonl` 实时输出。
+- 查看最终 `report.md`。
+- 处理 credential 请求,通过本地 keyring 加密保存。
+
+前端分层:
+
+| 目录 | 作用 |
+|---|---|
+| `web/src/pages/` | 页面级组合。 |
+| `web/src/components/` | 可复用面板和控件。 |
+| `web/src/hooks/` | 数据加载、轮询、WebSocket hooks。 |
+| `web/src/api.ts` | 后端 API 封装。 |
+| `web/src/types.ts` | 共享类型。 |
+
+---
+
+## Hooks 护栏
+
+项目级 hooks 在 `.claude/settings.json` 注册,脚本在 `backend/product_analyzer/hooks.py`。
+
+当前做三类事:
+
+- `PreToolUse`:拦截 host GUI 激活命令,如 `open`、`osascript activate/open/launch`、`cliclick`;在 sandbox workflow 中拦截用 `curl/wget` 抓官网替代真实浏览。
+- `PostToolUse`:记录脱敏事件到 `events.jsonl`。
+- `Stop`:检查 `workflow.json`、`steps/*.md`、`metadata.json`、`report.md` 是否完整,不完整就阻止结束。
+
+hooks 是“硬护栏”,workflow `.md` 是“业务规则”。不要把产品分析决策写进 hooks。
+
+---
+
+## Credential 处理
+
+遇到客户端登录墙时,agent 应写入 `workflow.json.credential_requests[]`。Web 控制台显示请求,用户提交后:
+
+1. 后端用 `keyring` 存到本机安全凭据系统。
+2. `workflow.json` 只保存 opaque `credential_id`。
+3. `events.jsonl`、`metadata.json`、`steps/*.md`、`report.md` 不写明文 secret。
+
+如果 keyring 不可用,应拒绝保存并记录 warning,不要降级到明文落盘。
+
+---
+
+## 沙盒操作原则
+
+沙盒内 GUI 操作遵守 observe → act → observe:
+
+```bash
+python backend/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
+python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01_web_homepage.png
+python backend/sandbox_ctl.py step click "$OUTPUT_DIR" 640 120
+python backend/sandbox_ctl.py step scroll "$OUTPUT_DIR" 512 400 --scroll-y -6
+python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/02_web_pricing.png
+```
+
+规则:
+
+- 官网必须在 Firefox 里真实浏览,不能 shell 抓站代替。
+- `step shell` 只用于已有直链下载安装包/APK、安装命令、系统探测或排障。
+- Linux 客户端优先;没有 Linux 才尝试 Windows + Wine。
+- Google Play 只记录证据,不从第三方镜像下载 APK。
+- macOS/iOS-only 直接 web-only。
 
 ---
 
 ## 验证
 
-随便挑一个有官网的产品试一次:
+基础检查:
 
 ```bash
-python3 scripts/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
+python3 backend/analyze_product.py --help
+python3 -m py_compile backend/product_analyzer/*.py
 ```
 
-通过条件:
-1. 终端实时看见 stream-json 事件流(thinking、各类 Tool 调用、Tool 返回都可见)
-2. `reports/productivekitty-YYYY-MM-DD/report.md` 存在,6 个强制章节按顺序
-3. `screenshots/` 至少 1 张 `web_*` + (有桌面端时)≥3 张 `app_*`
-4. 每张截图都在 `report.md` 里被引用过
-5. `metadata.json` 的 `finished_at` / `mode` 字段已被补齐
-6. 重跑同输入 → 产出 `...-2026-05-18-2/` 而非覆盖
+hook 快速检查:
 
-批量 sandbox 额外建议:
+```bash
+printf '{"tool_name":"Bash","tool_input":{"command":"open https://example.com"}}' \
+  | ANALYZER_RUNTIME=sandbox-local python3 backend/product_analyzer/hooks.py pre-tool
+```
+
+前端构建:
+
+```bash
+cd web
+npm install
+npm run build
+```
+
+sandbox smoke:
 
 ```bash
 python -m unittest tests.sandbox.test_sandbox_ctl_normalize_keys -v
 python -m tests.sandbox.sandbox_ctl_smoke
 ```
+
+---
+
+## Git 与生成物
+
+会提交:
+
+- `report.md`
+- `metadata.json`
+- `workflow.json`
+- `events.jsonl`
+- `steps/*.md`
+- `screenshots/`
+- `run.log`
+
+不会提交:
+
+- `reports/**/downloads/`
+- `reports/**/.sandbox_ctl_last_shell.json`
+- `web/node_modules/`
+- `web/dist/`
+- `web/*.tsbuildinfo`
+
+---
+
+## 退出码
+
+| 码 | 含义 |
+|---|---|
+| `0` | 成功。 |
+| `1` | 预检失败、用户中断、恢复任务缺 session。 |
+| `2` | Claude 子进程非零退出。 |
+| `130` | Ctrl+C 或 ESC 后放弃续跑。 |

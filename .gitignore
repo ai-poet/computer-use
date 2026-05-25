@@ -10,6 +10,11 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Web console
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+
 # macOS
 .DS_Store
 

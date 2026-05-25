@@ -27,6 +27,7 @@ from .sandbox_ctl import (
 from .sandbox_runtime import SandboxContext, write_cloud_mcp_config
 from .tasks import post_check, prepare_output_dir, write_metadata_seed
 from .ui import err, log
+from .workflow import seed_workflow
 
 
 @dataclass
@@ -46,7 +47,7 @@ def load_queue(path: Path) -> list[dict[str, str | None]]:
         hint = (
             f"queue file not found: {resolved}\n"
             f"  cwd: {Path.cwd()}\n"
-            "  example: python scripts/analyze_product.py "
+            "  example: python backend/analyze_product.py "
             "--batch queue.language-learning.json --sandbox-image linux"
         )
         raise FileNotFoundError(hint)
@@ -258,6 +259,30 @@ async def _run_batch(
     return BatchResult(total=len(rows), results=results)
 
 
+def run_single(
+    row: dict[str, str | None],
+    *,
+    sandbox_ctx: SandboxContext,
+    sandbox_warnings: list[str] | None = None,
+    plain: bool = True,
+) -> dict[str, Any]:
+    """Run one sandbox-first analysis using the same worker path as batch."""
+    store = BatchRunStore(
+        [row],
+        max_workers=1,
+        queue_name="single",
+        dashboard_active=not plain,
+    )
+    reset_batch_cleanup_gate()
+    install_batch_exit_hooks(local=sandbox_ctx.local)
+    try:
+        return _run_one(row, 1, sandbox_ctx, sandbox_warnings or [], store)
+    finally:
+        uninstall_batch_exit_hooks()
+        if sandbox_ctx.local:
+            cleanup_all_local_sandboxes()
+
+
 async def _run_one_with_semaphore(
     sem: asyncio.Semaphore,
     row: dict[str, str | None],
@@ -332,6 +357,7 @@ def _run_one(
         sandbox_mode=sandbox_ctx.mode,
         android_enabled=sandbox_ctx.android_enabled,
     )
+    seed_workflow(out_dir)
 
     env = os.environ.copy()
     env.update(sandbox_ctx.env())

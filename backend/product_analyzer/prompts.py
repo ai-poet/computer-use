@@ -1,11 +1,11 @@
 """组装喂给 ``claude --print`` 的初始 prompt。
 
 两个变体:
-- ``build_prompt``:全新任务,把所有输入参数明列、要求 7 步 canonical loop
+- ``build_prompt``:全新任务,把所有输入参数明列、要求 Linux-first workflow
 - ``build_resume_prompt``:从历史 session 续跑,只交代输出目录和补充指令
 
-沙盒操作细则在 ``.claude/skills/product-analyzer/SKILL.md`` 的「Sandbox 运行合约」;
-prompt 只传参数并指向该节,避免与 skill 重复维护两份规则。
+沙盒操作细则在 ``.claude/skills/product-analyzer/workflows/``;
+prompt 只传参数并指向 workflow,避免与 skill 重复维护两份规则。
 """
 
 from __future__ import annotations
@@ -44,18 +44,18 @@ def build_prompt(
 
     if runtime in ("sandbox-local", "sandbox-cloud"):
         ctl_hint = (
-            "scripts/sandbox_ctl.py bootstrap/step/teardown"
+            "backend/sandbox_ctl.py bootstrap/step/teardown"
             if runtime == "sandbox-local"
             else "Cua MCP(computer_*) 或 sandbox_ctl"
         )
         host_rule = (
-            "3. 沙盒 runtime — 遵守 SKILL「沙盒控制三阶段」(bootstrap → step loop → teardown);"
-            f"控制面:{ctl_hint};Linux cua-xfce 仅 Firefox(bootstrap 会起,勿 chromium);"
-            "**禁止 monolithic analysis script**"
+            "3. Linux-first workflow — 先读 SKILL 入口与 workflows/00-contract.md,"
+            "再按步骤读取 workflows/01-07;默认先进入 Linux Docker 沙盒;"
+            f"控制面:{ctl_hint};禁止 monolithic analysis script"
         )
         sandbox_rule = (
-            "4. 操作系统级操作只在沙盒内;host 仅写 `<output_dir>`;"
-            "每步 GUI 后截图到 screenshots/ 并读图再决策"
+            "4. 每步完成后写 `steps/NN_*.md` 并更新 `workflow.json`;"
+            "最终 `report.md` 只汇总阶段报告与截图证据"
         )
     else:
         host_rule = (
@@ -77,11 +77,11 @@ def build_prompt(
 {runtime_block}
 
 **要求**:
-1. 严格遵循 SKILL.md 的 canonical loop(7 步固定顺序)
-2. 全程用 TodoWrite 维护进度,7 个 todos,每步开始前 in_progress、完成后 completed
+1. 严格遵循 SKILL.md 的 Linux-first workflow
+2. 全程用 TodoWrite 维护进度,workflow 步骤开始前 in_progress、完成后 completed/skipped
 {host_rule}
 {sandbox_rule}
-5. 结束前在 metadata.json 里补齐 finished_at / mode / screenshots[] / warnings[]
+5. 结束前在 metadata.json 里补齐 finished_at / mode / screenshots[] / warnings[] / clients
 
 现在开始执行。
 """
@@ -95,12 +95,12 @@ def build_resume_prompt(out_dir: Path, supplement: str) -> str:
     sandbox_hint = ""
     if sandbox_json.is_file():
         sandbox_hint = (
-            f"\n- 已存在 {sandbox_json}:先 `python scripts/sandbox_ctl.py status {out_dir}`,"
+            f"\n- 已存在 {sandbox_json}:先 `python backend/sandbox_ctl.py status {out_dir}`,"
             "勿重复 bootstrap;从 step loop 断点续跑;结束后 teardown。\n"
         )
     return f"""(从历史任务恢复)继续之前在 {out_dir} 上未完成的产品分析工作。
 
-请检查现有产物(report.md / metadata.json / screenshots/)的进度,从断点处接着干。继续遵循 product-analyzer skill 的 canonical loop;TodoWrite 列表如果丢了就重建。若为 sandbox runtime,继续遵守 SKILL「沙盒控制三阶段」。
+请检查现有产物(workflow.json / steps/ / report.md / metadata.json / screenshots/)的进度,从断点处接着干。继续遵循 product-analyzer skill 的 Linux-first workflow;TodoWrite 列表如果丢了就重建。
 {sandbox_hint}
 用户补充指令:
 {supplement or '(无,请按原计划继续)'}
@@ -127,9 +127,8 @@ def _runtime_block(
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
     if android_enabled:
         android_rule = (
-            "- **Android**:enabled — 仅在 Android 沙盒成功启动且找到 APK 时走 APK 路径;"
-            "若沙盒起不来或安装失败,设 android.mode=skipped/failed,**改只操作 Firefox 网页**"
-            "从官网获取产品信息(勿强行 adb/QEMU)"
+            "- **Android**:enabled — 仅在找到官网直链或官方 release asset APK 且 Android 沙盒成功启动时走 APK 路径;"
+            "若无官方 APK、沙盒起不来或安装失败,设 android.mode=skipped/failed,改只操作 Firefox 网页"
         )
     else:
         android_rule = (
@@ -158,5 +157,5 @@ def _runtime_block(
 - sandbox 预检 warnings(非致命):
 {warning_lines}
 {local_ctl}
-- **沙盒操作**:必读 SKILL「Sandbox 运行合约」与「沙盒控制三阶段」;禁止整段 asyncio 分析脚本。
+- **沙盒操作**:必读 SKILL 入口和 workflows/00-contract.md;按 workflows/01-07 逐步执行;禁止整段 asyncio 分析脚本。
 """
