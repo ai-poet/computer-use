@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1779787367736,
+  "projectRoot": "/Users/huzhiwei/Desktop/Projects/computer-use",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "requirements.txt"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "pip",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "tests"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1779787367723,
+      "keyFiles": [
+        "analyze_product.py",
+        "analyzer_server.py",
+        "android_ctl.py",
+        "install_cua_driver.py",
+        "sandbox_ctl.py"
+      ]
+    },
+    "cua": {
+      "path": "cua",
+      "purpose": null,
+      "fileCount": 24,
+      "lastAccessed": 1779787367723,
+      "keyFiles": [
+        "CONTRIBUTING.md",
+        "Development.md",
+        "Dockerfile",
+        "LICENSE.md",
+        "Makefile"
+      ]
+    },
+    "reports": {
+      "path": "reports",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1779787367723,
+      "keyFiles": []
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 1,
+      "lastAccessed": 1779787367723,
+      "keyFiles": [
+        "__init__.py"
+      ]
+    },
+    "tmp": {
+      "path": "tmp",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1779787367724,
+      "keyFiles": []
+    },
+    "web": {
+      "path": "web",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1779787367724,
+      "keyFiles": [
+        "index.html",
+        "package-lock.json",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.tsbuildinfo"
+      ]
+    },
+    "web/dist": {
+      "path": "web/dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1779787367724,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "web/node_modules": {
+      "path": "web/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1779787367725,
+      "keyFiles": []
+    },
+    "web/src": {
+      "path": "web/src",
+      "purpose": "Source code",
+      "fileCount": 4,
+      "lastAccessed": 1779787367725,
+      "keyFiles": [
+        "api.ts",
+        "main.tsx",
+        "styles.css"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

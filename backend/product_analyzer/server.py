@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from .batch import run_single
@@ -38,10 +38,34 @@ class CredentialSubmitRequest(BaseModel):
     fields: dict[str, str]
 
 
+class APIErrorResponse(BaseModel):
+    error: str
+    detail: str | None = None
+
+
+def api_error(status_code: int, message: str, detail: str | None = None) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail=APIErrorResponse(error=message, detail=detail).model_dump(),
+    )
+
+
+def _cors_origins() -> list[str]:
+    env = os.environ.get("ANALYZER_CORS_ORIGINS", "")
+    if env:
+        return [o.strip() for o in env.split(",") if o.strip()]
+    return [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+    ]
+
+
 app = FastAPI(title="Product Analyzer Console")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -120,7 +144,7 @@ def get_step(run_id: str, step_file: str) -> str:
     out_dir = _resolve_run(run_id)
     path = out_dir / "steps" / step_file
     if not _inside(path, out_dir / "steps") or not path.is_file():
-        raise HTTPException(status_code=404, detail="step not found")
+        raise api_error(404, "step not found", f"{step_file} not found in steps/")
     return path.read_text(encoding="utf-8")
 
 
@@ -129,8 +153,19 @@ def get_report(run_id: str) -> str:
     out_dir = _resolve_run(run_id)
     path = out_dir / "report.md"
     if not path.is_file():
-        raise HTTPException(status_code=404, detail="report not found")
+        raise api_error(404, "report not found", f"{path.name} missing in run directory")
     return path.read_text(encoding="utf-8")
+
+
+@app.get("/api/runs/{run_id}/screenshots")
+def list_screenshots(run_id: str) -> list[str]:
+    out_dir = _resolve_run(run_id)
+    ss_dir = out_dir / "screenshots"
+    if not ss_dir.is_dir():
+        return []
+    return sorted(
+        p.name for p in ss_dir.iterdir() if p.is_file() and p.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".webp")
+    )
 
 
 @app.get("/api/runs/{run_id}/screenshots/{name}")
@@ -138,7 +173,7 @@ def get_screenshot(run_id: str, name: str) -> FileResponse:
     out_dir = _resolve_run(run_id)
     path = out_dir / "screenshots" / name
     if not _inside(path, out_dir / "screenshots") or not path.is_file():
-        raise HTTPException(status_code=404, detail="screenshot not found")
+        raise api_error(404, "screenshot not found", f"{name} not found in screenshots/")
     return FileResponse(path)
 
 
@@ -201,7 +236,7 @@ def _safe_load_workflow(out_dir: Path) -> dict[str, Any]:
 def _resolve_run(run_id: str) -> Path:
     candidate = (REPORTS_DIR / run_id.replace("~", "/")).resolve()
     if not _inside(candidate, REPORTS_DIR.resolve()) or not candidate.is_dir():
-        raise HTTPException(status_code=404, detail="run not found")
+        raise api_error(404, "run not found", f"no run directory for id: {run_id}")
     return candidate
 
 
@@ -221,11 +256,16 @@ def _inside(path: Path, parent: Path) -> bool:
 
 
 def main() -> int:
+    import argparse
     import uvicorn
 
-    host = os.environ.get("ANALYZER_SERVER_HOST", "127.0.0.1")
-    port = int(os.environ.get("ANALYZER_SERVER_PORT", "8765"))
-    uvicorn.run("product_analyzer.server:app", host=host, port=port, reload=False)
+    parser = argparse.ArgumentParser(description="Product Analyzer Console Server")
+    parser.add_argument("--host", default=os.environ.get("ANALYZER_SERVER_HOST", "127.0.0.1"), help="bind host (default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("ANALYZER_SERVER_PORT", "8765")), help="bind port (default: 8765)")
+    parser.add_argument("--reload", action="store_true", help="enable uvicorn auto-reload")
+    args = parser.parse_args()
+
+    uvicorn.run("product_analyzer.server:app", host=args.host, port=args.port, reload=args.reload)
     return 0
 
 

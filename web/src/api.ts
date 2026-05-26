@@ -1,4 +1,4 @@
-import type { CreateRunPayload, Run, RunDetail } from './types';
+import type { CreateRunPayload, Run, RunDetail, Screenshot } from './types';
 
 function runPath(runId: string): string {
   return encodeURIComponent(runId);
@@ -28,6 +28,26 @@ export async function getRun(runId: string): Promise<RunDetail> {
 export async function getReport(runId: string): Promise<string> {
   const res = await fetch(`/api/runs/${runPath(runId)}/report`);
   return res.ok ? await res.text() : '';
+}
+
+export async function listScreenshots(runId: string): Promise<Screenshot[]> {
+  const res = await fetch(`/api/runs/${runPath(runId)}/screenshots`);
+  if (!res.ok) return [];
+  const filenames: string[] = await res.json();
+  return filenames.map((filename, index) => {
+    const source: Screenshot['source'] = filename.includes('_app_')
+      ? 'app'
+      : filename.includes('_android_')
+        ? 'android'
+        : 'web';
+    return {
+      id: `${runId}-${index}`,
+      filename,
+      url: `/api/runs/${runPath(runId)}/screenshots/${encodeURIComponent(filename)}`,
+      source,
+      label: filename.replace(/\.png$/i, '').replace(/\d+_/, '')
+    };
+  });
 }
 
 export async function submitCredential(
