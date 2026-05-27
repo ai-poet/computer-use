@@ -66,9 +66,16 @@ computer-use/
 ├── web/
 │   ├── src/pages/                         # 页面组装
 │   ├── src/components/                    # UI 组件
+│   │   ├── StatusBadge.tsx                # 状态徽章
+│   │   ├── MarkdownRenderer.tsx           # Markdown 渲染（含目录导航）
+│   │   ├── ScreenshotGallery.tsx          # 截图预览画廊
+│   │   ├── EmptyState.tsx                 # 空状态
+│   │   ├── LoadingState.tsx               # 加载骨架屏
+│   │   └── ErrorState.tsx                 # 错误状态
 │   ├── src/hooks/                         # React 数据流 hooks
 │   ├── src/api.ts                         # API 调用
-│   └── src/types.ts                       # 前端类型
+│   ├── src/types.ts                       # 前端类型
+│   └── docs/ui-ux-improvements.md         # UI/UX 设计文档
 ├── reports/                               # 每次分析的产物
 └── queue*.json                            # 批量队列
 ```
@@ -145,6 +152,20 @@ Web 控制台内部会把分类 run id 显示成 `language-learning~duolingo-YYY
 ```bash
 claude --version
 ```
+
+### 前端
+
+```bash
+cd web
+npm install
+```
+
+前端技术栈:
+
+- **React 19** + Vite 6 + TypeScript
+- **Tailwind CSS v4** (`@tailwindcss/vite`) - 原子化样式 + 暗色/亮色主题
+- **react-markdown** + **remark-gfm** - Markdown 报告渲染（含目录导航、代码块复制）
+- **lucide-react** - 图标库
 
 ### Python
 
@@ -301,31 +322,76 @@ python3 backend/analyze_product.py --batch-all --max-workers 5 --batch-plain
 
 ## 本地 Web 控制台
 
+### 一键启动前后端
+
+```bash
+cd web
+npm install
+npm run dev:all
+```
+
+`dev:all` 通过 `concurrently` 同时启动:
+- **后端** FastAPI (`backend/start_server.py`) → `http://127.0.0.1:8765`
+- **前端** Vite dev server → `http://127.0.0.1:5173`
+
+前端代理 `/api/*` 到后端,零配置即可联调。
+
+### 分别启动
+
 后端:
 
 ```bash
 python3 backend/analyzer_server.py
+# 或
+python3 backend/start_server.py --port 8765 --reload
 ```
 
 前端:
 
 ```bash
 cd web
-npm install
 npm run dev
 ```
 
-默认前端代理到 `http://127.0.0.1:8765`。
+### 控制台能力
 
-第一版控制台能力:
+- **新建分析任务** - 表单验证（产品名长度、URL 格式）。
+- **任务列表** - 搜索、筛选（全部/运行中/已完成/失败）、状态徽章。
+- **Workflow 步骤可视化** - 进度条、步骤连接线、状态图标、可展开详情。
+- **实时日志** - WebSocket 推送,日志级别筛选（All/Info/Warn/Error）、自动滚动、复制/下载。
+- **截图画廊** - 网格/列表视图、Lightbox 全屏预览、键盘导航（←→Esc）。
+- **最终报告渲染** - Markdown 渲染（标题、列表、代码块、表格、图片）、目录导航（TOC）、导出/打印。
+- **Credential 处理** - 动态字段表单、字段验证、加密保存。
+- **暗色/亮色主题** - 一键切换、`localStorage` 持久化、系统偏好自动检测。
 
-- 新建分析任务。
-- 查看任务列表和当前 workflow 步骤。
-- 通过 WebSocket 看 `run.log` / `events.jsonl` 实时输出。
-- 查看最终 `report.md`。
-- 处理 credential 请求,通过本地 keyring 加密保存。
+### 前端技术栈
 
-前端分层:
+| 技术 | 版本 | 用途 |
+|---|---|---|
+| React | ^19.0.0 | UI 框架 |
+| Vite | ^6.0.0 | 构建工具 |
+| Tailwind CSS | ^4.3.0 | 原子化样式 + 暗色/亮色主题 |
+| react-markdown | ^10.1.0 | Markdown 报告渲染 |
+| remark-gfm | ^4.0.1 | GitHub Flavored Markdown 支持 |
+| lucide-react | ^0.468.0 | 图标库 |
+
+### 后端 API 端点
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/api/runs` | GET | 列出所有分析任务。 |
+| `/api/runs` | POST | 创建新任务（后台线程启动）。 |
+| `/api/runs/{run_id}` | GET | 获取任务详情（metadata + workflow）。 |
+| `/api/runs/{run_id}/steps/{step_file}` | GET | 获取步骤文件内容。 |
+| `/api/runs/{run_id}/report` | GET | 获取最终报告 Markdown。 |
+| `/api/runs/{run_id}/screenshots` | GET | **新增**：列出截图文件列表。 |
+| `/api/runs/{run_id}/screenshots/{name}` | GET | 获取单张截图图片。 |
+| `/api/runs/{run_id}/credentials` | POST | 提交 credential。 |
+| `/api/runs/{run_id}/stream` | WS | WebSocket 实时日志推送。 |
+
+CORS 源可通过环境变量配置：`ANALYZER_CORS_ORIGINS=http://localhost:3000,http://localhost:5173`
+
+### 前端分层
 
 | 目录 | 作用 |
 |---|---|
@@ -334,6 +400,7 @@ npm run dev
 | `web/src/hooks/` | 数据加载、轮询、WebSocket hooks。 |
 | `web/src/api.ts` | 后端 API 封装。 |
 | `web/src/types.ts` | 共享类型。 |
+| `web/docs/` | UI/UX 设计文档。 |
 
 ---
 
@@ -409,6 +476,14 @@ npm install
 npm run build
 ```
 
+一键启动验证:
+
+```bash
+cd web
+npm run dev:all
+# 浏览器打开 http://127.0.0.1:5173
+```
+
 sandbox smoke:
 
 ```bash
@@ -437,6 +512,7 @@ python -m tests.sandbox.sandbox_ctl_smoke
 - `web/node_modules/`
 - `web/dist/`
 - `web/*.tsbuildinfo`
+- `web/docs/`（设计文档，可选手动提交）
 
 ---
 
