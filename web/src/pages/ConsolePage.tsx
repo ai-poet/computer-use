@@ -4,7 +4,6 @@ import { LogPanel } from '../components/LogPanel';
 import { ReportPanel } from '../components/ReportPanel';
 import { RunSidebar } from '../components/RunSidebar';
 import { TopBar } from '../components/TopBar';
-import { WorkflowPanel } from '../components/WorkflowPanel';
 import { ErrorState } from '../components/ErrorState';
 import { useRuns } from '../hooks/useRuns';
 import { useRunStream } from '../hooks/useRunStream';
@@ -92,8 +91,7 @@ export function ConsolePage() {
           />
         ) : (
           <section className="grid">
-            <WorkflowPanel steps={detail?.workflow.steps || []} />
-            <LogPanel log={log} />
+            <LogPanel log={log} run={selectedRun} />
             <CredentialPanel detail={detail} runId={selected} />
             <ReportPanel report={report} runId={selected} />
           </section>

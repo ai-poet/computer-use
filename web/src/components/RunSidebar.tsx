@@ -46,7 +46,17 @@ export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate, isLo
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<RunStatus | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // 动态提取所有 category（去重，排除空值）
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    runs.forEach((r) => {
+      if (r.queue?.category) set.add(r.queue.category);
+    });
+    return Array.from(set).sort();
+  }, [runs]);
 
   const filteredRuns = useMemo(() => {
     let result = runs;
@@ -57,8 +67,11 @@ export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate, isLo
     if (filter !== 'all') {
       result = result.filter((r) => inferStatus(r) === filter);
     }
+    if (categoryFilter !== 'all') {
+      result = result.filter((r) => r.queue?.category === categoryFilter);
+    }
     return result;
-  }, [runs, search, filter]);
+  }, [runs, search, filter, categoryFilter]);
 
   function validate(): boolean {
     const e: Record<string, string> = {};
@@ -221,6 +234,35 @@ export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate, isLo
             </button>
           ))}
         </div>
+
+        {/* Category filter */}
+        {categories.length > 0 && (
+          <div className="flex gap-1 flex-wrap">
+            <button
+              onClick={() => setCategoryFilter('all')}
+              className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
+                categoryFilter === 'all'
+                  ? 'bg-secondary-50 text-secondary-600 border border-secondary-200'
+                  : 'text-text-tertiary hover:text-text-secondary border border-transparent'
+              }`}
+            >
+              全部种类
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
+                  categoryFilter === cat
+                    ? 'bg-secondary-50 text-secondary-600 border border-secondary-200'
+                    : 'text-text-tertiary hover:text-text-secondary border border-transparent'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Refresh */}
@@ -237,16 +279,17 @@ export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate, isLo
         {isLoading ? (
           <LoadingState variant="skeleton-card" count={3} />
         ) : filteredRuns.length === 0 ? (
-          search || filter !== 'all' ? (
+          search || filter !== 'all' || categoryFilter !== 'all' ? (
             <EmptyState
               variant="search"
               title="未找到匹配任务"
-              description={`没有符合 "${search}" 的任务`}
+              description="没有符合当前筛选条件的任务"
               action={{
-                label: '清除搜索',
+                label: '清除筛选',
                 onClick: () => {
                   setSearch('');
                   setFilter('all');
+                  setCategoryFilter('all');
                 }
               }}
             />

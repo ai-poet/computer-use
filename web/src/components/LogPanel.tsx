@@ -5,14 +5,18 @@ import {
   Check,
   Trash2,
   Download,
-  Filter
+  Filter,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { EmptyState } from './EmptyState';
+import type { Run } from '../types';
 
 type LogLevel = 'all' | 'info' | 'warn' | 'error';
 
 interface LogPanelProps {
   log: string;
+  run?: Run;
 }
 
 function parseLogLine(line: string): { timestamp?: string; level?: string; message: string } {
@@ -42,7 +46,15 @@ function levelColor(level?: string): string {
   }
 }
 
-export function LogPanel({ log }: LogPanelProps) {
+function inferStatus(run?: Run): string {
+  if (!run) return 'pending';
+  if (run.status) return run.status;
+  if (run.finished_at) return 'completed';
+  if (run.current_step) return 'running';
+  return 'pending';
+}
+
+export function LogPanel({ log, run }: LogPanelProps) {
   const scrollRef = useRef<HTMLPreElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [filter, setFilter] = useState<LogLevel>('all');
@@ -187,6 +199,20 @@ export function LogPanel({ log }: LogPanelProps) {
             <p className="text-text-tertiary text-center py-8">没有符合筛选条件的日志</p>
           )}
         </pre>
+      ) : inferStatus(run) === 'completed' ? (
+        <EmptyState
+          variant="empty"
+          title="任务已完成"
+          description="该任务未产生日志输出"
+          icon={CheckCircle2}
+        />
+      ) : inferStatus(run) === 'pending' ? (
+        <EmptyState
+          variant="empty"
+          title="任务未开始"
+          description="任务排队中，开始运行后将显示日志"
+          icon={Clock}
+        />
       ) : (
         <EmptyState
           variant="loading"
