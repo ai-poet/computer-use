@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createRun, getReport, getRun, listRuns } from '../../shared/lib/api';
-import type { CreateRunPayload, Run, RunDetail } from './types';
+import { createBatchRuns, createRun, getReport, getRun, listRuns } from '../../shared/lib/api';
+import type { CreateBatchRunsPayload, CreateRunPayload, Run, RunDetail } from './types';
+
+type RefreshOptions = {
+  silent?: boolean;
+};
 
 export function useRuns() {
   const [runs, setRuns] = useState<Run[]>([]);
@@ -15,24 +19,23 @@ export function useRuns() {
     [runs, selected]
   );
 
-  const refreshRuns = useCallback(async (preferredId?: string) => {
-    setIsLoading(true);
+  const refreshRuns = useCallback(async (preferredId?: string, options: RefreshOptions = {}) => {
+    if (!options.silent) setIsLoading(true);
     setError(null);
     try {
       const data = await listRuns();
       setRuns(data);
-      const nextSelected = preferredId || selected;
-      if (nextSelected && data.some((run) => run.id === nextSelected)) {
-        setSelected(nextSelected);
-      } else if (!nextSelected && data.length) {
-        setSelected(data[0].id);
-      }
+      setSelected((current) => {
+        const nextSelected = preferredId || current;
+        if (nextSelected && data.some((run) => run.id === nextSelected)) return nextSelected;
+        return data[0]?.id || '';
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载任务列表失败');
     } finally {
-      setIsLoading(false);
+      if (!options.silent) setIsLoading(false);
     }
-  }, [selected]);
+  }, []);
 
   const refreshDetail = useCallback(async (runId = selected) => {
     if (!runId) {
@@ -46,7 +49,7 @@ export function useRuns() {
         getReport(runId)
       ]);
       setDetail(nextDetail);
-      setReport(nextReport);
+      setReport((current) => (current === nextReport ? current : nextReport));
     } catch (err) {
       console.error('Failed to refresh detail:', err);
     }
@@ -61,15 +64,25 @@ export function useRuns() {
     return created;
   }, [refreshRuns, refreshDetail]);
 
+  const startBatch = useCallback(async (payload: CreateBatchRunsPayload) => {
+    setError(null);
+    const created = await createBatchRuns(payload);
+    const firstId = created.ids[0] || '';
+    if (firstId) setSelected(firstId);
+    await refreshRuns(firstId, { silent: true });
+    await refreshDetail(firstId);
+    return created;
+  }, [refreshRuns, refreshDetail]);
+
   useEffect(() => {
     void refreshRuns();
-  }, []);
+  }, [refreshRuns]);
 
   useEffect(() => {
     if (!selected) return;
     void refreshDetail(selected);
     const detailTimer = window.setInterval(() => void refreshDetail(selected), 3000);
-    const listTimer = window.setInterval(() => void refreshRuns(selected), 5000);
+    const listTimer = window.setInterval(() => void refreshRuns(selected, { silent: true }), 5000);
     return () => {
       window.clearInterval(detailTimer);
       window.clearInterval(listTimer);
@@ -86,6 +99,7 @@ export function useRuns() {
     error,
     setSelected,
     refreshRuns,
-    startRun
+    startRun,
+    startBatch
   };
 }

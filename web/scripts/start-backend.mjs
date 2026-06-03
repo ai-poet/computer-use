@@ -31,19 +31,26 @@ if (!python) {
   process.exit(1);
 }
 
+const detached = process.platform !== 'win32';
 const child = spawn(python, [backendScript, ...process.argv.slice(2)], {
   cwd: webRoot,
+  detached,
   stdio: 'inherit'
 });
 
 function forward(signal) {
-  if (!child.killed) child.kill(signal);
+  if (child.killed) return;
+  if (detached) {
+    process.kill(-child.pid, signal);
+  } else {
+    child.kill(signal);
+  }
 }
 
 process.on('SIGINT', () => forward('SIGTERM'));
 process.on('SIGTERM', () => forward('SIGTERM'));
 
 child.on('exit', (code, signal) => {
-  if (signal) process.kill(process.pid, signal);
+  if (signal && signal !== 'SIGTERM') process.kill(process.pid, signal);
   process.exit(code ?? 0);
 });

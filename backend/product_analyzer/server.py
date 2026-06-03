@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import threading
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .batch import run_single
+from .batch import run_rows, run_single
 from .config import REPORTS_DIR
 from .credentials import store_credential
 from .preflight import check_local_sandbox_prereqs
@@ -30,6 +31,21 @@ class CreateRunRequest(BaseModel):
     product_name: str = Field(min_length=1, max_length=80)
     url: str = Field(min_length=1)
     download_url: str | None = None
+    sandbox_image: str = "linux"
+    android: bool = True
+
+
+class CreateBatchRunRow(BaseModel):
+    product_name: str = Field(min_length=1, max_length=80)
+    url: str = Field(min_length=1)
+    download_url: str | None = None
+    category: str | None = None
+
+
+class CreateBatchRunsRequest(BaseModel):
+    rows: list[CreateBatchRunRow] = Field(min_length=1, max_length=200)
+    max_workers: int = Field(default=2, ge=1, le=20)
+    queue_name: str | None = None
     sandbox_image: str = "linux"
     android: bool = True
 
@@ -143,6 +159,69 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
     thread.start()
     _RUN_THREADS[run_id] = thread
     return {"id": run_id, "state": "starting", "warnings": meta.get("warnings", []) + warnings}
+
+
+@app.post("/api/runs/batch")
+def create_batch_runs(req: CreateBatchRunsRequest) -> dict[str, Any]:
+    ctx = build_sandbox_context(
+        req.sandbox_image,
+        mode="local",
+        android_enabled=req.android,
+    )
+    warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
+    queue_name = (req.queue_name or "web-import").strip() or "web-import"
+    batch_id = f"web-{uuid.uuid4().hex[:8]}"
+    rows: list[dict[str, str | None]] = []
+    ids: list[str] = []
+
+    for index, item in enumerate(req.rows, start=1):
+        category = (item.category or queue_name).strip() or "web-import"
+        out_dir = prepare_output_dir(item.product_name, category=category)
+        write_metadata_seed(
+            out_dir,
+            item.product_name,
+            item.url,
+            item.download_url,
+            runtime=ctx.runtime,
+            sandbox_image=ctx.image,
+            sandbox_local=ctx.local,
+            sandbox_mode=ctx.mode,
+            android_enabled=ctx.android_enabled,
+            queue_category=category,
+            queue_file=queue_name,
+        )
+        seed_workflow(out_dir)
+        ids.append(_run_id(out_dir))
+        rows.append(
+            {
+                "product_name": item.product_name,
+                "url": item.url,
+                "download_url": item.download_url,
+                "queue_category": category,
+                "queue_file": queue_name,
+                "out_dir": str(out_dir),
+            }
+        )
+
+    def _worker() -> None:
+        run_rows(
+            rows,
+            max_workers=req.max_workers,
+            sandbox_ctx=ctx,
+            queue_name=queue_name,
+            sandbox_warnings=warnings,
+            plain=True,
+        )
+
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+    _RUN_THREADS[batch_id] = thread
+    return {
+        "batch_id": batch_id,
+        "ids": ids,
+        "state": "starting",
+        "warnings": warnings,
+    }
 
 
 @app.get("/api/runs/{run_id}")

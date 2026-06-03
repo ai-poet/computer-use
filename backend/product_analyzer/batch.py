@@ -326,6 +326,44 @@ def run_single(
             cleanup_all_local_sandboxes()
 
 
+def run_rows(
+    rows: list[dict[str, str | None]],
+    max_workers: int,
+    *,
+    sandbox_ctx: SandboxContext,
+    queue_name: str = "web-import",
+    sandbox_warnings: list[str] | None = None,
+    plain: bool = True,
+) -> BatchResult:
+    """Run already-normalized queue rows without reading a queue file.
+
+    Used by the Web console, which creates real output directories before the
+    worker starts so new batch runs appear in the task list immediately.
+    """
+    store = BatchRunStore(
+        rows,
+        max_workers=max_workers,
+        queue_name=queue_name,
+        dashboard_active=not plain,
+    )
+    reset_batch_cleanup_gate()
+    install_batch_exit_hooks(local=sandbox_ctx.local)
+    try:
+        return asyncio.run(
+            _run_batch(
+                rows,
+                max_workers,
+                sandbox_ctx=sandbox_ctx,
+                sandbox_warnings=sandbox_warnings or [],
+                store=store,
+            )
+        )
+    finally:
+        uninstall_batch_exit_hooks()
+        if sandbox_ctx.local:
+            cleanup_all_local_sandboxes()
+
+
 async def _run_one_with_semaphore(
     sem: asyncio.Semaphore,
     row: dict[str, str | None],

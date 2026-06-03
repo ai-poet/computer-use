@@ -63,3 +63,25 @@ export type CreateRunResponse = {
   state: 'starting';
   warnings: string[];
 };
+
+export type BatchRunInput = {
+  product_name: string;
+  url: string;
+  download_url?: string | null;
+  category?: string | null;
+};
+
+export type CreateBatchRunsPayload = {
+  rows: BatchRunInput[];
+  max_workers: number;
+  queue_name?: string | null;
+  sandbox_image: string;
+  android: boolean;
+};
+
+export type CreateBatchRunsResponse = {
+  batch_id: string;
+  ids: string[];
+  state: 'starting';
+  warnings: string[];
+};

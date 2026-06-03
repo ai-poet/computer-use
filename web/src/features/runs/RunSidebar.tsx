@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
-import type { CreateRunPayload, Run } from './types';
+import type { CreateBatchRunsPayload, CreateRunPayload, Run } from './types';
+import { RunBatchImport } from './RunBatchImport';
 import { RunCreateForm } from './RunCreateForm';
 import { RunFilters } from './RunFilters';
 import { RunList } from './RunList';
@@ -18,10 +19,19 @@ type Props = {
   onSelect: (id: string) => void;
   onRefresh: () => void;
   onCreate: (payload: CreateRunPayload) => Promise<unknown>;
+  onCreateBatch: (payload: CreateBatchRunsPayload) => Promise<unknown>;
   isLoading?: boolean;
 };
 
-export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate, isLoading }: Props) {
+export function RunSidebar({
+  runs,
+  selected,
+  onSelect,
+  onRefresh,
+  onCreate,
+  onCreateBatch,
+  isLoading
+}: Props) {
   const [filters, setFilters] = useState<RunFilterState>(DEFAULT_RUN_FILTERS);
 
   const categories = useMemo(() => collectRunCategories(runs), [runs]);
@@ -42,6 +52,7 @@ export function RunSidebar({ runs, selected, onSelect, onRefresh, onCreate, isLo
       </div>
 
       <RunCreateForm onCreate={onCreate} />
+      <RunBatchImport onCreateBatch={onCreateBatch} />
       <RunFilters filters={filters} categories={categories} onChange={setFilters} onRefresh={onRefresh} />
       <RunList runs={filteredRuns} selected={selected} isLoading={isLoading} onSelect={onSelect} />
     </aside>

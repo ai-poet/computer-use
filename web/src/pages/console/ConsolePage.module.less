@@ -8,9 +8,11 @@
 }
 
 .main {
+  min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .workspace {
@@ -55,10 +57,20 @@
 
 @media (max-width: 980px) {
   .app {
+    min-height: 100vh;
+    height: auto;
     grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .main {
+    overflow: visible;
   }
 
   .workspace {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
     grid-template-columns: 1fr;
     grid-template-areas:
       "logs"

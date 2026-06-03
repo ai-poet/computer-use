@@ -87,6 +87,80 @@
   animation: reveal 160ms ease-out;
 }
 
+.batch {
+  display: grid;
+  gap: 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.batchTop,
+.batchMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.batchTitle,
+.fileButton,
+.workerControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.batchTitle {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.fileButton {
+  min-height: 26px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0 8px;
+  color: var(--text-secondary);
+  background: var(--bg-soft);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.fileButton input {
+  display: none;
+}
+
+.batchMeta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.workerControl {
+  flex: 0 0 auto;
+}
+
+.workerInput {
+  width: 46px;
+  min-height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 6px;
+  color: var(--text-primary);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+}
+
+.batchStatus {
+  display: grid;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .tools {
   display: grid;
   gap: 8px;
@@ -263,6 +337,20 @@
 @keyframes reveal {
   from { opacity: 0; transform: translateY(-3px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 980px) {
+  .sidebar {
+    height: auto;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .list {
+    flex: none;
+    max-height: 360px;
+  }
 }
 
 @media (max-width: 980px) {

@@ -1,4 +1,11 @@
-import type { CreateRunPayload, CreateRunResponse, Run, RunDetail } from '../../features/runs/types';
+import type {
+  CreateBatchRunsPayload,
+  CreateBatchRunsResponse,
+  CreateRunPayload,
+  CreateRunResponse,
+  Run,
+  RunDetail
+} from '../../features/runs/types';
 import type { Screenshot } from '../../features/report/types';
 
 function runPath(runId: string): string {
@@ -28,6 +35,16 @@ export async function createRun(payload: CreateRunPayload): Promise<CreateRunRes
   });
   if (!res.ok) throw new Error(await errorMessage(res, 'failed to create run'));
   return (await res.json()) as CreateRunResponse;
+}
+
+export async function createBatchRuns(payload: CreateBatchRunsPayload): Promise<CreateBatchRunsResponse> {
+  const res = await fetch('/api/runs/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to create batch runs'));
+  return (await res.json()) as CreateBatchRunsResponse;
 }
 
 export async function getRun(runId: string): Promise<RunDetail> {

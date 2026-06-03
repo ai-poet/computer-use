@@ -21,7 +21,8 @@ export function ConsolePage() {
     error,
     setSelected,
     refreshRuns,
-    startRun
+    startRun,
+    startBatch
   } = useRuns();
   const log = useRunStream(selected);
   const { isDark, toggle } = useTheme();
@@ -47,8 +48,9 @@ export function ConsolePage() {
         runs={runs}
         selected={selected}
         onSelect={setSelected}
-        onRefresh={() => void refreshRuns(selected)}
+        onRefresh={() => void refreshRuns(selected, { silent: true })}
         onCreate={startRun}
+        onCreateBatch={startBatch}
         isLoading={isLoading}
       />
       <main className={styles.main}>
@@ -56,7 +58,7 @@ export function ConsolePage() {
           run={selectedRun}
           isDark={isDark}
           onToggleTheme={toggle}
-          onRefresh={() => void refreshRuns(selected)}
+          onRefresh={() => void refreshRuns(selected, { silent: true })}
         />
         {error ? (
           <div className={styles.error}>{error}</div>
