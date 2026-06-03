@@ -1,0 +1,142 @@
+.panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 720;
+}
+
+.count {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.bar {
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg-soft);
+  margin-bottom: 12px;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+  transition: width 250ms ease;
+}
+
+.steps {
+  display: grid;
+  gap: 2px;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 9px;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.step:hover {
+  background: var(--surface-hover);
+}
+
+.connector {
+  position: absolute;
+  top: 29px;
+  bottom: -7px;
+  left: 16px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--border-subtle);
+}
+
+.connectorDone {
+  background: color-mix(in srgb, var(--success) 62%, var(--border-subtle));
+}
+
+.icon {
+  position: relative;
+  z-index: 1;
+  margin-top: 1px;
+  color: var(--text-muted);
+}
+
+.completed {
+  color: var(--success);
+}
+
+.failed {
+  color: var(--danger);
+}
+
+.running {
+  color: var(--accent);
+}
+
+.stepMain {
+  min-width: 0;
+}
+
+.stepTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.index {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.stepTitle {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expanded {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}

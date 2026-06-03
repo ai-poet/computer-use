@@ -386,7 +386,11 @@ def _run_one(
     if store.should_skip_job(index):
         return _cancelled_result(row, sandbox_ctx, index)
 
-    out_dir = prepare_output_dir(product_name, category=queue_category)
+    prepared_out_dir = row.get("out_dir")
+    out_dir = Path(prepared_out_dir) if prepared_out_dir else prepare_output_dir(product_name, category=queue_category)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "screenshots").mkdir(exist_ok=True)
+    (out_dir / "downloads").mkdir(exist_ok=True)
     log_file = out_dir / "run.log"
     store.mark_running(index, out_dir=str(out_dir), log_file=str(log_file))
 

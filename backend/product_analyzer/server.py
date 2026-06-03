@@ -19,9 +19,11 @@ from .batch import run_single
 from .config import REPORTS_DIR
 from .credentials import store_credential
 from .preflight import check_local_sandbox_prereqs
+from .renderer import render_event
 from .sandbox_runtime import build_sandbox_context
-from .tasks import list_tasks, read_metadata
+from .tasks import list_tasks, prepare_output_dir, read_metadata, write_metadata_seed
 from .workflow import load_workflow, workflow_path
+from .workflow import seed_workflow
 
 
 class CreateRunRequest(BaseModel):
@@ -81,6 +83,7 @@ def list_runs() -> list[dict[str, Any]]:
         entry = task["dir"]
         meta = read_metadata(entry) or {}
         wf = _safe_load_workflow(entry)
+        steps = wf.get("steps") if isinstance(wf.get("steps"), list) else []
         rows.append(
             {
                 "id": _run_id(entry),
@@ -90,8 +93,11 @@ def list_runs() -> list[dict[str, Any]]:
                 "queue": meta.get("queue"),
                 "mode": meta.get("mode"),
                 "runtime": meta.get("runtime"),
+                "status": _run_status(entry, meta, wf),
+                "started_at": meta.get("started_at") or wf.get("started_at"),
                 "finished_at": meta.get("finished_at"),
                 "current_step": wf.get("current_step"),
+                "progress": _workflow_progress(steps),
             }
         )
     return rows
@@ -105,26 +111,38 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
         android_enabled=req.android,
     )
     warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
-    holder: dict[str, Any] = {}
+    out_dir = prepare_output_dir(req.product_name)
+    meta = write_metadata_seed(
+        out_dir,
+        req.product_name,
+        req.url,
+        req.download_url,
+        runtime=ctx.runtime,
+        sandbox_image=ctx.image,
+        sandbox_local=ctx.local,
+        sandbox_mode=ctx.mode,
+        android_enabled=ctx.android_enabled,
+    )
+    seed_workflow(out_dir)
+    run_id = _run_id(out_dir)
 
     def _worker() -> None:
-        result = run_single(
+        run_single(
             {
                 "product_name": req.product_name,
                 "url": req.url,
                 "download_url": req.download_url,
+                "out_dir": str(out_dir),
             },
             sandbox_ctx=ctx,
             sandbox_warnings=warnings,
             plain=True,
         )
-        holder.update(result)
 
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
-    run_key = f"pending-{id(thread)}"
-    _RUN_THREADS[run_key] = thread
-    return {"id": run_key, "state": "starting", "warnings": warnings}
+    _RUN_THREADS[run_id] = thread
+    return {"id": run_id, "state": "starting", "warnings": meta.get("warnings", []) + warnings}
 
 
 @app.get("/api/runs/{run_id}")
@@ -153,7 +171,7 @@ def get_report(run_id: str) -> str:
     out_dir = _resolve_run(run_id)
     path = out_dir / "report.md"
     if not path.is_file():
-        raise api_error(404, "report not found", f"{path.name} missing in run directory")
+        return ""
     return path.read_text(encoding="utf-8")
 
 
@@ -206,6 +224,8 @@ async def stream_run(websocket: WebSocket, run_id: str) -> None:
     log_path = out_dir / "run.log"
     events_path = out_dir / "events.jsonl"
     positions = {log_path: 0, events_path: 0}
+    render_state: dict[str, Any] = {"session_id": None, "last_action": "starting"}
+    seq = 0
     try:
         while True:
             for path in (log_path, events_path):
@@ -220,9 +240,49 @@ async def stream_run(websocket: WebSocket, run_id: str) -> None:
                     fh.seek(positions[path])
                     chunk = fh.read()
                     positions[path] = fh.tell()
-                await websocket.send_json({"file": path.name, "chunk": chunk})
+                if path == log_path:
+                    lines: list[dict[str, Any]] = []
+                    for raw in chunk.splitlines():
+                        rendered = render_event(raw, render_state)
+                        if rendered is None:
+                            seq += 1
+                            lines.append(
+                                {
+                                    "id": f"{path.name}:{positions[path]}:{seq}",
+                                    "source": path.name,
+                                    "kind": "raw",
+                                    "text": raw,
+                                    "tone": "normal",
+                                    "indent": 0,
+                                    "raw": raw,
+                                }
+                            )
+                            continue
+                        for item in rendered:
+                            seq += 1
+                            line = item.to_dict()
+                            line["id"] = f"{path.name}:{positions[path]}:{seq}"
+                            line["source"] = path.name
+                            line.setdefault("raw", _truncate_raw(raw))
+                            lines.append(line)
+                    await websocket.send_json(
+                        {"source": path.name, "chunk": chunk, "lines": lines}
+                    )
+                else:
+                    events = []
+                    for raw in chunk.splitlines():
+                        try:
+                            event = json.loads(raw)
+                        except json.JSONDecodeError:
+                            event = {"event": "raw", "message": raw}
+                        events.append(event)
+                    await websocket.send_json(
+                        {"source": path.name, "chunk": chunk, "events": events}
+                    )
             await asyncio.sleep(1)
     except WebSocketDisconnect:
+        return
+    except asyncio.CancelledError:
         return
 
 
@@ -253,6 +313,36 @@ def _inside(path: Path, parent: Path) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _truncate_raw(raw: str, limit: int = 2000) -> str:
+    if len(raw) <= limit:
+        return raw
+    return raw[:limit] + "…"
+
+
+def _workflow_progress(steps: list[Any]) -> dict[str, int]:
+    total = len(steps)
+    completed = 0
+    for step in steps:
+        if isinstance(step, dict) and step.get("status") in {"completed", "skipped"}:
+            completed += 1
+    percent = round((completed / total) * 100) if total else 0
+    return {"completed": completed, "total": total, "percent": percent}
+
+
+def _run_status(out_dir: Path, meta: dict[str, Any], workflow: dict[str, Any]) -> str:
+    report_md = out_dir / "report.md"
+    steps = workflow.get("steps") if isinstance(workflow.get("steps"), list) else []
+    if meta.get("finished_at") and report_md.exists() and report_md.stat().st_size > 200:
+        return "completed"
+    if any(isinstance(step, dict) and step.get("status") == "failed" for step in steps):
+        return "failed"
+    if meta.get("last_session_id") or any(
+        isinstance(step, dict) and step.get("status") == "in_progress" for step in steps
+    ):
+        return "running"
+    return "pending"
 
 
 def main() -> int:

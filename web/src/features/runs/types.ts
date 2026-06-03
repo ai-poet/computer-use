@@ -1,7 +1,14 @@
 export type RunStatus = 'running' | 'pending' | 'completed' | 'failed' | 'paused' | 'cancelled';
 
+export type RunProgress = {
+  completed: number;
+  total: number;
+  percent: number;
+};
+
 export type Run = {
   id: string;
+  out_dir?: string;
   product_name: string;
   url?: string;
   mode?: string | null;
@@ -10,10 +17,11 @@ export type Run = {
     category?: string | null;
     file?: string | null;
   } | null;
+  status: RunStatus;
+  started_at?: string | null;
   finished_at?: string | null;
   current_step?: string | null;
-  status?: RunStatus;
-  created_at?: string;
+  progress?: RunProgress;
 };
 
 export type WorkflowStep = {
@@ -34,6 +42,7 @@ export type CredentialRequest = {
 
 export type RunDetail = {
   id: string;
+  out_dir?: string;
   metadata: Record<string, unknown>;
   workflow: {
     steps?: WorkflowStep[];
@@ -49,16 +58,8 @@ export type CreateRunPayload = {
   android: boolean;
 };
 
-export type Screenshot = {
+export type CreateRunResponse = {
   id: string;
-  filename: string;
-  url: string;
-  source: 'web' | 'app' | 'android';
-  label: string;
-};
-
-export type ApiError = {
-  message: string;
-  status?: number;
-  code?: string;
+  state: 'starting';
+  warnings: string[];
 };

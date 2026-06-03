@@ -19,6 +19,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "concurrently": "^9.0.0",
+    "less": "^4.6.4",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.7.0"
   }

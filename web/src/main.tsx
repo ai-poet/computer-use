@@ -1,10 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConsolePage } from './pages/ConsolePage';
-import './styles.css';
+import { App } from './app/App';
+import './shared/styles/global.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ConsolePage />
+    <App />
   </React.StrictMode>
 );

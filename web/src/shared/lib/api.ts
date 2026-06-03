@@ -1,27 +1,38 @@
-import type { CreateRunPayload, Run, RunDetail, Screenshot } from './types';
+import type { CreateRunPayload, CreateRunResponse, Run, RunDetail } from '../../features/runs/types';
+import type { Screenshot } from '../../features/report/types';
 
 function runPath(runId: string): string {
   return encodeURIComponent(runId);
 }
 
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = await res.json();
+    return data?.detail?.error || data?.detail?.detail || data?.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function listRuns(): Promise<Run[]> {
   const res = await fetch('/api/runs');
-  if (!res.ok) throw new Error('failed to list runs');
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to list runs'));
   return (await res.json()) as Run[];
 }
 
-export async function createRun(payload: CreateRunPayload): Promise<void> {
+export async function createRun(payload: CreateRunPayload): Promise<CreateRunResponse> {
   const res = await fetch('/api/runs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  if (!res.ok) throw new Error('failed to create run');
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to create run'));
+  return (await res.json()) as CreateRunResponse;
 }
 
 export async function getRun(runId: string): Promise<RunDetail> {
   const res = await fetch(`/api/runs/${runPath(runId)}`);
-  if (!res.ok) throw new Error('failed to load run');
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to load run'));
   return (await res.json()) as RunDetail;
 }
 
@@ -45,7 +56,7 @@ export async function listScreenshots(runId: string): Promise<Screenshot[]> {
       filename,
       url: `/api/runs/${runPath(runId)}/screenshots/${encodeURIComponent(filename)}`,
       source,
-      label: filename.replace(/\.png$/i, '').replace(/\d+_/, '')
+      label: filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '').replace(/^\d+_/, '')
     };
   });
 }
@@ -61,5 +72,10 @@ export async function submitCredential(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ request_id: requestId, label, fields })
   });
-  if (!res.ok) throw new Error('failed to submit credential');
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to submit credential'));
+}
+
+export function screenshotUrl(runId: string, src: string): string {
+  const name = src.replace(/^\.?\//, '').replace(/^screenshots\//, '');
+  return `/api/runs/${runPath(runId)}/screenshots/${encodeURIComponent(name)}`;
 }
