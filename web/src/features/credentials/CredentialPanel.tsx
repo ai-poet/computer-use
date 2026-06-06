@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, KeyRound, Loader2, Shield } from 'lucide-react';
-import { submitCredential } from '../../shared/lib/api';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, CheckCircle2, KeyRound, Loader2, Shield, Trash2 } from 'lucide-react';
+import { deleteCredential, listCredentials, submitCredential } from '../../shared/lib/api';
 import { Button } from '../../shared/ui/Button';
 import { EmptyState } from '../../shared/ui/EmptyState';
+import type { SavedCredential } from '../settings/types';
 import type { RunDetail } from '../runs/types';
 import styles from './CredentialPanel.module.less';
 
@@ -32,6 +33,23 @@ export function CredentialPanel({ detail, runId }: { detail: RunDetail | null; r
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [saved, setSaved] = useState<SavedCredential[]>([]);
+
+  const product = typeof detail?.metadata?.product_name === 'string' ? detail.metadata.product_name : '';
+
+  async function refreshSaved() {
+    if (!product) {
+      setSaved([]);
+      return;
+    }
+    setSaved(await listCredentials(product));
+  }
+
+  useEffect(() => {
+    void refreshSaved();
+    // 凭据列表随选中任务变化刷新
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product, runId, submitState]);
 
   const fieldNames = pending?.fields?.length ? pending.fields : ['username', 'password'];
 
@@ -60,6 +78,11 @@ export function CredentialPanel({ detail, runId }: { detail: RunDetail | null; r
       setSubmitState('error');
       setErrorMsg(err instanceof Error ? err.message : '提交失败');
     }
+  }
+
+  async function remove(id: string) {
+    await deleteCredential(id);
+    await refreshSaved();
   }
 
   return (
@@ -99,6 +122,27 @@ export function CredentialPanel({ detail, runId }: { detail: RunDetail | null; r
             {submitState === 'submitting' ? '提交中...' : submitState === 'success' ? '已提交' : submitState === 'error' ? '提交失败，重试' : '加密保存并提交'}
           </Button>
           <p className={styles.hint}>凭证将加密存储，仅用于本次分析</p>
+        </div>
+      )}
+
+      {saved.length > 0 && (
+        <div className={styles.saved}>
+          <h3 className={styles.savedTitle}>已保存凭据（{product}）</h3>
+          {saved.map((item) => (
+            <div key={item.credential_id} className={styles.savedItem}>
+              <div className={styles.savedMeta}>
+                <span className={styles.savedLabel}>{item.label}</span>
+                <span className={styles.savedFields}>
+                  {(item.field_names || []).join(' · ') || '—'}
+                  {item.source_run && item.source_run !== runId ? ' · 其它任务写入' : ''}
+                </span>
+              </div>
+              <button className={styles.savedDelete} onClick={() => void remove(item.credential_id)} title="删除凭据">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+          <p className={styles.hint}>由 agent 或手动保存，跨同产品任务复用；密钥不在此显示。</p>
         </div>
       )}
     </section>

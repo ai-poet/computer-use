@@ -178,10 +178,15 @@ def _registration_block(*, enabled: bool, provider: str | None) -> str:
         return (
             f"- registration.email.enabled:true\n"
             f"- registration.email.provider:{provider or 'auto'}\n"
-            "- registration.email.tool:`python -m product_analyzer.email_otp`"
+            "- registration.email.tool:`python -m product_analyzer.email_otp`\n"
+            "- credential.store:`python -m product_analyzer.email_otp cred-put/cred-get/cred-list`"
+            "(写入全局钥匙串并标注来源 run + 产品,可跨同产品任务复用;"
+            "secrets 只回当前 tool call,禁止写进 report/metadata/steps)"
         )
     return (
         "- registration.email.enabled:false\n"
         "- registration.email.provider:none\n"
-        "- registration.email.tool:disabled"
+        "- registration.email.tool:disabled\n"
+        "- credential.store:`python -m product_analyzer.email_otp cred-get/cred-list`"
+        "(仍可读取此前为该产品保存的凭据,但不创建新测试邮箱)"
     )

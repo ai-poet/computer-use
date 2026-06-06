@@ -7,6 +7,7 @@ import type {
   RunDetail
 } from '../../features/runs/types';
 import type { Screenshot } from '../../features/report/types';
+import type { SavedCredential, SettingsStatus, SettingsUpdate } from '../../features/settings/types';
 
 function runPath(runId: string): string {
   return encodeURIComponent(runId);
@@ -95,4 +96,34 @@ export async function submitCredential(
 export function screenshotUrl(runId: string, src: string): string {
   const name = src.replace(/^\.?\//, '').replace(/^screenshots\//, '');
   return `/api/runs/${runPath(runId)}/screenshots/${encodeURIComponent(name)}`;
+}
+
+export async function getSettings(): Promise<SettingsStatus> {
+  const res = await fetch('/api/settings');
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to load settings'));
+  return (await res.json()) as SettingsStatus;
+}
+
+export async function updateSettings(payload: SettingsUpdate): Promise<SettingsStatus> {
+  const res = await fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to save settings'));
+  return (await res.json()) as SettingsStatus;
+}
+
+export async function listCredentials(product?: string): Promise<SavedCredential[]> {
+  const query = product ? `?product=${encodeURIComponent(product)}` : '';
+  const res = await fetch(`/api/credentials${query}`);
+  if (!res.ok) return [];
+  return (await res.json()) as SavedCredential[];
+}
+
+export async function deleteCredential(credentialId: string): Promise<void> {
+  const res = await fetch(`/api/credentials/${encodeURIComponent(credentialId)}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error(await errorMessage(res, 'failed to delete credential'));
 }

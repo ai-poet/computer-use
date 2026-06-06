@@ -1,4 +1,4 @@
-import { Moon, RefreshCw, Sun } from 'lucide-react';
+import { Moon, RefreshCw, Settings, Sun } from 'lucide-react';
 import { Button } from '../../shared/ui/Button';
 import { StatusBadge } from '../../shared/ui/StatusBadge';
 import type { Run } from '../../features/runs/types';
@@ -9,9 +9,10 @@ type TopBarProps = {
   isDark: boolean;
   onToggleTheme: () => void;
   onRefresh: () => void;
+  onOpenSettings: () => void;
 };
 
-export function TopBar({ run, isDark, onToggleTheme, onRefresh }: TopBarProps) {
+export function TopBar({ run, isDark, onToggleTheme, onRefresh, onOpenSettings }: TopBarProps) {
   return (
     <header className={styles.bar}>
       <div className={styles.identity}>
@@ -24,6 +25,9 @@ export function TopBar({ run, isDark, onToggleTheme, onRefresh }: TopBarProps) {
         </p>
       </div>
       <div className={styles.actions}>
+        <Button iconOnly variant="ghost" onClick={onOpenSettings} title="全局配置">
+          <Settings size={17} />
+        </Button>
         <Button iconOnly variant="ghost" onClick={onToggleTheme} title={isDark ? '切换到亮色模式' : '切换到暗色模式'}>
           {isDark ? <Sun size={17} /> : <Moon size={17} />}
         </Button>

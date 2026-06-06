@@ -50,12 +50,15 @@ export type RunDetail = {
   };
 };
 
+export type EmailOverrides = Record<string, string>;
+
 export type CreateRunPayload = {
   product_name: string;
   url: string;
   download_url?: string | null;
   sandbox_image: string;
   android: boolean;
+  email_overrides?: EmailOverrides | null;
 };
 
 export type CreateRunResponse = {

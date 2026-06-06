@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CredentialPanel } from '../../features/credentials/CredentialPanel';
 import { LogPanel } from '../../features/logs/LogPanel';
 import { useRunStream } from '../../features/logs/useRunStream';
 import { ReportPanel } from '../../features/report/ReportPanel';
 import { RunSidebar } from '../../features/runs/RunSidebar';
 import { useRuns } from '../../features/runs/useRuns';
+import { SettingsModal } from '../../features/settings/SettingsModal';
 import { WorkflowPanel } from '../../features/workflow/WorkflowPanel';
 import { TopBar } from './TopBar';
 import { useTheme } from '../../app/theme';
@@ -26,6 +27,7 @@ export function ConsolePage() {
   } = useRuns();
   const log = useRunStream(selected);
   const { isDark, toggle } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -59,6 +61,7 @@ export function ConsolePage() {
           isDark={isDark}
           onToggleTheme={toggle}
           onRefresh={() => void refreshRuns(selected, { silent: true })}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
         {error ? (
           <div className={styles.error}>{error}</div>
@@ -77,6 +80,7 @@ export function ConsolePage() {
           </section>
         )}
       </main>
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

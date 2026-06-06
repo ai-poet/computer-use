@@ -14,8 +14,29 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT / "backend"))
 
 from product_analyzer import email_otp  # noqa: E402
+from product_analyzer import credentials as cred_store  # noqa: E402
 from product_analyzer.tasks import write_metadata_seed  # noqa: E402
 from product_analyzer.workflow import load_workflow, redact_text, seed_workflow  # noqa: E402
+
+
+class _FakeKeyring:
+    class errors:  # noqa: N801
+        class PasswordDeleteError(Exception):
+            pass
+
+    def __init__(self) -> None:
+        self.store: dict[tuple[str, str], str] = {}
+
+    def get_password(self, service, key):
+        return self.store.get((service, key))
+
+    def set_password(self, service, key, value):
+        self.store[(service, key)] = value
+
+    def delete_password(self, service, key):
+        if (service, key) not in self.store:
+            raise self.errors.PasswordDeleteError()
+        del self.store[(service, key)]
 
 
 class TestEmailOtpConfig(unittest.TestCase):
@@ -73,6 +94,7 @@ class TestEmailOtpAddress(unittest.TestCase):
             with mock.patch.dict(
                 "os.environ",
                 {
+                    "ANALYZER_CONFIG_DIR": tmp,
                     "ANALYZER_EMAIL_PROVIDER": "imap",
                     "ANALYZER_IMAP_HOST": "imap.example.com",
                     "ANALYZER_IMAP_USERNAME": "user",
@@ -100,6 +122,7 @@ class TestEmailOtpAddress(unittest.TestCase):
             with mock.patch.dict(
                 "os.environ",
                 {
+                    "ANALYZER_CONFIG_DIR": tmp,
                     "ANALYZER_EMAIL_PROVIDER": "imap",
                     "ANALYZER_IMAP_HOST": "imap.example.com",
                     "ANALYZER_IMAP_USERNAME": "user",
@@ -134,6 +157,62 @@ class TestEmailOtpExtraction(unittest.TestCase):
         self.assertNotIn("123456", redacted)
         self.assertNotIn("sk-test", redacted)
         self.assertIn("[REDACTED]", redacted)
+
+
+class TestCredentialStore(unittest.TestCase):
+    def setUp(self) -> None:
+        self._fake_kr = _FakeKeyring()
+        patcher = mock.patch.object(cred_store, "_keyring", return_value=self._fake_kr)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_cred_put_get_list_roundtrip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp)
+            write_metadata_seed(out_dir, "Example Product", "https://example.com", None)
+            seed_workflow(out_dir)
+
+            put = email_otp.cred_put(out_dir, "login account", {"username": "u@x.com", "password": "pw"})
+            self.assertTrue(put["ok"])
+            self.assertEqual(put["product"], "Example Product")
+            self.assertEqual(put["field_names"], ["password", "username"])
+
+            listing = email_otp.cred_list(out_dir)
+            self.assertEqual(len(listing["credentials"]), 1)
+            entry = listing["credentials"][0]
+            self.assertEqual(entry["label"], "login account")
+            # 列表只含元数据,不含 secret 值
+            self.assertNotIn("fields", entry)
+            self.assertNotIn("pw", json.dumps(listing, ensure_ascii=False))
+
+            got = email_otp.cred_get(out_dir)
+            self.assertTrue(got["ok"])
+            self.assertEqual(got["fields"], {"username": "u@x.com", "password": "pw"})
+
+    def test_cred_get_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp)
+            write_metadata_seed(out_dir, "No Creds", "https://example.com", None)
+            seed_workflow(out_dir)
+            got = email_otp.cred_get(out_dir)
+            self.assertFalse(got["ok"])
+            self.assertEqual(got["error"], "not_found")
+
+    def test_cred_isolated_per_product(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            a = Path(tmp) / "a"
+            b = Path(tmp) / "b"
+            a.mkdir()
+            b.mkdir()
+            write_metadata_seed(a, "Product A", "https://a.com", None)
+            write_metadata_seed(b, "Product B", "https://b.com", None)
+            seed_workflow(a)
+            seed_workflow(b)
+            email_otp.cred_put(a, "acct", {"username": "a@x.com"})
+            # B 看不到 A 的凭据
+            self.assertFalse(email_otp.cred_get(b)["ok"])
+            self.assertEqual(len(email_otp.cred_list(b)["credentials"]), 0)
+            self.assertEqual(len(email_otp.cred_list(b, all_products=True)["credentials"]), 1)
 
 
 if __name__ == "__main__":

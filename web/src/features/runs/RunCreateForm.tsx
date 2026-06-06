@@ -87,17 +87,43 @@ export function RunCreateForm({ onCreate }: Props) {
       </button>
 
       {showAdvanced && (
-        <label className={cn(styles.field, styles.advanced)}>
-          <span className={styles.label}>下载链接（可选）</span>
-          <input
-            className={styles.input}
-            value={form.download_url}
-            onChange={(event) => updateField('download_url', event.target.value)}
-            onBlur={validate}
-            placeholder="直接指向安装包的 URL"
-          />
-          {errors.download_url && <span className={styles.errorText}>{errors.download_url}</span>}
-        </label>
+        <>
+          <label className={cn(styles.field, styles.advanced)}>
+            <span className={styles.label}>下载链接（可选）</span>
+            <input
+              className={styles.input}
+              value={form.download_url}
+              onChange={(event) => updateField('download_url', event.target.value)}
+              onBlur={validate}
+              placeholder="直接指向安装包的 URL"
+            />
+            {errors.download_url && <span className={styles.errorText}>{errors.download_url}</span>}
+          </label>
+
+          <label className={cn(styles.field, styles.advanced)}>
+            <span className={styles.label}>邮箱 Provider 覆盖（可选）</span>
+            <select
+              className={styles.input}
+              value={form.email_provider}
+              onChange={(event) => updateField('email_provider', event.target.value)}
+            >
+              <option value="">继承全局配置</option>
+              <option value="auto">auto</option>
+              <option value="mailosaur">mailosaur</option>
+              <option value="imap">imap</option>
+            </select>
+          </label>
+
+          <label className={cn(styles.field, styles.advanced)}>
+            <span className={styles.label}>固定邮箱覆盖（可选）</span>
+            <input
+              className={styles.input}
+              value={form.email_address}
+              onChange={(event) => updateField('email_address', event.target.value)}
+              placeholder="留空继承全局；仅 IMAP 生效"
+            />
+          </label>
+        </>
       )}
 
       <Button variant="primary" full disabled={submitting}>

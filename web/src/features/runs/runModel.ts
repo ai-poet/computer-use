@@ -4,6 +4,8 @@ export type RunDraft = {
   product_name: string;
   url: string;
   download_url: string;
+  email_provider: string;
+  email_address: string;
 };
 
 export type RunValidationErrors = Partial<Record<keyof RunDraft, string>>;
@@ -17,7 +19,9 @@ export type RunFilterState = {
 export const EMPTY_RUN_DRAFT: RunDraft = {
   product_name: '',
   url: '',
-  download_url: ''
+  download_url: '',
+  email_provider: '',
+  email_address: ''
 };
 
 export const DEFAULT_RUN_FILTERS: RunFilterState = {
@@ -89,11 +93,16 @@ export function hasValidationErrors(errors: RunValidationErrors): boolean {
 }
 
 export function toCreateRunPayload(draft: RunDraft): CreateRunPayload {
+  const overrides: Record<string, string> = {};
+  if (draft.email_provider.trim()) overrides.provider = draft.email_provider.trim();
+  if (draft.email_address.trim()) overrides.email_address = draft.email_address.trim();
+
   return {
     product_name: draft.product_name.trim(),
     url: draft.url.trim(),
     download_url: draft.download_url.trim() || null,
     sandbox_image: 'linux',
-    android: true
+    android: true,
+    email_overrides: Object.keys(overrides).length ? overrides : null
   };
 }
