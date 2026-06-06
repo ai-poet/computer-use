@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .batch_store import BatchRunStore, JobState
+from . import app_config
 from .claude_driver import run_claude
 from .config import REPO_ROOT
 from .prompts import build_prompt
@@ -313,10 +314,11 @@ def run_single(
     plain: bool = True,
     email_registration_enabled: bool = False,
     email_registration_provider: str | None = None,
+    email_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run one sandbox-first analysis using the same worker path as batch."""
     row = dict(row)
-    _apply_email_registration([row], email_registration_enabled, email_registration_provider)
+    _apply_email_registration([row], email_registration_enabled, email_registration_provider, email_overrides)
     store = BatchRunStore(
         [row],
         max_workers=1,
@@ -343,13 +345,14 @@ def run_rows(
     plain: bool = True,
     email_registration_enabled: bool = False,
     email_registration_provider: str | None = None,
+    email_overrides: dict[str, Any] | None = None,
 ) -> BatchResult:
     """Run already-normalized queue rows without reading a queue file.
 
     Used by the Web console, which creates real output directories before the
     worker starts so new batch runs appear in the task list immediately.
     """
-    _apply_email_registration(rows, email_registration_enabled, email_registration_provider)
+    _apply_email_registration(rows, email_registration_enabled, email_registration_provider, email_overrides)
     store = BatchRunStore(
         rows,
         max_workers=max_workers,
@@ -378,10 +381,14 @@ def _apply_email_registration(
     rows: list[dict[str, str | None]],
     enabled: bool,
     provider: str | None,
+    overrides: dict[str, Any] | None = None,
 ) -> None:
+    blob = app_config.overrides_env_blob(overrides)
     for row in rows:
         row["email_registration_enabled"] = "1" if enabled else "0"
         row["email_registration_provider"] = provider or ""
+        if blob and not row.get("email_overrides"):
+            row["email_overrides"] = blob
 
 
 async def _run_one_with_semaphore(
@@ -442,6 +449,15 @@ def _run_one(
     queue_file = row.get("queue_file") or None
     email_registration_enabled = row.get("email_registration_enabled") == "1"
     email_registration_provider = row.get("email_registration_provider") or None
+    email_overrides: dict[str, Any] = {}
+    raw_overrides = row.get("email_overrides")
+    if raw_overrides:
+        try:
+            parsed = json.loads(raw_overrides)
+            if isinstance(parsed, dict):
+                email_overrides = parsed
+        except json.JSONDecodeError:
+            email_overrides = {}
 
     if store.should_skip_job(index):
         return _cancelled_result(row, sandbox_ctx, index)
@@ -476,6 +492,8 @@ def _run_one(
 
     env = os.environ.copy()
     env.update(sandbox_ctx.env())
+    if email_registration_enabled:
+        env.update(app_config.email_env_delta(email_overrides or None))
     env.update(
         {
             "ANALYZER_OUTPUT_DIR": str(out_dir),

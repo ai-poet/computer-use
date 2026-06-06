@@ -17,8 +17,9 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from .batch import run_rows, run_single
+from . import app_config
 from .config import REPORTS_DIR
-from .credentials import store_credential
+from .credentials import delete_credential, list_credentials, store_credential
 from .email_otp import resolve_config as resolve_email_config
 from .preflight import check_local_sandbox_prereqs
 from .renderer import render_event
@@ -35,6 +36,7 @@ class CreateRunRequest(BaseModel):
     sandbox_image: str = "linux"
     android: bool = True
     email_registration: bool | None = None
+    email_overrides: dict[str, str] | None = None
 
 
 class CreateBatchRunRow(BaseModel):
@@ -51,6 +53,24 @@ class CreateBatchRunsRequest(BaseModel):
     sandbox_image: str = "linux"
     android: bool = True
     email_registration: bool | None = None
+    email_overrides: dict[str, str] | None = None
+
+
+class SettingsUpdateRequest(BaseModel):
+    # 非敏感字段
+    provider: str | None = None
+    mailosaur_server_id: str | None = None
+    mailosaur_server_domain: str | None = None
+    imap_host: str | None = None
+    imap_port: str | None = None
+    imap_username: str | None = None
+    imap_ssl: str | None = None
+    imap_folder: str | None = None
+    email_address: str | None = None
+    alias_mode: str | None = None
+    # 敏感字段(写 keyring;空字符串=清除,缺省=保持不变)
+    mailosaur_api_key: str | None = None
+    imap_password: str | None = None
 
 
 class CredentialSubmitRequest(BaseModel):
@@ -83,10 +103,13 @@ def _cors_origins() -> list[str]:
     ]
 
 
-def _resolve_email_registration(flag: bool | None) -> tuple[bool, str | None, str | None]:
+def _resolve_email_registration(
+    flag: bool | None, overrides: dict[str, str] | None = None
+) -> tuple[bool, str | None, str | None]:
     if flag is False:
         return False, None, "disabled"
-    cfg = resolve_email_config()
+    env = app_config.effective_email_env(overrides)
+    cfg = resolve_email_config(env)
     if flag is True:
         return cfg.enabled, cfg.selected_provider, cfg.reason
     if cfg.enabled:
@@ -140,7 +163,9 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
         mode="local",
         android_enabled=req.android,
     )
-    email_enabled, email_provider, email_reason = _resolve_email_registration(req.email_registration)
+    email_enabled, email_provider, email_reason = _resolve_email_registration(
+        req.email_registration, req.email_overrides
+    )
     warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
     out_dir = prepare_output_dir(req.product_name)
     meta = write_metadata_seed(
@@ -172,6 +197,7 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
             plain=True,
             email_registration_enabled=email_enabled,
             email_registration_provider=email_provider,
+            email_overrides=req.email_overrides,
         )
 
     thread = threading.Thread(target=_worker, daemon=True)
@@ -190,7 +216,9 @@ def create_batch_runs(req: CreateBatchRunsRequest) -> dict[str, Any]:
         mode="local",
         android_enabled=req.android,
     )
-    email_enabled, email_provider, email_reason = _resolve_email_registration(req.email_registration)
+    email_enabled, email_provider, email_reason = _resolve_email_registration(
+        req.email_registration, req.email_overrides
+    )
     warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
     queue_name = (req.queue_name or "web-import").strip() or "web-import"
     batch_id = f"web-{uuid.uuid4().hex[:8]}"
@@ -238,6 +266,7 @@ def create_batch_runs(req: CreateBatchRunsRequest) -> dict[str, Any]:
             plain=True,
             email_registration_enabled=email_enabled,
             email_registration_provider=email_provider,
+            email_overrides=req.email_overrides,
         )
 
     thread = threading.Thread(target=_worker, daemon=True)
@@ -307,7 +336,13 @@ def get_screenshot(run_id: str, name: str) -> FileResponse:
 @app.post("/api/runs/{run_id}/credentials")
 def submit_credential(run_id: str, req: CredentialSubmitRequest) -> dict[str, Any]:
     out_dir = _resolve_run(run_id)
-    ref = store_credential(req.label, req.fields)
+    meta = read_metadata(out_dir) or {}
+    ref = store_credential(
+        req.label,
+        req.fields,
+        source_run=run_id,
+        product=str(meta.get("product_name") or out_dir.name),
+    )
     wf = _safe_load_workflow(out_dir)
     requests = wf.setdefault("credential_requests", [])
     for item in requests:
@@ -320,6 +355,34 @@ def submit_credential(run_id: str, req: CredentialSubmitRequest) -> dict[str, An
         encoding="utf-8",
     )
     return {"ok": True, "credential_id": ref.credential_id}
+
+
+@app.get("/api/settings")
+def get_settings() -> dict[str, Any]:
+    return app_config.settings_status()
+
+
+@app.put("/api/settings")
+def update_settings(req: SettingsUpdateRequest) -> dict[str, Any]:
+    data = req.model_dump(exclude_unset=True)
+    non_secret = {k: v for k, v in data.items() if k in app_config.FIELD_TO_ENV}
+    if non_secret:
+        app_config.save_settings(non_secret)
+    for field in app_config.SECRET_FIELD_TO_ENV:
+        if field in data:
+            app_config.set_secret(field, data[field])
+    return app_config.settings_status()
+
+
+@app.get("/api/credentials")
+def get_credentials(product: str | None = None) -> list[dict[str, Any]]:
+    return list_credentials(product=product)
+
+
+@app.delete("/api/credentials/{credential_id}")
+def remove_credential(credential_id: str) -> dict[str, Any]:
+    delete_credential(credential_id)
+    return {"ok": True}
 
 
 @app.websocket("/api/runs/{run_id}/stream")

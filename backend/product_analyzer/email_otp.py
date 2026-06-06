@@ -12,7 +12,6 @@ import email
 import email.policy
 import imaplib
 import json
-import os
 import re
 import socket
 import ssl
@@ -27,6 +26,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from . import app_config
+from . import credentials as cred_store
 from .tasks import read_metadata, slugify, update_metadata
 from .workflow import load_workflow, write_workflow
 
@@ -64,7 +65,8 @@ class EmailConfig:
 
 
 def resolve_config(env: dict[str, str] | None = None) -> EmailConfig:
-    env = env or os.environ
+    if env is None:
+        env = app_config.effective_email_env()
     requested = (env.get("ANALYZER_EMAIL_PROVIDER") or PROVIDER_AUTO).strip().lower()
     if requested not in PROVIDERS:
         return EmailConfig(
@@ -308,6 +310,61 @@ def mark_failed(out_dir: Path, reason: str) -> dict[str, Any]:
 def mark_skipped(out_dir: Path, reason: str) -> dict[str, Any]:
     _merge_registration(out_dir, status="skipped", failure_reason=reason)
     return _result(True, status="skipped", failure_reason=reason)
+
+
+def _run_id_for(out_dir: Path) -> str:
+    return out_dir.resolve().name
+
+
+def cred_put(
+    out_dir: Path,
+    label: str,
+    fields: dict[str, str],
+) -> dict[str, Any]:
+    """Agent-facing: persist a credential to the global store, tagged with the
+    source run + product so later runs of the same product can reuse it."""
+    meta = read_metadata(out_dir) or {}
+    product = meta.get("product_name") or out_dir.name
+    ref = cred_store.store_credential(
+        label,
+        fields,
+        source_run=_run_id_for(out_dir),
+        product=str(product),
+    )
+    return _result(
+        True,
+        credential_id=ref.credential_id,
+        label=ref.label,
+        product=str(product),
+        field_names=sorted(fields.keys()),
+    )
+
+
+def cred_list(out_dir: Path | None = None, *, all_products: bool = False) -> dict[str, Any]:
+    product = None
+    if out_dir is not None and not all_products:
+        meta = read_metadata(out_dir) or {}
+        product = str(meta.get("product_name") or out_dir.name)
+    entries = cred_store.list_credentials(product=product)
+    return _result(True, product=product, credentials=entries)
+
+
+def cred_get(out_dir: Path, *, label: str | None = None) -> dict[str, Any]:
+    """Agent-facing: fetch a previously saved credential's secret fields by
+    product (optionally filtered by label). Returns secrets to THIS tool call
+    only — callers must not echo them into reports/artifacts."""
+    meta = read_metadata(out_dir) or {}
+    product = str(meta.get("product_name") or out_dir.name)
+    payload = cred_store.find_credential(product=product, label=label)
+    if payload is None:
+        return _result(False, error="not_found", product=product)
+    return _result(
+        True,
+        credential_id=payload.get("credential_id"),
+        label=payload.get("label"),
+        product=product,
+        fields=payload.get("fields") or {},
+    )
 
 
 def extract_code_from_mailosaur(message: Any) -> str | None:
@@ -642,7 +699,36 @@ def _build_parser() -> argparse.ArgumentParser:
         mark.add_argument("--out-dir", type=Path, required=True)
         mark.add_argument("--reason", required=True)
 
+    put = sub.add_parser("cred-put", help="Persist a credential to the global store")
+    put.add_argument("--out-dir", type=Path, required=True)
+    put.add_argument("--label", required=True, help="Human label, e.g. 'login account'")
+    put.add_argument(
+        "--field",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Credential field (repeatable), e.g. --field username=foo --field password=bar",
+    )
+
+    listing = sub.add_parser("cred-list", help="List saved credentials (metadata only)")
+    listing.add_argument("--out-dir", type=Path, default=None)
+    listing.add_argument("--all", action="store_true", help="List across all products")
+
+    getter = sub.add_parser("cred-get", help="Fetch saved credential fields for this product")
+    getter.add_argument("--out-dir", type=Path, required=True)
+    getter.add_argument("--label", default=None, help="Optional label filter")
+
     return parser
+
+
+def _parse_fields(pairs: list[str]) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    for pair in pairs:
+        key, sep, value = pair.partition("=")
+        if not sep or not key.strip():
+            raise ValueError(f"invalid --field (expected KEY=VALUE): {pair!r}")
+        fields[key.strip()] = value
+    return fields
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -671,6 +757,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "mark-skipped":
             _emit(mark_skipped(args.out_dir, args.reason))
             return 0
+        if args.command == "cred-put":
+            payload = cred_put(args.out_dir, args.label, _parse_fields(args.field))
+            _emit(payload)
+            return 0 if payload.get("ok") else 1
+        if args.command == "cred-list":
+            _emit(cred_list(args.out_dir, all_products=args.all))
+            return 0
+        if args.command == "cred-get":
+            payload = cred_get(args.out_dir, label=args.label)
+            _emit(payload)
+            return 0 if payload.get("ok") else 1
     except Exception as exc:
         _emit(_result(False, error=f"{type(exc).__name__}: {exc}"))
         return 1

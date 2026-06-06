@@ -3,6 +3,8 @@
 模块依赖方向(自下而上,无环):
 
     config       路径常量 + ANSI 配色 + USE_COLOR 开关
+    app_config   全局设置(JSON)+ keyring secrets + email env 合并
+    credentials  keyring 凭据存储 + 索引(list/find/delete)
     ui           log/err/prompt_str/Spinner — 终端 I/O
     batch_store  BatchJob / BatchRunStore — 批量任务状态(线程安全)
     batch_dashboard  curses 批量控制台(列表/详情/暂停续跑)
@@ -10,6 +12,7 @@
     preflight    detect_host/ensure_claude_cli/ensure_cua_driver
     tasks        slugify / metadata I/O / list_tasks / pick_resume_target
     workflow     workflow.json / steps / hook validation helpers
+    email_otp    邮箱 OTP/链接工具 + 凭据写读 CLI(依赖 app_config/credentials)
     sandbox_runtime  batch 本地 Cua sandbox 运行上下文
     sandbox_ctl  bootstrap/step/teardown 逐步控制桥
     android_ctl  Android QEMU sandbox + sb.mobile 逐步控制桥
