@@ -65,7 +65,9 @@ python -m product_analyzer.workflow_cli ...
 - 禁止用 shell 抓官网作为主路径。官网必须在沙盒 Firefox 中通过截图、点击、滚动、输入来真实浏览。
 - `step shell` 只允许下载安装包直链、安装命令、读系统信息、排障。
 - 不从第三方 APK 镜像站下载 APK。
-- 不绕过登录、不创建账号、不保存明文 credential。
+- 不绕过登录。只有 prompt 明确 `registration.email.enabled:true` 时,才允许使用系统提供的测试邮箱创建一次低风险测试账号。
+- 不保存明文 credential、验证码、邮箱 API key、邮箱密码、session token。
+- 禁止手机号注册、绕过 CAPTCHA、邀请码破解、付费绑卡、营销邀请、批量滥用注册。
 - Android sandbox 必须是独立于 Linux Firefox sandbox 的第二个 sandbox;只有找到官方 APK 后才启动。
 - `sandbox_ctl` 只用于 Linux/Firefox 桌面沙盒;Android 移动端必须用 `backend/android_ctl.py` 或同等 Cua SDK `sb.mobile` 脚本。
 
@@ -83,3 +85,20 @@ python -m product_analyzer.workflow_cli ...
 2. 暂停等待用户通过前端/控制台提交。
 3. 有 credential 就继续体验;没有就记录 warning 并降级到可访问范围。
 4. 不把 secret 写入 `metadata.json`、`events.jsonl`、`steps/*.md` 或 `report.md`。
+
+## Email registration
+
+遇到登录/注册墙且 prompt 显示 `registration.email.enabled:true` 时,可优先尝试邮箱注册:
+
+1. 先截图记录登录/注册入口,确认存在邮箱注册路径。
+2. 调 `python -m product_analyzer.email_otp status` 确认 provider 可用。
+3. 调 `python -m product_analyzer.email_otp create-address --out-dir "$OUTPUT_DIR"` 获取测试邮箱。
+4. 在目标网页/客户端中填写测试邮箱和一次性随机密码;密码只用于当前 UI 输入,不得写入产物。
+5. 若需要验证码,调 `python -m product_analyzer.email_otp wait-code --out-dir "$OUTPUT_DIR" --email "<email>" --timeout 90`;若需要邮箱链接,调 `wait-link`。
+6. 注册成功后调 `mark-completed --used-for web|desktop|android`;失败/跳过则调 `mark-failed` 或 `mark-skipped` 写原因。
+
+限制:
+- 每个 run 最多创建 1 个测试账号,最多等待验证码 2 轮。
+- 如果 plus alias 被产品拒绝,可重新 `create-address --force-fixed` 用固定邮箱重试一次。
+- 遇到 CAPTCHA、手机号必填、邀请码、人工审核、付费/绑卡、企业邮箱限制,立即停止注册并降级。
+- 阶段报告和最终报告只写“使用测试邮箱完成/未完成注册及原因”,不得暴露完整邮箱、验证码、密码。

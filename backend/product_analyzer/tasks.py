@@ -79,6 +79,8 @@ def write_metadata_seed(
     sandbox_local: bool = True,
     sandbox_mode: str | None = None,
     android_enabled: bool = False,
+    email_registration_enabled: bool = False,
+    email_registration_provider: str | None = None,
     queue_category: str | None = None,
     queue_file: str | None = None,
 ) -> dict:
@@ -103,6 +105,15 @@ def write_metadata_seed(
             "apk_file": None,
             "package_name": None,
             "mode": None,
+        },
+        "registration": {
+            "enabled": email_registration_enabled,
+            "provider": email_registration_provider,
+            "status": "available" if email_registration_enabled else "not_configured",
+            "email_domain": None,
+            "alias_mode": None,
+            "failure_reason": None,
+            "used_for": None,
         },
         "workflow": {
             "file": "workflow.json",

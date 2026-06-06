@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from .batch import run_rows, run_single
 from .config import REPORTS_DIR
 from .credentials import store_credential
+from .email_otp import resolve_config as resolve_email_config
 from .preflight import check_local_sandbox_prereqs
 from .renderer import render_event
 from .sandbox_runtime import build_sandbox_context
@@ -33,6 +34,7 @@ class CreateRunRequest(BaseModel):
     download_url: str | None = None
     sandbox_image: str = "linux"
     android: bool = True
+    email_registration: bool | None = None
 
 
 class CreateBatchRunRow(BaseModel):
@@ -48,6 +50,7 @@ class CreateBatchRunsRequest(BaseModel):
     queue_name: str | None = None
     sandbox_image: str = "linux"
     android: bool = True
+    email_registration: bool | None = None
 
 
 class CredentialSubmitRequest(BaseModel):
@@ -78,6 +81,17 @@ def _cors_origins() -> list[str]:
         "http://127.0.0.1:3000",
         "http://localhost:3000",
     ]
+
+
+def _resolve_email_registration(flag: bool | None) -> tuple[bool, str | None, str | None]:
+    if flag is False:
+        return False, None, "disabled"
+    cfg = resolve_email_config()
+    if flag is True:
+        return cfg.enabled, cfg.selected_provider, cfg.reason
+    if cfg.enabled:
+        return True, cfg.selected_provider, None
+    return False, None, cfg.reason or "not_configured"
 
 
 app = FastAPI(title="Product Analyzer Console")
@@ -126,6 +140,7 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
         mode="local",
         android_enabled=req.android,
     )
+    email_enabled, email_provider, email_reason = _resolve_email_registration(req.email_registration)
     warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
     out_dir = prepare_output_dir(req.product_name)
     meta = write_metadata_seed(
@@ -138,6 +153,8 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
         sandbox_local=ctx.local,
         sandbox_mode=ctx.mode,
         android_enabled=ctx.android_enabled,
+        email_registration_enabled=email_enabled,
+        email_registration_provider=email_provider,
     )
     seed_workflow(out_dir)
     run_id = _run_id(out_dir)
@@ -153,12 +170,17 @@ def create_run(req: CreateRunRequest) -> dict[str, Any]:
             sandbox_ctx=ctx,
             sandbox_warnings=warnings,
             plain=True,
+            email_registration_enabled=email_enabled,
+            email_registration_provider=email_provider,
         )
 
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
     _RUN_THREADS[run_id] = thread
-    return {"id": run_id, "state": "starting", "warnings": meta.get("warnings", []) + warnings}
+    response_warnings = meta.get("warnings", []) + warnings
+    if not email_enabled and email_reason not in (None, "disabled"):
+        response_warnings.append(f"email registration unavailable: {email_reason}")
+    return {"id": run_id, "state": "starting", "warnings": response_warnings}
 
 
 @app.post("/api/runs/batch")
@@ -168,6 +190,7 @@ def create_batch_runs(req: CreateBatchRunsRequest) -> dict[str, Any]:
         mode="local",
         android_enabled=req.android,
     )
+    email_enabled, email_provider, email_reason = _resolve_email_registration(req.email_registration)
     warnings = check_local_sandbox_prereqs(req.sandbox_image, android_enabled=req.android)
     queue_name = (req.queue_name or "web-import").strip() or "web-import"
     batch_id = f"web-{uuid.uuid4().hex[:8]}"
@@ -187,6 +210,8 @@ def create_batch_runs(req: CreateBatchRunsRequest) -> dict[str, Any]:
             sandbox_local=ctx.local,
             sandbox_mode=ctx.mode,
             android_enabled=ctx.android_enabled,
+            email_registration_enabled=email_enabled,
+            email_registration_provider=email_provider,
             queue_category=category,
             queue_file=queue_name,
         )
@@ -211,16 +236,21 @@ def create_batch_runs(req: CreateBatchRunsRequest) -> dict[str, Any]:
             queue_name=queue_name,
             sandbox_warnings=warnings,
             plain=True,
+            email_registration_enabled=email_enabled,
+            email_registration_provider=email_provider,
         )
 
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
     _RUN_THREADS[batch_id] = thread
+    response_warnings = list(warnings)
+    if not email_enabled and email_reason not in (None, "disabled"):
+        response_warnings.append(f"email registration unavailable: {email_reason}")
     return {
         "batch_id": batch_id,
         "ids": ids,
         "state": "starting",
-        "warnings": warnings,
+        "warnings": response_warnings,
     }
 
 

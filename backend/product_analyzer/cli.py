@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .claude_driver import run_claude
 from .config import BOLD, DIM, RESET
+from .email_otp import resolve_config as resolve_email_config
 from .preflight import (
     check_local_sandbox_prereqs,
     ensure_claude_cli,
@@ -88,6 +89,17 @@ def resolve_android_enabled(args: argparse.Namespace) -> bool:
     return args.sandbox_image == "auto"
 
 
+def resolve_email_registration(args: argparse.Namespace) -> tuple[bool, str | None, str | None]:
+    if getattr(args, "no_email_registration", False):
+        return False, None, "disabled"
+    cfg = resolve_email_config()
+    if getattr(args, "email_registration", False):
+        return cfg.enabled, cfg.selected_provider, cfg.reason
+    if cfg.enabled:
+        return True, cfg.selected_provider, None
+    return False, None, cfg.reason or "not_configured"
+
+
 def _sandbox_first_args(args: argparse.Namespace) -> argparse.Namespace:
     return argparse.Namespace(
         batch=None,
@@ -103,6 +115,8 @@ def _sandbox_first_args(args: argparse.Namespace) -> argparse.Namespace:
         product_name=getattr(args, "product_name", None),
         url=getattr(args, "url", None),
         download_url=getattr(args, "download_url", None),
+        email_registration=getattr(args, "email_registration", False),
+        no_email_registration=getattr(args, "no_email_registration", False),
         resume=False,
     )
 
@@ -207,6 +221,7 @@ def cmd_new_host(args: argparse.Namespace) -> int:
 
     out_dir = prepare_output_dir(product_name)
     log(f"输出目录: {out_dir}")
+    email_enabled, email_provider, _email_reason = resolve_email_registration(args)
     meta = write_metadata_seed(
         out_dir,
         product_name,
@@ -217,6 +232,8 @@ def cmd_new_host(args: argparse.Namespace) -> int:
         sandbox_local=True,
         sandbox_mode="local",
         android_enabled=False,
+        email_registration_enabled=email_enabled,
+        email_registration_provider=email_provider,
     )
     seed_workflow(out_dir)
 
@@ -224,6 +241,8 @@ def cmd_new_host(args: argparse.Namespace) -> int:
         product_name, url, download_url, out_dir,
         meta["host_os"], meta["host_arch"],
         runtime="host",
+        email_registration_enabled=email_enabled,
+        email_registration_provider=email_provider,
         batch_parallel=False,
     )
     rc = run_claude(prompt, out_dir=out_dir)
@@ -241,6 +260,7 @@ def cmd_new_sandbox(args: argparse.Namespace) -> int:
     log(f"输入已确认:product_name={product_name!r}  url={url!r}  download_url={download_url!r}")
     sandbox_args = _sandbox_first_args(args)
     sandbox_ctx, warnings = prepare_batch_context(sandbox_args)
+    email_enabled, email_provider, _email_reason = resolve_email_registration(args)
 
     from .batch import run_single
 
@@ -253,6 +273,8 @@ def cmd_new_sandbox(args: argparse.Namespace) -> int:
         sandbox_ctx=sandbox_ctx,
         sandbox_warnings=warnings,
         plain=True,
+        email_registration_enabled=email_enabled,
+        email_registration_provider=email_provider,
     )
     rc = result["rc"]
     if rc != 0:
@@ -346,6 +368,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
         err("请指定 --batch 或 --batch-all")
         return 1
     sandbox_ctx, warnings = prepare_batch_context(args)
+    email_enabled, email_provider, _email_reason = resolve_email_registration(args)
     plain = getattr(args, "batch_plain", False) or os.environ.get(
         "ANALYZE_BATCH_PLAIN", ""
     ).strip() in ("1", "true", "yes")
@@ -397,6 +420,8 @@ def cmd_batch(args: argparse.Namespace) -> int:
             queue_root=queue_root,
             sandbox_warnings=warnings,
             plain=plain,
+            email_registration_enabled=email_enabled,
+            email_registration_provider=email_provider,
         )
     except KeyboardInterrupt:
         err("用户中断批量任务")
@@ -543,6 +568,19 @@ def _build_parser() -> argparse.ArgumentParser:
         "--no-android",
         action="store_true",
         help="批量时禁用 Android 路径(默认 --sandbox-image linux 时已禁用)。",
+    )
+    parser.add_argument(
+        "--email-registration",
+        action="store_true",
+        help=(
+            "启用自动邮箱注册路径。默认 auto:Mailosaur/IMAP 配置完整时自动启用;"
+            "未配置时该参数只记录为不可用并按 web-only 降级。"
+        ),
+    )
+    parser.add_argument(
+        "--no-email-registration",
+        action="store_true",
+        help="禁用自动邮箱注册路径,即使 Mailosaur/IMAP 已配置。",
     )
     return parser
 

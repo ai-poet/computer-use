@@ -21,6 +21,10 @@
 外部入口只有 ``cli.main``,由 ``backend/analyze_product.py`` 这层 shim 调用。
 """
 
-from .cli import main  # noqa: F401
-
 __all__ = ["main"]
+
+
+def main(argv: list[str] | None = None) -> int:
+    from .cli import main as cli_main
+
+    return cli_main(argv)

@@ -25,6 +25,8 @@ def build_prompt(
     sandbox_image: str | None = None,
     sandbox_local: bool = True,
     android_enabled: bool = False,
+    email_registration_enabled: bool = False,
+    email_registration_provider: str | None = None,
     sandbox_warnings: list[str] | None = None,
     batch_parallel: bool = False,
 ) -> str:
@@ -38,6 +40,8 @@ def build_prompt(
         sandbox_image=sandbox_image,
         sandbox_local=sandbox_local,
         android_enabled=android_enabled,
+        email_registration_enabled=email_registration_enabled,
+        email_registration_provider=email_registration_provider,
         sandbox_warnings=sandbox_warnings or [],
         batch_parallel=batch_parallel,
     )
@@ -113,15 +117,22 @@ def _runtime_block(
     sandbox_image: str | None,
     sandbox_local: bool,
     android_enabled: bool,
+    email_registration_enabled: bool,
+    email_registration_provider: str | None,
     sandbox_warnings: list[str],
     batch_parallel: bool = False,
 ) -> str:
+    registration_block = _registration_block(
+        enabled=email_registration_enabled,
+        provider=email_registration_provider,
+    )
     if runtime not in ("sandbox-local", "sandbox-cloud"):
         return (
             f"- runtime:{runtime}\n"
             "- 路径:host 单任务(非批量、非沙盒)\n"
             "- 驱动:cua-driver + 父 shell curl;**禁止** Cua Sandbox / Docker\n"
-            "- 细则:SKILL.md「Host 单任务」"
+            "- 细则:SKILL.md「Host 单任务」\n"
+            f"{registration_block}"
         )
 
     warning_lines = "\n".join(f"  - {item}" for item in sandbox_warnings) or "  - 无"
@@ -154,8 +165,23 @@ def _runtime_block(
 - android.enabled:{str(android_enabled).lower()}
 - batch.parallel:{str(batch_parallel).lower()}
 {android_rule}
+{registration_block}
 - sandbox 预检 warnings(非致命):
 {warning_lines}
 {local_ctl}
 - **沙盒操作**:必读 SKILL 入口和 workflows/00-contract.md;按 workflows/01-07 逐步执行;禁止整段 asyncio 分析脚本。
 """
+
+
+def _registration_block(*, enabled: bool, provider: str | None) -> str:
+    if enabled:
+        return (
+            f"- registration.email.enabled:true\n"
+            f"- registration.email.provider:{provider or 'auto'}\n"
+            "- registration.email.tool:`python -m product_analyzer.email_otp`"
+        )
+    return (
+        "- registration.email.enabled:false\n"
+        "- registration.email.provider:none\n"
+        "- registration.email.tool:disabled"
+    )

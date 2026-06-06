@@ -8,7 +8,7 @@
 - 没有 Linux/Windows 客户端。
 - Windows + Wine 安装或启动失败。
 - Android 没有官方 APK 或 Android 沙盒失败。
-- 登录墙无 credential。
+- 登录墙既无 credential 也无法完成系统测试邮箱注册。
 
 ## 浏览范围
 
@@ -18,8 +18,15 @@
 - Docs / Help / Changelog。
 - FAQ / Blog / About。
 - 登录入口,只观察不绕过。
+- 若 prompt 显示 `registration.email.enabled:true` 且网页端存在邮箱注册入口,可尝试一次系统测试邮箱注册来观察可访问功能;没有客户端时仍保持 `metadata.mode = web-only`。
 - 可交互 demo:输入、提交、切 tab、播放、错误输入。
 - 语言切换器。
+
+## 邮箱注册边界
+
+- 每个 run 最多 1 个测试账号,最多等待验证码 2 轮。
+- 遇到 CAPTCHA、手机号必填、邀请码、付费绑卡或企业邮箱限制,立即停止并记录原因。
+- 报告只写注册是否完成及原因,不暴露完整邮箱、验证码、密码。
 
 ## 截图
 

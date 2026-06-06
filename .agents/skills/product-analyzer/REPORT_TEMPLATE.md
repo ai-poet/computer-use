@@ -8,9 +8,12 @@
 | 主机 | <darwin/linux/windows> / <arm64/x86_64> |
 | Runtime | <host / sandbox-local> |
 | 模式 | <full / sandbox-full / android / web-only> |
+| 测试邮箱注册 | <未启用 / 已完成 / 未完成:原因> |
 | 用时 | <分钟> |
 
 > 模式说明:**full** = host 上同时分析了官网与桌面应用;**sandbox-full** = 本地 Cua sandbox 内完成官网/桌面应用分析;**android** = 额外分析了 Android APK;**web-only** = 仅基于官网与浏览器截图,未驱动桌面端(原因见下)。
+
+> 邮箱说明:若使用系统测试邮箱完成注册,只写注册状态和原因;不要写完整邮箱、验证码或密码。
 
 <!-- 若 mode = web-only,在此用一句话说明降级原因。例如:
 > 本次为网页版分析,未驱动桌面端 — 当前主机 Linux aarch64 没有 cua-driver-rs 预编译。

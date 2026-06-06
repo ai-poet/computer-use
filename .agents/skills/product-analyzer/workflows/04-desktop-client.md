@@ -28,8 +28,15 @@
 ## Credential
 
 如果客户端需要登录:
-- 写 credential request。
-- 有 credential 时继续;无 credential 时记录登录墙,转 web-only 补足官网证据。
+- 先写 credential request 或 registration 状态。
+- 有 credential 时继续。
+- 无 credential 但 `registration.email.enabled:true` 且存在邮箱注册入口时,按 `00-contract.md` 的 Email registration 流程尝试一次测试邮箱注册。
+- 邮箱注册成功则继续体验;邮箱不可用、验证码超时、CAPTCHA、强制手机号、邀请码或付费绑卡时记录原因,转 web-only 补足官网证据。
+
+邮箱注册操作纪律:
+- 注册页、邮箱输入、验证码输入/验证链接前后都截图。
+- 测试邮箱完整地址、验证码、密码不得写入 `steps/*.md`、`report.md` 或 `metadata.json`。
+- 若 plus alias 被拒绝,可用 `create-address --force-fixed` 固定邮箱重试一次;仍失败就降级。
 
 ## 输出
 

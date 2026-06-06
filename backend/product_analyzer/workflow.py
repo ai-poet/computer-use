@@ -60,7 +60,19 @@ STEP_DEFINITIONS: list[dict[str, str]] = [
 
 STEP_IDS = {item["id"] for item in STEP_DEFINITIONS}
 STEP_FILES = {item["id"]: item["file"] for item in STEP_DEFINITIONS}
-SECRET_KEYS = ("password", "passwd", "token", "secret", "credential", "api_key", "apikey")
+SECRET_KEYS = (
+    "password",
+    "passwd",
+    "token",
+    "secret",
+    "credential",
+    "api_key",
+    "apikey",
+    "otp",
+    "verification_code",
+    "mailosaur_api_key",
+    "imap_password",
+)
 
 
 def workflow_path(out_dir: Path) -> Path:
@@ -123,6 +135,15 @@ def seed_workflow(out_dir: Path, *, force: bool = False) -> dict[str, Any]:
             "desktop_result": None,
             "android_result": None,
             "web_only_reason": None,
+        },
+        "registration": {
+            "enabled": bool((meta.get("registration") or {}).get("enabled")),
+            "provider": (meta.get("registration") or {}).get("provider"),
+            "email_address": None,
+            "status": (meta.get("registration") or {}).get("status") or "not_configured",
+            "alias_mode": (meta.get("registration") or {}).get("alias_mode"),
+            "failure_reason": None,
+            "used_for": None,
         },
         "credential_requests": [],
         "warnings": [],
@@ -205,18 +226,27 @@ def sanitize(value: Any) -> Any:
     if isinstance(value, list):
         return [sanitize(item) for item in value]
     if isinstance(value, str):
-        return _redact_text(value)
+        return redact_text(value)
     return value
 
 
-def _redact_text(text: str) -> str:
+def redact_text(text: str) -> str:
     redacted = text
     patterns = [
         r"(?i)(password|passwd|token|secret|api[_-]?key)\s*[:=]\s*['\"]?[^'\"\s]+",
         r"(?i)(authorization:\s*bearer\s+)[a-z0-9._~+/=-]+",
+        r"(?i)(MAILOSAUR_API_KEY|ANALYZER_IMAP_PASSWORD)\s*[:=]\s*['\"]?[^'\"\s]+",
+        r"(?i)(\"(?:MAILOSAUR_API_KEY|ANALYZER_IMAP_PASSWORD)\"\s*:\s*\")[^\"\s]+(\")",
+        r"(?i)(\"(?:code|otp|verification_code)\"\s*:\s*\")\d{4,8}(\")",
+        r"(?i)('(?:code|otp|verification_code)'\s*:\s*')\d{4,8}(')",
     ]
     for pattern in patterns:
-        redacted = re.sub(pattern, lambda m: m.group(1) + "=[REDACTED]", redacted)
+        def _replace(match: re.Match[str]) -> str:
+            if len(match.groups()) >= 2 and match.group(2) in ("\"", "'"):
+                return match.group(1) + "[REDACTED]" + match.group(2)
+            return match.group(1) + "=[REDACTED]"
+
+        redacted = re.sub(pattern, _replace, redacted)
     return redacted
 
 

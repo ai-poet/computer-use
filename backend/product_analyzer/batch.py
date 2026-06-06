@@ -192,6 +192,8 @@ def run_batch(
     queue_root: Path | None = None,
     sandbox_warnings: list[str] | None = None,
     plain: bool | None = None,
+    email_registration_enabled: bool = False,
+    email_registration_provider: str | None = None,
 ) -> BatchResult:
     """Synchronous wrapper used by CLI."""
     rows, queue_name, _paths = resolve_batch_rows(
@@ -200,6 +202,7 @@ def run_batch(
         batch_all=batch_all,
         queue_root=queue_root,
     )
+    _apply_email_registration(rows, email_registration_enabled, email_registration_provider)
     use_plain = _plain_batch_enabled() if plain is None else plain
     if not use_plain:
         os.environ["ANALYZER_FORCE_COLOR"] = "1"
@@ -308,8 +311,12 @@ def run_single(
     sandbox_ctx: SandboxContext,
     sandbox_warnings: list[str] | None = None,
     plain: bool = True,
+    email_registration_enabled: bool = False,
+    email_registration_provider: str | None = None,
 ) -> dict[str, Any]:
     """Run one sandbox-first analysis using the same worker path as batch."""
+    row = dict(row)
+    _apply_email_registration([row], email_registration_enabled, email_registration_provider)
     store = BatchRunStore(
         [row],
         max_workers=1,
@@ -334,12 +341,15 @@ def run_rows(
     queue_name: str = "web-import",
     sandbox_warnings: list[str] | None = None,
     plain: bool = True,
+    email_registration_enabled: bool = False,
+    email_registration_provider: str | None = None,
 ) -> BatchResult:
     """Run already-normalized queue rows without reading a queue file.
 
     Used by the Web console, which creates real output directories before the
     worker starts so new batch runs appear in the task list immediately.
     """
+    _apply_email_registration(rows, email_registration_enabled, email_registration_provider)
     store = BatchRunStore(
         rows,
         max_workers=max_workers,
@@ -362,6 +372,16 @@ def run_rows(
         uninstall_batch_exit_hooks()
         if sandbox_ctx.local:
             cleanup_all_local_sandboxes()
+
+
+def _apply_email_registration(
+    rows: list[dict[str, str | None]],
+    enabled: bool,
+    provider: str | None,
+) -> None:
+    for row in rows:
+        row["email_registration_enabled"] = "1" if enabled else "0"
+        row["email_registration_provider"] = provider or ""
 
 
 async def _run_one_with_semaphore(
@@ -420,6 +440,8 @@ def _run_one(
     download_url = row.get("download_url")
     queue_category = row.get("queue_category") or None
     queue_file = row.get("queue_file") or None
+    email_registration_enabled = row.get("email_registration_enabled") == "1"
+    email_registration_provider = row.get("email_registration_provider") or None
 
     if store.should_skip_job(index):
         return _cancelled_result(row, sandbox_ctx, index)
@@ -445,6 +467,8 @@ def _run_one(
         sandbox_local=sandbox_ctx.local,
         sandbox_mode=sandbox_ctx.mode,
         android_enabled=sandbox_ctx.android_enabled,
+        email_registration_enabled=email_registration_enabled,
+        email_registration_provider=email_registration_provider,
         queue_category=queue_category,
         queue_file=queue_file,
     )
@@ -458,6 +482,7 @@ def _run_one(
             "ANALYZER_PRODUCT_URL": url,
             "ANALYZER_BATCH_PARALLEL": "1",
             "ANALYZER_PYTHON": sys.executable,
+            "ANALYZER_EMAIL_REGISTRATION_ENABLED": "1" if email_registration_enabled else "0",
             "ANALYZER_SANDBOX_WARNINGS": json.dumps(
                 sandbox_warnings, ensure_ascii=False
             ),
@@ -475,6 +500,8 @@ def _run_one(
         sandbox_image=sandbox_ctx.image,
         sandbox_local=sandbox_ctx.local,
         android_enabled=sandbox_ctx.android_enabled,
+        email_registration_enabled=email_registration_enabled,
+        email_registration_provider=email_registration_provider,
         sandbox_warnings=sandbox_warnings,
         batch_parallel=True,
     )

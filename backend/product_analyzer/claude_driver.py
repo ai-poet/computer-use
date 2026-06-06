@@ -16,6 +16,7 @@ from .config import DIM, RESET, YELLOW
 from .renderer import format_event
 from .tasks import update_metadata
 from .ui import Spinner, err, log
+from .workflow import redact_text
 
 
 _PRINT_LOCK = threading.Lock()
@@ -220,20 +221,21 @@ def run_claude(
             try:
                 for line in proc.stdout:
                     if raw_fh:
-                        raw_fh.write(line)
+                        raw_fh.write(redact_text(line))
                         raw_fh.flush()
                     if log_fh:
-                        log_fh.write(line)
+                        log_fh.write(redact_text(line))
                         log_fh.flush()
                     line = line.rstrip("\n")
                     if not line:
                         continue
-                    pretty = format_event(line, state)
+                    safe_line = redact_text(line)
+                    pretty = format_event(safe_line, state)
                     out_lines: list[str]
                     if pretty is None:
-                        out_lines = [line]
+                        out_lines = [safe_line]
                     else:
-                        out_lines = pretty
+                        out_lines = [redact_text(item) for item in pretty]
                     if event_sink is not None:
                         event_sink(out_lines, dict(state))
                     if spinner is not None:

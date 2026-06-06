@@ -1,4 +1,5 @@
 cua
 fastapi
 keyring
+mailosaur
 uvicorn

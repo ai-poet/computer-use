@@ -122,7 +122,10 @@ python backend/android_ctl.py teardown "$OUTPUT_DIR"
 ## 安全
 
 - 不授予高危权限,只记录弹窗文案和可见选项。
-- 不创建账号。
+- 只有 prompt 显示 `registration.email.enabled:true` 且应用存在邮箱注册入口时,才允许使用系统测试邮箱创建一次低风险测试账号。
+- 禁止手机号注册、绕过 CAPTCHA、邀请码破解、付费绑卡、营销邀请。
+- 邮箱注册成功后继续体验;邮箱不可用、验证码超时、CAPTCHA、强制手机号、邀请码或付费绑卡时记录原因并降级。
+- 测试邮箱完整地址、验证码、密码不得写入产物。
 - 不从第三方 APK 站下载。
 - 安装失败、闪退或 Android sandbox 失败时,写 `metadata.android.mode = failed`,不要让整单失败。
 - Android 失败只影响 `metadata.android.mode` 和 warning;继续用 Linux Firefox web-only 或已有桌面证据完成报告。
