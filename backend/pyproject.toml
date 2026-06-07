@@ -1,0 +1,19 @@
+[project]
+name = "product-analyzer"
+version = "0.1.0"
+description = "把'分析一款新产品'做成一条可重复流水线的后端实现"
+requires-python = ">=3.11"
+dependencies = [
+    "cua",
+    "fastapi",
+    "keyring",
+    "mailosaur",
+    "uvicorn",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -89,32 +89,32 @@ png = await sb.screenshot()
 
 ## android_ctl 用法
 
-Claude Code 操控 Android Docker/QEMU 沙盒时不要复用 `sandbox_ctl`;`sandbox_ctl` 面向 Linux 桌面 Firefox,没有移动端触控语义。Android 路径使用 `backend/android_ctl.py`,它维护 `<output_dir>/android_sandbox.json`,并调用 Cua SDK 的 `sb.mobile` 接口。
+Claude Code 操控 Android Docker/QEMU 沙盒时不要复用 `sandbox_ctl`;`sandbox_ctl` 面向 Linux 桌面 Firefox,没有移动端触控语义。Android 路径使用 `backend/scripts/android_ctl.py`,它维护 `<output_dir>/android_sandbox.json`,并调用 Cua SDK 的 `sb.mobile` 接口。
 
 常用命令:
 
 ```bash
 # 找到官方 APK 后再启动;可在创建镜像时安装 APK
-python backend/android_ctl.py bootstrap "$OUTPUT_DIR" --apk "$OUTPUT_DIR/downloads/app.apk" --install-with-image
+python backend/scripts/android_ctl.py bootstrap "$OUTPUT_DIR" --apk "$OUTPUT_DIR/downloads/app.apk" --install-with-image
 
 # 如果 image builder 安装失败,且 APK 路径在 Android sandbox 内可见,才降级 adb install
-python backend/android_ctl.py bootstrap "$OUTPUT_DIR"
-python backend/android_ctl.py install "$OUTPUT_DIR" "$OUTPUT_DIR/downloads/app.apk"
+python backend/scripts/android_ctl.py bootstrap "$OUTPUT_DIR"
+python backend/scripts/android_ctl.py install "$OUTPUT_DIR" "$OUTPUT_DIR/downloads/app.apk"
 
 # 移动端 observe → act → observe
-python backend/android_ctl.py screenshot "$OUTPUT_DIR" --out screenshots/09_android_launch.png
-python backend/android_ctl.py tap "$OUTPUT_DIR" 540 1600
-python backend/android_ctl.py swipe "$OUTPUT_DIR" 540 1600 540 600 --duration-ms 450
-python backend/android_ctl.py type "$OUTPUT_DIR" "example"
-python backend/android_ctl.py key "$OUTPUT_DIR" back
-python backend/android_ctl.py key "$OUTPUT_DIR" home
-python backend/android_ctl.py screenshot "$OUTPUT_DIR" --out screenshots/10_android_main.png
+python backend/scripts/android_ctl.py screenshot "$OUTPUT_DIR" --out screenshots/09_android_launch.png
+python backend/scripts/android_ctl.py tap "$OUTPUT_DIR" 540 1600
+python backend/scripts/android_ctl.py swipe "$OUTPUT_DIR" 540 1600 540 600 --duration-ms 450
+python backend/scripts/android_ctl.py type "$OUTPUT_DIR" "example"
+python backend/scripts/android_ctl.py key "$OUTPUT_DIR" back
+python backend/scripts/android_ctl.py key "$OUTPUT_DIR" home
+python backend/scripts/android_ctl.py screenshot "$OUTPUT_DIR" --out screenshots/10_android_main.png
 
 # 仅作为降级:adb shell input / monkey / dumpsys 等
-python backend/android_ctl.py shell "$OUTPUT_DIR" -c 'adb shell monkey -p com.example.app 1'
+python backend/scripts/android_ctl.py shell "$OUTPUT_DIR" -c 'adb shell monkey -p com.example.app 1'
 
-python backend/android_ctl.py status "$OUTPUT_DIR"
-python backend/android_ctl.py teardown "$OUTPUT_DIR"
+python backend/scripts/android_ctl.py status "$OUTPUT_DIR"
+python backend/scripts/android_ctl.py teardown "$OUTPUT_DIR"
 ```
 
 每次 `tap/swipe/type/key/shell` 前后都要截图。`android_sandbox.json` 与 `sandbox.json` 是两套状态文件:前者只描述 Android sandbox,后者只描述 Linux Firefox sandbox。
@@ -133,6 +133,6 @@ python backend/android_ctl.py teardown "$OUTPUT_DIR"
 - APK 来源和文件路径。
 - Android 沙盒启动/安装/运行结果。
 - sandbox 名称、镜像来源和是否使用 `Image.from_registry` / `Image.android`。
-- 使用 `backend/android_ctl.py` 或等价 `sb.mobile` 控制脚本的步骤摘要。
+- 使用 `backend/scripts/android_ctl.py` 或等价 `sb.mobile` 控制脚本的步骤摘要。
 - 截图索引。
 - 成功体验则记录为 Android 增强证据;失败则写 warning。

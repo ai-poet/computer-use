@@ -1,6 +1,6 @@
 ---
 name: product-analyzer
-description: 给定产品名和官网 URL,按 Linux-first workflow 在沙盒中访问官网、发现并体验客户端、逐步写阶段报告,最后产出中文产品分析报告。触发方式:backend/analyze_product.py 调用,或对话中“分析/拆解/评测/调研 这个产品 https://...”类请求且包含 URL。
+description: 给定产品名和官网 URL,按 Linux-first workflow 在沙盒中访问官网、发现并体验客户端、逐步写阶段报告,最后产出中文产品分析报告。触发方式:backend/scripts/analyze_product.py 调用,或对话中“分析/拆解/评测/调研 这个产品 https://...”类请求且包含 URL。
 ---
 
 # product-analyzer
@@ -26,7 +26,7 @@ description: 给定产品名和官网 URL,按 Linux-first workflow 在沙盒中�
 - 单任务和批量都先进入 Linux 沙盒。只有调用方显式要求 legacy host 模式时,才走本机 cua-driver。
 - 客户端优先级:Linux 客户端 → Windows 客户端 + Wine → 官方 APK + Android 沙盒 → web-only。
 - 只有 iOS/macOS 客户端、客户端下载/安装失败、拿不到官方 APK、或登录墙既没有 credential 也无法用系统测试邮箱注册时,改走 web-only。
-- 若 prompt 显示 `registration.email.enabled:true`,可用 `python -m product_analyzer.email_otp` 创建一次测试邮箱并读取邮箱验证码/验证链接;禁止手机号注册、绕过 CAPTCHA、邀请码破解、付费绑卡、营销邀请。
+- 若 prompt 显示 `registration.email.enabled:true`,可用 `python backend/scripts/email_otp.py` 创建一次测试邮箱并读取邮箱验证码/验证链接;禁止手机号注册、绕过 CAPTCHA、邀请码破解、付费绑卡、营销邀请。
 
 ## 运行纪律
 

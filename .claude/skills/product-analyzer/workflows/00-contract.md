@@ -49,7 +49,7 @@ reports/<queue-category>/<slug>-YYYY-MM-DD[-N]/
 优先用 Python helper 更新 workflow:
 
 ```bash
-python -m product_analyzer.workflow_cli ...
+python backend/scripts/workflow_cli.py ...
 ```
 
 如果 helper 不可用,可以直接编辑 `workflow.json`,但必须保持 JSON 合法。每个 step 至少记录:
@@ -67,7 +67,7 @@ python -m product_analyzer.workflow_cli ...
 - 不从第三方 APK 镜像站下载 APK。
 - 不绕过登录、不创建账号、不保存明文 credential。
 - Android sandbox 必须是独立于 Linux Firefox sandbox 的第二个 sandbox;只有找到官方 APK 后才启动。
-- `sandbox_ctl` 只用于 Linux/Firefox 桌面沙盒;Android 移动端必须用 `backend/android_ctl.py` 或同等 Cua SDK `sb.mobile` 脚本。
+- `sandbox_ctl` 只用于 Linux/Firefox 桌面沙盒;Android 移动端必须用 `backend/scripts/android_ctl.py` 或同等 Cua SDK `sb.mobile` 脚本。
 
 ## 模式
 

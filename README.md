@@ -20,20 +20,23 @@
 
 | 层 | 目录/文件 | 职责 |
 |---|---|---|
-| CLI 编排层 | `backend/analyze_product.py`, `backend/product_analyzer/cli.py` | 参数解析、预检、建输出目录、启动 Claude 子进程。 |
-| 执行控制层 | `claude_driver.py`, `batch.py`, `sandbox_ctl.py`, `android_ctl.py` | 流式运行 Claude、批量并发、控制 Linux 桌面沙盒和 Android 移动端沙盒。 |
+| CLI 编排层 | `backend/scripts/analyze_product.py`, `backend/src/analysis/cli.py` | 参数解析、预检、建输出目录、启动 Claude 子进程。 |
+| 执行控制层 | `analysis/claude_driver.py`, `batch/batch.py`, `sandbox/sandbox_ctl.py`, `sandbox/android_ctl.py` | 流式运行 Claude、批量并发、控制 Linux 桌面沙盒和 Android 移动端沙盒。 |
 | Workflow 规则层 | `.claude/skills/product-analyzer/` | 决定分析什么、怎么降级、每步产出什么。规则改这里,不改 Python 主流程。 |
-| 可视化层 | `backend/product_analyzer/server.py`, `web/` | 本地 FastAPI + React/Vite 控制台,展示任务、日志、步骤、credential 请求。 |
+| 可视化层 | `backend/src/web/server.py`, `web/` | 本地 FastAPI + React/Vite 控制台,展示任务、日志、步骤、credential 请求。 |
 
-模块依赖方向仍保持单向:
+`backend/src/` 按子包分层,依赖方向单向无环 `core → settings → sandbox → analysis → batch → web`:
 
 ```text
-config → ui → batch_store → batch_dashboard → renderer → preflight → tasks
-       → workflow → sandbox_runtime → sandbox_ctl / android_ctl → prompts → claude_driver
-       → batch → cli
+core/      config ui renderer tasks preflight        # 叶子,仅包内依赖
+settings/  app_config credentials                     # 叶子
+sandbox/   sandbox_runtime sandbox_ctl android_ctl    # 依赖 core
+analysis/  prompts workflow claude_driver email_otp hooks cli workflow_cli   # 依赖 core/settings/sandbox
+batch/     batch_store ansi_curses batch_dashboard batch                     # 依赖 core/settings/sandbox/analysis
+web/       server                                      # 依赖以上全部
 ```
 
-`sandbox_ctl` 是 Linux/Firefox 桌面沙盒控制桥;`android_ctl` 是 Android/QEMU 移动端控制桥。两者都不 import `claude_driver` 或 `batch`。
+唯一前向引用 `cli → batch` 是函数内懒加载,导入期不成环。`sandbox_ctl` 是 Linux/Firefox 桌面沙盒控制桥;`android_ctl` 是 Android/QEMU 移动端控制桥。两者都不 import `claude_driver` 或 `batch`。
 
 ---
 
@@ -42,20 +45,25 @@ config → ui → batch_store → batch_dashboard → renderer → preflight →
 ```text
 computer-use/
 ├── backend/
-│   ├── analyze_product.py                 # CLI shim
-│   ├── analyzer_server.py                 # Web 控制台后端入口
-│   ├── sandbox_ctl.py                     # sandbox_ctl shim
-│   ├── android_ctl.py                     # android_ctl shim
-│   └── product_analyzer/
-│       ├── cli.py                         # 命令入口
-│       ├── batch.py                       # 单任务/批量 worker
-│       ├── claude_driver.py               # claude --print stream-json 编排
-│       ├── sandbox_ctl.py                 # Cua sandbox 单步控制
-│       ├── android_ctl.py                 # Android sb.mobile 单步控制
-│       ├── workflow.py                    # workflow.json / steps 校验
-│       ├── hooks.py                       # Claude hooks 护栏
-│       ├── server.py                      # FastAPI 本地控制台
-│       └── credentials.py                 # 本地 keyring credential 存储
+│   ├── pyproject.toml                     # uv 非包模式 + pytest 配置
+│   ├── uv.lock
+│   ├── scripts/                           # 外部入口 shim(把 src 加入 sys.path)
+│   │   ├── analyze_product.py             # CLI shim
+│   │   ├── analyzer_server.py             # Web 控制台后端入口
+│   │   ├── start_server.py                # 服务器启动入口
+│   │   ├── sandbox_ctl.py                 # sandbox_ctl shim
+│   │   ├── android_ctl.py                 # android_ctl shim
+│   │   ├── email_otp.py                   # email_otp CLI shim
+│   │   ├── workflow_cli.py                # workflow_cli shim
+│   │   └── install_cua_driver.py          # 桌面驱动安装脚本
+│   ├── src/
+│   │   ├── core/                          # config/ui/renderer/tasks/preflight
+│   │   ├── settings/                      # app_config/credentials
+│   │   ├── sandbox/                       # sandbox_runtime/sandbox_ctl/android_ctl
+│   │   ├── analysis/                      # cli/claude_driver/prompts/workflow/email_otp/hooks
+│   │   ├── batch/                         # batch/batch_store/batch_dashboard/ansi_curses
+│   │   └── web/                           # server(FastAPI 本地控制台)
+│   └── tests/                             # 单元测试 + sandbox 冒烟
 ├── .claude/
 │   ├── settings.json                      # 项目级 hooks 注册
 │   └── skills/product-analyzer/
@@ -244,16 +252,16 @@ Linux 沙盒 smoke 测试在 `tests/sandbox/`: `sandbox_ctl_smoke` 会通过 `bo
 Android 不复用 `sandbox_ctl`。Linux `sandbox_ctl` 面向 Firefox 桌面坐标流;Android 需要独立移动端桥:
 
 ```bash
-python backend/android_ctl.py bootstrap "$OUTPUT_DIR" --apk "$OUTPUT_DIR/downloads/app.apk" --install-with-image
-python backend/android_ctl.py screenshot "$OUTPUT_DIR" --out screenshots/09_android_launch.png
-python backend/android_ctl.py tap "$OUTPUT_DIR" 540 1600
-python backend/android_ctl.py swipe "$OUTPUT_DIR" 540 1600 540 600 --duration-ms 450
-python backend/android_ctl.py type "$OUTPUT_DIR" "example"
-python backend/android_ctl.py key "$OUTPUT_DIR" back
-python backend/android_ctl.py teardown "$OUTPUT_DIR"
+python backend/scripts/android_ctl.py bootstrap "$OUTPUT_DIR" --apk "$OUTPUT_DIR/downloads/app.apk" --install-with-image
+python backend/scripts/android_ctl.py screenshot "$OUTPUT_DIR" --out screenshots/09_android_launch.png
+python backend/scripts/android_ctl.py tap "$OUTPUT_DIR" 540 1600
+python backend/scripts/android_ctl.py swipe "$OUTPUT_DIR" 540 1600 540 600 --duration-ms 450
+python backend/scripts/android_ctl.py type "$OUTPUT_DIR" "example"
+python backend/scripts/android_ctl.py key "$OUTPUT_DIR" back
+python backend/scripts/android_ctl.py teardown "$OUTPUT_DIR"
 ```
 
-`backend/android_ctl.py` 维护 `android_sandbox.json`,调用 Cua SDK 的 `sb.mobile` 接口。只有移动端接口不可用时,才用 `android_ctl shell -c 'adb shell input ...'` 作为降级。
+`backend/scripts/android_ctl.py` 维护 `android_sandbox.json`,调用 Cua SDK 的 `sb.mobile` 接口。只有移动端接口不可用时,才用 `android_ctl shell -c 'adb shell input ...'` 作为降级。
 
 ---
 
@@ -262,13 +270,13 @@ python backend/android_ctl.py teardown "$OUTPUT_DIR"
 ### 单任务,默认 Linux sandbox
 
 ```bash
-python3 backend/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
+python3 backend/scripts/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
 ```
 
 给定下载链接:
 
 ```bash
-python3 backend/analyze_product.py NAME URL DOWNLOAD_URL
+python3 backend/scripts/analyze_product.py NAME URL DOWNLOAD_URL
 ```
 
 ### 旧 host/cua-driver 路径
@@ -276,7 +284,7 @@ python3 backend/analyze_product.py NAME URL DOWNLOAD_URL
 只在需要兼容旧流程时使用:
 
 ```bash
-python3 backend/analyze_product.py --host "ProductiveKitty" "https://productivekitty.masterwordai.com"
+python3 backend/scripts/analyze_product.py --host "ProductiveKitty" "https://productivekitty.masterwordai.com"
 ```
 
 `--host` 会使用本机 cua-driver,不走 Linux-first workflow。
@@ -284,7 +292,7 @@ python3 backend/analyze_product.py --host "ProductiveKitty" "https://productivek
 ### 交互式菜单
 
 ```bash
-python3 backend/analyze_product.py
+python3 backend/scripts/analyze_product.py
 ```
 
 菜单:
@@ -299,9 +307,9 @@ python3 backend/analyze_product.py
 ### 批量
 
 ```bash
-python3 backend/analyze_product.py --batch queue.language-learning.json --max-workers 2 --sandbox-image linux
-python3 backend/analyze_product.py --batch queue.desktop-pets.json --batch queue.coding-platforms.json --max-workers 2
-python3 backend/analyze_product.py --batch-all --max-workers 5 --sandbox-image linux
+python3 backend/scripts/analyze_product.py --batch queue.language-learning.json --max-workers 2 --sandbox-image linux
+python3 backend/scripts/analyze_product.py --batch queue.desktop-pets.json --batch queue.coding-platforms.json --max-workers 2
+python3 backend/scripts/analyze_product.py --batch-all --max-workers 5 --sandbox-image linux
 ```
 
 `--batch` 可重复指定,按命令行顺序合并为一条队列。输出目录按来源队列分类;`--batch-all` 会保留每个 `queue*.json` 的分类。
@@ -309,13 +317,13 @@ python3 backend/analyze_product.py --batch-all --max-workers 5 --sandbox-image l
 云端 sandbox 需要显式指定:
 
 ```bash
-python3 backend/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
+python3 backend/scripts/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
 ```
 
 纯文本模式:
 
 ```bash
-python3 backend/analyze_product.py --batch-all --max-workers 5 --batch-plain
+python3 backend/scripts/analyze_product.py --batch-all --max-workers 5 --batch-plain
 ```
 
 ---
@@ -331,7 +339,7 @@ npm run dev:all
 ```
 
 `dev:all` 通过 `concurrently` 同时启动:
-- **后端** FastAPI (`backend/start_server.py`) → `http://127.0.0.1:8765`
+- **后端** FastAPI (`backend/scripts/start_server.py`) → `http://127.0.0.1:8765`
 - **前端** Vite dev server → `http://127.0.0.1:5173`
 
 前端代理 `/api/*` 到后端,零配置即可联调。
@@ -341,9 +349,9 @@ npm run dev:all
 后端:
 
 ```bash
-python3 backend/analyzer_server.py
+python3 backend/scripts/analyzer_server.py
 # 或
-python3 backend/start_server.py --port 8765 --reload
+python3 backend/scripts/start_server.py --port 8765 --reload
 ```
 
 前端:
@@ -406,7 +414,7 @@ CORS 源可通过环境变量配置：`ANALYZER_CORS_ORIGINS=http://localhost:30
 
 ## Hooks 护栏
 
-项目级 hooks 在 `.claude/settings.json` 注册,脚本在 `backend/product_analyzer/hooks.py`。
+项目级 hooks 在 `.claude/settings.json` 注册,脚本在 `backend/src/analysis/hooks.py`。
 
 当前做三类事:
 
@@ -435,11 +443,11 @@ hooks 是“硬护栏”,workflow `.md` 是“业务规则”。不要把产品�
 沙盒内 GUI 操作遵守 observe → act → observe:
 
 ```bash
-python backend/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
-python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01_web_homepage.png
-python backend/sandbox_ctl.py step click "$OUTPUT_DIR" 640 120
-python backend/sandbox_ctl.py step scroll "$OUTPUT_DIR" 512 400 --scroll-y -6
-python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/02_web_pricing.png
+python backend/scripts/sandbox_ctl.py bootstrap "$OUTPUT_DIR" --open-browser --url "$URL"
+python backend/scripts/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/01_web_homepage.png
+python backend/scripts/sandbox_ctl.py step click "$OUTPUT_DIR" 640 120
+python backend/scripts/sandbox_ctl.py step scroll "$OUTPUT_DIR" 512 400 --scroll-y -6
+python backend/scripts/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/02_web_pricing.png
 ```
 
 规则:
@@ -457,15 +465,15 @@ python backend/sandbox_ctl.py step screenshot "$OUTPUT_DIR" --out screenshots/02
 基础检查:
 
 ```bash
-python3 backend/analyze_product.py --help
-python3 -m py_compile backend/product_analyzer/*.py
+python3 backend/scripts/analyze_product.py --help
+python3 -c "import compileall,sys; sys.exit(0 if compileall.compile_dir('backend/src', quiet=1) else 1)"
 ```
 
 hook 快速检查:
 
 ```bash
 printf '{"tool_name":"Bash","tool_input":{"command":"open https://example.com"}}' \
-  | ANALYZER_RUNTIME=sandbox-local python3 backend/product_analyzer/hooks.py pre-tool
+  | ANALYZER_RUNTIME=sandbox-local python3 backend/src/analysis/hooks.py pre-tool
 ```
 
 前端构建:

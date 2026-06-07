@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/backend/product_analyzer/hooks.py\" pre-tool"
+            "command": "python \"$CLAUDE_PROJECT_DIR/backend/src/analysis/hooks.py\" pre-tool"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/backend/product_analyzer/hooks.py\" post-tool"
+            "command": "python \"$CLAUDE_PROJECT_DIR/backend/src/analysis/hooks.py\" post-tool"
           }
         ]
       }
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/backend/product_analyzer/hooks.py\" stop"
+            "command": "python \"$CLAUDE_PROJECT_DIR/backend/src/analysis/hooks.py\" stop"
           }
         ]
       }

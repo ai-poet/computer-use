@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## 这个仓库是什么
 
-把"分析一款新产品"做成一条可重复流水线:Python 脚本(`backend/analyze_product.py`)把产品名 + 官网 URL 喂进 `Codex --print --output-format stream-json` 子进程,让 Codex 走 `product-analyzer` skill 完成抓取/驱动桌面端/截图/写报告,产出 `reports/<slug>-YYYY-MM-DD[-N]/{report.md, metadata.json, screenshots/}`。
+把"分析一款新产品"做成一条可重复流水线:Python 脚本(`backend/scripts/analyze_product.py`)把产品名 + 官网 URL 喂进 `Codex --print --output-format stream-json` 子进程,让 Codex 走 `product-analyzer` skill 完成抓取/驱动桌面端/截图/写报告,产出 `reports/<slug>-YYYY-MM-DD[-N]/{report.md, metadata.json, screenshots/}`。
 
 **核心设计原则:改规则不改代码。**所有"分析什么、产出什么、怎么降级"的判断都在 `.Codex/skills/product-analyzer/SKILL.md`(及 `REPORT_TEMPLATE.md`)里;Python 只做预检、建目录、起子进程、流式渲染、ESC 续跑。改报告章节、截图命名、降级条件,**改 skill,不要改 Python**。
 
@@ -12,55 +12,59 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ```bash
 # 装桌面驱动器(macOS=Swift cua-driver, Linux/Windows=cua-driver-rs;首跑会自动调起)
-python3 backend/install_cua_driver.py
+python3 backend/scripts/install_cua_driver.py
 
 # 跑一次完整分析
-python3 backend/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
+python3 backend/scripts/analyze_product.py "ProductiveKitty" "https://productivekitty.masterwordai.com"
 
 # 全参(给定 download_url 跳过"在官网找下载链接"那步)
-python3 backend/analyze_product.py NAME URL DOWNLOAD_URL
+python3 backend/scripts/analyze_product.py NAME URL DOWNLOAD_URL
 
 # 零参数 → 进交互菜单(新任务 / 恢复历史 / 退出)
-python3 backend/analyze_product.py
+python3 backend/scripts/analyze_product.py
 
 # 直接进恢复流程
-python3 backend/analyze_product.py --resume
+python3 backend/scripts/analyze_product.py --resume
 
 # 批量:默认本地 sandbox;TTY 下为 curses 控制台(排队/运行可视化);仅 --sandbox cloud 时走云端
-python3 backend/analyze_product.py --batch queue.json --max-workers 10 --sandbox-image auto
-python3 backend/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
+python3 backend/scripts/analyze_product.py --batch queue.json --max-workers 10 --sandbox-image auto
+python3 backend/scripts/analyze_product.py --batch queue.json --sandbox cloud --cua-api-key sk-...
 # 批量全量:自动合并仓库根目录 queue*.json(当前 4 类 40 条)
-python3 backend/analyze_product.py --batch-all --max-workers 5 --sandbox-image linux
+python3 backend/scripts/analyze_product.py --batch-all --max-workers 5 --sandbox-image linux
 # 批量纯文本(CI/管道): ANALYZE_BATCH_PLAIN=1 或 --batch-plain
-python3 backend/analyze_product.py --batch queue.json --batch-plain --max-workers 2
+python3 backend/scripts/analyze_product.py --batch queue.json --batch-plain --max-workers 2
 
 # 调试:把 stream-json 同时落盘
-ANALYZE_RAW_LOG=/tmp/raw.jsonl python3 backend/analyze_product.py NAME URL
+ANALYZE_RAW_LOG=/tmp/raw.jsonl python3 backend/scripts/analyze_product.py NAME URL
 ```
 
-仓库里没有 lint / test / build 配置 — 这是脚本仓,Python 模块手工跑就是验证。改完代码后跑一次 `python3 backend/analyze_product.py --help` 确保 import 链不破即可。
+仓库里没有 lint / test / build 配置 — 这是脚本仓,Python 模块手工跑就是验证。改完代码后跑一次 `python3 backend/scripts/analyze_product.py --help` 确保 import 链不破即可。
 
 ## 架构(big picture)
 
 ### 两层分工
 
 ```
-backend/analyze_product.py        # 5 行 shim,只调 product_analyzer.main
-backend/product_analyzer/         # Python 实现包(预检/建目录/起子进程/流式渲染)
+backend/scripts/                  # 入口 shim:把 src/ 加入 sys.path 后调对应 main
+backend/src/                      # Python 实现,扁平分 6 个子包
 .Codex/skills/product-analyzer/  # 业务规则(SKILL.md + REPORT_TEMPLATE.md)
 .Codex/skills/cua-driver/        # 桌面自动化规则(snapshot→act→verify、no-foreground 契约)
 ```
 
-`backend/product_analyzer/__init__.py` 顶部的 docstring 是模块依赖图的权威来源。依赖**单向无环**,改动时务必保持:
+`backend/src/` 下分 6 个子包,依赖**单向无环**,改动时务必保持(箭头表示「上游被下游依赖」):
 
 ```
- config → ui → batch_store → batch_dashboard → renderer → preflight → tasks
-       → sandbox_runtime → sandbox_ctl → prompts → claude_driver → batch → cli
+ core → settings → sandbox → analysis → batch → web
 ```
 
-(`batch_dashboard` 仅 TTY 批量时由 `batch` 懒加载; `batch_store` 无 UI 依赖。)
+- **core/** — `config` `ui` `renderer` `tasks` `preflight`。无包外依赖(最底层)。
+- **settings/** — `app_config` `credentials`。叶子,不依赖任何业务包。
+- **sandbox/** — `sandbox_runtime` `sandbox_ctl` `android_ctl`。只依赖 core。
+- **analysis/** — `prompts` `workflow` `claude_driver` `email_otp` `hooks` `cli` `workflow_cli`。依赖 core/settings/sandbox;`cli` 对 `batch` 是函数内懒加载,不在导入期成环。
+- **batch/** — `batch_store` `ansi_curses` `batch_dashboard` `batch`。依赖 core/settings/sandbox/analysis。
+- **web/** — `server`。依赖以上全部。
 
-`sandbox_ctl` 只依赖 `sandbox_runtime` / `tasks`,不得 import `claude_driver` 或 `batch`。
+约束:`core` 出度为 0(不 import 任何业务包);`sandbox.sandbox_ctl` / `sandbox.android_ctl` 不得 import `analysis.claude_driver` 或 `batch.batch`。包内用相对导入(`from .config`),跨包用绝对包名(`from core.config`)。运行时由 scripts shim 或 pytest 的 `pythonpath=["src"]` 把 `src/` 挂上,所以跨包名直接以子包开头。
 
 每个模块的职责一句话:
 
@@ -112,7 +116,7 @@ Codex --print --output-format stream-json --verbose
 
 ### 改 Python:保依赖单向
 
-- 改任意模块前,先看它在 `__init__.py` 依赖图的位置,**不要让下层 import 上层**(比如 `tasks.py` 不能 import `claude_driver`)。
+- 改任意模块前,先看它在上面「6 子包依赖图」里的位置,**不要让下层 import 上层**(比如 `core` 不能 import `analysis.claude_driver`)。包内相对导入,跨包绝对包名。
 - 新增"原子能力"先想是不是该塞进 `ui.py` 或 `tasks.py`,而不是再起一层。
 - `claude_driver.run_claude` 是唯一对外的子进程编排接口,`cli` 之外不要直接 `subprocess.Popen` 起 Codex。
 
