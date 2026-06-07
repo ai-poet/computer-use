@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, '..');
-const backendScript = path.resolve(webRoot, '../backend/start_server.py');
+const backendScript = path.resolve(webRoot, '../backend/scripts/start_server.py');
 
 const candidates = [
   process.env.PYTHON_BIN,
