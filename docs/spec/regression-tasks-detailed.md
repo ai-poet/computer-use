@@ -542,6 +542,26 @@ backend/
 ├── tests/             # 与 src 同级的测试目录
 ├── pyproject.toml
 └── uv.lock
+
+.claude/skills/        # 业务规则与桌面自动化（agent 内部引用，非 Python 代码）
+├── product-analyzer/  # 产品分析业务规则：分析什么、产出什么、怎么降级
+│   ├── SKILL.md                  # 7 步 canonical loop 总控 + 降级条件
+│   ├── REPORT_TEMPLATE.md        # report.md 6 强制章节模板
+│   └── workflows/                # 各步骤详细操作手册
+│       ├── 00-contract.md        # 输入输出契约与截图规范
+│       ├── 01-linux-sandbox.md   # Step 1: 准备 Linux sandbox
+│       ├── 02-website-discovery.md # Step 2: 官网浏览与信息收集
+│       ├── 03-client-routing.md  # Step 3: 判断客户端类型(web/app/android)
+│       ├── 04-desktop-client.md  # Step 4: 桌面客户端体验
+│       ├── 05-android-client.md  # Step 5: Android 客户端体验
+│       ├── 06-web-only.md        # 降级模式:仅网页分析
+│       └── 07-reporting.md       # Step 6-7: 阶段报告与最终报告
+└── cua-driver/        # 桌面自动化规则：snapshot→act→verify、no-foreground 契约
+    ├── SKILL.md       # 核心 API 与 no-foreground 死契约
+    ├── README.md      # 快速上手指南
+    ├── RECORDING.md   # 录制与回放
+    ├── TESTS.md       # 测试策略
+    └── WEB_APPS.md    # Web 应用特殊处理
 ```
 
 ### 依赖单向无环（硬约束）
